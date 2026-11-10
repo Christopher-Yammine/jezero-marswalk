@@ -83,6 +83,7 @@ a{color:var(--rust)}
 .crew-icon{width:18px;height:18px;border-radius:50%;background:var(--warn);border:2px solid #140c08;box-shadow:0 0 0 3px rgba(229,182,74,.35)}
 .hab-icon{width:16px;height:16px;background:var(--ok);border:2px solid #140c08;transform:rotate(45deg)}
 .wp-icon{width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--rust)}
+.via-icon{width:6px;height:6px;border-radius:50%;background:var(--rust);opacity:.9}
 .tgt-icon{width:14px;height:14px;border-radius:2px;background:var(--rust);border:2px solid #140c08}
 @media (max-width:860px){
   body{grid-template-columns:1fr;grid-template-rows:1fr auto}
@@ -96,7 +97,7 @@ a{color:var(--rust)}
   <div>
     <p class="eyebrow">Crew tablet · Jezero crater · NASA Space Apps 2026</p>
     <h1>Jezero Marswalk Planner</h1>
-    <p class="note">Click the map to add waypoints, or press Route on a science target to compare three computed routes. Drag the green habitat marker to move base. Every layer is live from NASA Mars Trek; the rover track is NASA's published Perseverance traverse.</p>
+    <p class="note">Click the map to add waypoints; the planner routes between them over the terrain. Drag a waypoint or right-click to remove it and the legs around it are re-routed. Press Route on a science target to compare three computed routes. Drag the green habitat marker to move base. Every layer is live from NASA Mars Trek; the rover track is NASA's published Perseverance traverse.</p>
     <div class="evkey">
       <span><span class="ev obs">observed</span> NASA measured it (rover position, track, elevation)</span>
       <span><span class="ev orb">orbital proxy</span> inferred from orbit (THEMIS night IR: dark = fine sand, bright = rock)</span>
@@ -348,7 +349,7 @@ function astar(from, to, mode, slopeLim){
   const pop=()=>{ const t=hp[0], l=hp.pop(); if(hp.length){ hp[0]=l; let k=0; for(;;){ const a=2*k+1,b=a+1; let s=k; if(a<hp.length&&hp[a][0]<hp[s][0]) s=a; if(b<hp.length&&hp[b][0]<hp[s][0]) s=b; if(s===k) break; [hp[s],hp[k]]=[hp[k],hp[s]]; k=s; } } return t; };
   const tx=t0%nx, ty=(t0/nx)|0;
   const h=i=>{ const dx=Math.abs(i%nx-tx), dy=Math.abs(((i/nx)|0)-ty); return (Math.max(dx,dy)+(Math.SQRT2-1)*Math.min(dx,dy))*CELL*0.6; };
-  const mu=j=>{ let m=1+2.5*sand[j]; if(driven[j]) m*=0.6; else if(mode==='best') m+=1.0; return m; };
+  const mu=j=>{ let m=1+2.5*sand[j]; if(driven[j]) m*=0.6; else if(mode==='best'||mode==='soft') m+=1.0; return m; };
   g[s0]=0; push(h(s0),s0); let expanded=0;
   while(hp.length){
     const [,i]=pop(); if(done[i]) continue; done[i]=1; if(i===t0) break; if(++expanded>400000) return null;
@@ -357,8 +358,9 @@ function astar(from, to, mode, slopeLim){
       if(!dx&&!dy) continue; const xx=x+dx, yy=y+dy; if(xx<0||yy<0||xx>=nx||yy>=ny) continue;
       const j=yy*nx+xx; if(done[j]) continue;
       const d=Math.hypot(dx,dy)*CELL;
-      if(mode==='best'&&j!==t0&&!isNaN(elev[i])&&!isNaN(elev[j])&&Math.atan2(Math.abs(elev[j]-elev[i]),d)*180/Math.PI>slopeLim) continue;
-      const c=g[i]+d*mu(j);
+      let steep=0;
+      if((mode==='best'||mode==='soft')&&j!==t0&&!isNaN(elev[i])&&!isNaN(elev[j])){ const sl=Math.atan2(Math.abs(elev[j]-elev[i]),d)*180/Math.PI; if(sl>slopeLim){ if(mode==='best') continue; steep=sl/slopeLim; } }
+      const c=g[i]+d*mu(j)*(1+8*steep);
       if(c<g[j]){ g[j]=c; par[j]=i; push(c+h(j),j); }
     }
   }
@@ -428,7 +430,7 @@ function renderCandidates(selected){
 }
 function adoptRoute(k){
   const r=cand&&cand.routes[k]; if(!r||!r.path) return;
-  clearRoute(); r.path.forEach(ll=>addWaypoint(ll,true)); recompute(); renderCandidates(k);
+  anchors=r.path.slice(); truthLen=null; rebuild(); renderCandidates(k);
   speak(CAND[k].label+' route adopted. '+Math.round(r.metrics.len)+' metres to '+cand.target.n+'.');
 }
 
@@ -461,40 +463,66 @@ function renderTargets(){
 }
 
 // ---- Habitat and plan
-const hab = L.marker([18.444627,77.450886],{draggable:true,icon:L.divIcon({className:'',html:'<div class="hab-icon"></div>',iconSize:[16,16],iconAnchor:[8,8]})}).bindTooltip('Habitat (drag to move)').addTo(planGroup);
+const hab = L.marker([18.444627,77.450886],{draggable:true,zIndexOffset:1000,icon:L.divIcon({className:'',html:'<div class="hab-icon"></div>',iconSize:[16,16],iconAnchor:[8,8]})}).bindTooltip('Habitat (drag to move)').addTo(planGroup);
 const circle = L.circle(hab.getLatLng(),{radius:1750,color:'#6fcf97',weight:1.5,fillOpacity:.06,dashArray:'6 4'}).addTo(planGroup);
 const routeLine = L.polyline([],{color:'#e0683a',weight:4}).addTo(planGroup);
 const backLine = L.polyline([],{color:'#e0683a',weight:2,dashArray:'4 6',opacity:.8}).addTo(planGroup);
 let waypoints = []; let wpMarkers = []; let truthLen = null;
-hab.on('drag dragend',()=>{ circle.setLatLng(hab.getLatLng()); recompute(); });
-map.on('click',e=>{
-  const from=waypoints.length?waypoints[waypoints.length-1]:hab.getLatLng();
-  if($('autoRoute').checked&&G.ready&&dist(from,e.latlng)>CELL*2){
-    const path=astar(from,e.latlng,'best',+$('slope').value);
-    if(path){ path.forEach(ll=>addWaypoint(ll,true)); recompute(); return; }
-  }
-  addWaypoint(e.latlng);
-});
-function addWaypoint(ll, quiet){
-  waypoints.push(ll); truthLen=null;
-  const m = L.marker(ll,{draggable:true,icon:L.divIcon({className:'',html:'<div class="wp-icon"></div>',iconSize:[12,12],iconAnchor:[6,6]})}).addTo(planGroup);
-  m.on('drag dragend',()=>{ waypoints[wpMarkers.indexOf(m)]=m.getLatLng(); recompute(); });
-  m.on('contextmenu',()=>{ const i=wpMarkers.indexOf(m); planGroup.removeLayer(m); wpMarkers.splice(i,1); waypoints.splice(i,1); recompute(); });
-  wpMarkers.push(m); if(!quiet) recompute();
+// anchors are the points the astronaut chose; waypoints is the walked list after routing between them.
+// Every edit (click, drag, remove, slider, toggle) rebuilds from the anchors, so a straight leg can only exist with routing off.
+let anchors = [], backPath = []; // backPath: routed return from the last anchor to the habitat (ends at the habitat)
+hab.on('drag',()=>{ circle.setLatLng(hab.getLatLng()); backPath=[hab.getLatLng()]; recompute(); });
+hab.on('dragend',()=>{ circle.setLatLng(hab.getLatLng()); rebuild(); });
+// Route under the slope limit; if no such path exists (a point inside a crater), take the least steep one and say so.
+function routeTo(from,to,lim){
+  let path=astar(from,to,'best',lim); if(path) return {path,soft:false};
+  path=astar(from,to,'soft',lim); return path?{path,soft:true}:null;
 }
-function clearRoute(){ wpMarkers.forEach(m=>planGroup.removeLayer(m)); wpMarkers=[]; waypoints=[]; truthLen=null; recompute(); }
-$('undo').onclick=()=>{ const m=wpMarkers.pop(); if(m){planGroup.removeLayer(m); waypoints.pop();} truthLen=null; recompute(); };
+function rebuild(){
+  wpMarkers.forEach(m=>planGroup.removeLayer(m)); wpMarkers=[]; waypoints=[];
+  const auto=$('autoRoute').checked&&G.ready, lim=+$('slope').value;
+  let from=hab.getLatLng(), soft=0, off=0;
+  anchors.forEach((a,ai)=>{
+    let via=[a];
+    if(auto&&dist(from,a)>CELL*2){ const r=routeTo(from,a,lim); if(r){ via=r.path; if(r.soft) soft++; } else off++; }
+    via.forEach((ll,k)=>{
+      const isAnchor=k===via.length-1;
+      const m=L.marker(ll,{draggable:isAnchor,interactive:isAnchor,icon:L.divIcon({className:'',html:'<div class="'+(isAnchor?'wp-icon':'via-icon')+'"></div>',iconSize:isAnchor?[12,12]:[6,6],iconAnchor:isAnchor?[6,6]:[3,3]})}).addTo(planGroup);
+      if(isAnchor){
+        m.on('dragend',()=>{ anchors[ai]=m.getLatLng(); truthLen=null; rebuild(); });
+        m.on('contextmenu',()=>{ anchors.splice(ai,1); truthLen=null; rebuild(); });
+        m.bindTooltip('Waypoint '+(ai+1)+': drag to move, right-click to remove');
+      }
+      wpMarkers.push(m); waypoints.push(ll);
+    });
+    from=a;
+  });
+  const h=hab.getLatLng(); backPath=[];
+  if(anchors.length){
+    backPath=[h];
+    if(auto&&dist(from,h)>CELL*2){ const r=routeTo(from,h,lim); if(r){ backPath=r.path; if(r.soft) soft++; } else off++; }
+  }
+  recompute();
+  if(soft) speak('No route to '+(soft>1?soft+' points stays':'one point stays')+' under the '+lim+' degree limit. Showing the least steep approach; the breach is flagged.');
+  else if(off) speak((off>1?off+' points are':'One point is')+' outside the terrain grid; straight line used there.');
+}
+map.on('click',e=>addWaypoint(e.latlng));
+function addWaypoint(ll){ anchors.push(ll); truthLen=null; rebuild(); }
+function clearRoute(){ anchors=[]; truthLen=null; rebuild(); }
+$('undo').onclick=()=>{ anchors.pop(); truthLen=null; rebuild(); };
 $('clear').onclick=()=>{ clearRoute(); cand=null; renderCandidates(null); };
+$('autoRoute').addEventListener('change',rebuild);
+$('slope').addEventListener('change',rebuild);
 $('truth').onclick=()=>{
   clearRoute(); cand=null; renderCandidates(null);
   const segs = segsBySol.filter(s=>s.sol>=1170&&s.sol<=1200); if(!segs.length) return;
   truthLen=0; const ll=[];
   segs.forEach(s=>{ truthLen+=s.len; s.pts.forEach(p=>ll.push(L.latLng(p[1],p[0]))); });
   const start=ll.shift();
-  ll.forEach(q=>{ if(dist(waypoints[waypoints.length-1]||start,q)>0.5) waypoints.push(q); });
+  ll.forEach(q=>{ if(dist(anchors[anchors.length-1]||start,q)>0.5) anchors.push(q); });
   hab.setLatLng(start); circle.setLatLng(start);
-  const b=L.latLngBounds([start,...waypoints]).pad(.3);
-  const tl=truthLen; recompute();
+  const b=L.latLngBounds([start,...anchors]).pad(.3);
+  const tl=truthLen; rebuild(); truthLen=tl; recompute();
   map.fitBounds(b,{maxZoom:17});
   truthNote.innerHTML='Ground truth '+OBS+': NASA lists '+(tl/1000).toFixed(2)+' km for sols 1170 to 1200. Planner distance above is computed independently on the Mars radius from the thinned points.';
 };
@@ -511,7 +539,8 @@ function recompute(){
   const radius=speed*1000*wb/60; circle.setRadius(radius);
   const h=hab.getLatLng();
   routeLine.setLatLngs(waypoints);
-  backLine.setLatLngs(waypoints.length?[waypoints[waypoints.length-1],h]:[]);
+  const ret=waypoints.length?[waypoints[waypoints.length-1],...(backPath.length?backPath:[h])]:[];
+  backLine.setLatLngs(ret);
   let out=0, far=0, up=0, dn=0, knownN=0, totN=0;
   const prev=[h,...waypoints];
   const eH=nearestElev(h); const prof=[[0,eH]]; let px=0;
@@ -528,7 +557,7 @@ function recompute(){
     }
     legInfo.push({d,slope,e1:nearestElev(prev[i]),sand:G.ready?sandyN/(sp.length-1):null});
   }
-  const back=waypoints.length?dist(waypoints[waypoints.length-1],h):0;
+  let back=0; for(let i=1;i<ret.length;i++) back+=dist(ret[i-1],ret[i]);
   const total=out+back, mins=total/(speed*1000/60);
   $('sOut').textContent=fmtM(out); $('sBack').textContent=fmtM(back); $('sTime').textContent=fmtT(mins); $('sFar').textContent=fmtM(far);
   $('sDose').textContent=Math.round(mins*DOSE_PER_MIN)+' µGy';
@@ -617,9 +646,9 @@ function simPos(s){
 $('simStart').onclick=()=>{
   if(!waypoints.length) return; simReset();
   sim={back:false,base:0,farSaid:false};
-  setSimPath([hab.getLatLng(),...waypoints,hab.getLatLng()]);
+  setSimPath([hab.getLatLng(),...waypoints,...(backPath.length?backPath:[hab.getLatLng()])]);
   sim.outLen=sim.cum[sim.cum.length-2];
-  crew=L.marker(sim.path[0],{icon:L.divIcon({className:'',html:'<div class="crew-icon"></div>',iconSize:[18,18],iconAnchor:[9,9]})}).bindTooltip('Crew (simulated)').addTo(crewGroup);
+  crew=L.marker(sim.path[0],{interactive:false,icon:L.divIcon({className:'',html:'<div class="crew-icon"></div>',iconSize:[18,18],iconAnchor:[9,9]})}).bindTooltip('Crew (simulated)').addTo(crewGroup);
   $('trackBack').disabled=false;
   const [sh,sm]=$('start').value.split(':').map(Number); const speed=+$('speed').value*1000/60;
   speak('Simulated walk started. '+Math.round(sim.total)+' metres round trip, back at base about '+lmst(sh*60+sm+sim.total/speed)+'.');
@@ -645,7 +674,7 @@ $('simStop').onclick=()=>{ simReset(); $('cMsg').textContent=''; };
 $('trackBack').onclick=()=>{
   if(!sim||!crew) return;
   const here=crew.getLatLng(), h=hab.getLatLng();
-  let path=G.ready?astar(here,h,'best',+$('slope').value):null;
+  const rt=G.ready?routeTo(here,h,+$('slope').value):null, path=rt&&rt.path;
   const via=path?[here,...path]:[here,h];
   const elapsedSoFar=sim.base+(performance.now()-sim.startMs)/1000;
   sim.base=elapsedSoFar; sim.back=true; sim.outLen=null;

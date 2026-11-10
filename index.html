@@ -230,6 +230,7 @@ const trackGroup = L.layerGroup().addTo(map);
 const targetGroup = L.layerGroup().addTo(map);
 const planGroup = L.layerGroup().addTo(map);
 const candGroup = L.layerGroup().addTo(map);
+const slopeGroup = L.layerGroup().addTo(map);
 const crewGroup = L.layerGroup().addTo(map);
 const OBS='<span class="ev obs">observed</span>', ORB='<span class="ev orb">orbital</span>', RULE='<span class="ev rule">rule</span>', SIM='<span class="ev sim">simulated</span>';
 L.control.layers({}, {
@@ -244,6 +245,7 @@ L.control.layers({}, {
   ['Science targets '+OBS]:targetGroup,
   ['Habitat, walk-back circle '+RULE+', route']:planGroup,
   ['Candidate routes (comparison)']:candGroup,
+  ['Steep ground, CTX DTM: red over the slope limit, amber within 5° of it '+OBS]:slopeGroup,
   ['Crew tag '+SIM]:crewGroup,
 }, { collapsed: window.innerWidth < 860 }).addTo(map);
 
@@ -322,8 +324,25 @@ function buildGrid(nirCanvas, dtmBuf){
     cellLL:i=>L.latLng(lat0-((i/nx|0)+.5)*CELL/mLat, lon0+((i%nx)+.5)*CELL/mLon)});
   let drv=0; for(let i=0;i<n;i++) drv+=driven[i];
   $('gridStatus').innerHTML='Terrain grid ready: '+nx+' × '+ny+' cells of '+CELL+' m. Night-IR brightness '+Math.round(p15)+' (sandy) to '+Math.round(p65)+' (rock) sets the sand proxy. '+drv+' cells within 60 m of the rover track count as proven ground.'+dtmNote;
-  renderTargets(); recompute();
+  renderTargets(); renderSlope(); recompute();
 }
+// What the router sees: steepest 30 m step out of each cell, painted over the map so a route can be checked by eye.
+function renderSlope(){
+  if(!G.ready||!G.dtm) return;
+  const {nx,ny,elev,lat0,lon0,mLon,mLat}=G, lim=+$('slope').value;
+  const c=document.createElement('canvas'); c.width=nx; c.height=ny; const ctx=c.getContext('2d'); const img=ctx.createImageData(nx,ny), d=img.data;
+  for(let y=0;y<ny;y++) for(let x=0;x<nx;x++){
+    const i=y*nx+x, e0=elev[i]; let mx=0;
+    for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){ if(!dx&&!dy) continue; const xx=x+dx, yy=y+dy; if(xx<0||yy<0||xx>=nx||yy>=ny) continue; const sl=Math.atan2(Math.abs(elev[yy*nx+xx]-e0),Math.hypot(dx,dy)*CELL)*180/Math.PI; if(sl>mx) mx=sl; }
+    const o=i*4;
+    if(mx>lim){ d[o]=224; d[o+1]=60; d[o+2]=40; d[o+3]=190; }
+    else if(mx>lim-5){ d[o]=240; d[o+1]=170; d[o+2]=40; d[o+3]=120; }
+  }
+  ctx.putImageData(img,0,0);
+  slopeGroup.clearLayers();
+  L.imageOverlay(c.toDataURL(),[[lat0-ny*CELL/mLat,lon0],[lat0,lon0+nx*CELL/mLon]],{opacity:.8,interactive:false}).addTo(slopeGroup);
+}
+$('slope').addEventListener('change',renderSlope);
 function loadNight(){
   const c=document.createElement('canvas'); c.width=512; c.height=512; const ctx=c.getContext('2d');
   const jobs=[]; for(const r of [202,203]) for(const col of [731,732]) jobs.push(new Promise((res,rej)=>{

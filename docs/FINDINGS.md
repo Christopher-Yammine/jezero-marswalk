@@ -81,7 +81,7 @@ Existing ESP32-S3 safety tag from a previous project: MPU-6500 fall detection, M
 
 ## 9. Not done yet
 
-- 1 m Jezero DTM for slope off the rover track (GeoTIFF, needs tiling).
+- 1 m HiRISE Jezero DTM (GeoTIFF, several GB); the 20 m CTX DTM is in (section 11).
 - CRISM mineral layers (same).
 - MEDA temperature series for the daylight window.
 - Real ESP32 tag feed into the crew panel.
@@ -93,3 +93,11 @@ Existing ESP32-S3 safety tag from a previous project: MPU-6500 fall detection, M
 - Night-IR tiles are read as pixels in the browser (CORS allowed on trek.nasa.gov): z9 rows 202-203, cols 731-732, 81 m per pixel at Jezero.
 - Spoken warnings use the browser speech API; track back replans from the live simulated position on the recommended cost.
 - Reference for thermal inertia as a sand proxy: Christensen et al. 2004, THEMIS on Mars Odyssey.
+
+## 11. CTX stereo DTM for slope everywhere (added 11 Nov)
+
+- Source: USGS Mars 2020 TRN product `JEZ_ctx_B_soc_008_DTM_MOLAtopography_DeltaGeoid_20m_Eqc_latTs0_lon0.tif` (https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/), 9.7 MB GeoTIFF, 1512 x 1596 px, equirectangular on the Mars 2000 sphere (R = 3,396,190 m), 20 m per pixel, elevations -2,711 to -1,516 m, no nodata inside the file.
+- `data/build_dtm.py` samples it bilinearly at the centres of the planner's 30 m cells and writes `data/jez_dtm_30m.i16` (677 x 717 Int16 decimetres, 971 KB) plus `data/jez_dtm_30m.json` (metadata and the check below). The page loads the binary next to the THEMIS tiles.
+- Check against Perseverance: at the 11,044 traverse vertices that carry an elevation, DTM minus rover is -0.40 m mean, -0.27 m median, 3.1 m standard deviation, 95 percent within 6.1 m. The page repeats the check per grid cell at load time and prints it under Route comparison.
+- Effect: slope is now known on every cell, so the "Recommended" router refuses steps over the slope limit everywhere, not only within 60 m of the track. Map clicks route over the terrain by default (untick "Route clicks over terrain" for straight lines). Every leg is walked in 30 m steps; the leg's slope is its steepest step, and the climb, drop and elevation profile come from the same samples.
+- Test: habitat at the landing site, click 4.2 km north-west across the 15 m deep crater at 18.4727 N, 77.4281 E. Straight line: max step 22.5 deg, flagged as a slope breach. Routed: 5.59 km, no step over 15 deg. Bright Angel comparison now reports slope known on 100 percent of all three routes.

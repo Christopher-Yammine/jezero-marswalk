@@ -1,0 +1,16 @@
+{
+ "nx": 677,
+ "ny": 717,
+ "cell": 30,
+ "units": "decimetres",
+ "nodata": -32768,
+ "source": "USGS Mars 2020 TRN CTX DTM 20 m, JEZ_ctx_B_soc_008_DTM_MOLAtopography_DeltaGeoid_20m",
+ "resampled": "bilinear at 30 m cell centres",
+ "dtm_minus_rover_m": {
+  "n": 11044,
+  "mean": -0.4042123602802913,
+  "median": -0.26554482082360664,
+  "std": 3.135497801382184,
+  "p95abs": 6.127652722194399
+ }
+}

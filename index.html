@@ -125,6 +125,7 @@ a{color:var(--rust)}
       <button id="clear" class="quiet">Clear</button>
       <button id="truth">Load Perseverance sols 1170 to 1200</button>
     </div>
+    <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;cursor:pointer;font-size:13px"><input type="checkbox" id="autoRoute" checked style="margin-top:3px"><span>Route clicks over terrain: recommended cost, slope limit enforced on the CTX DTM <span class="ev obs">observed</span>. Untick for straight lines.</span></label>
     <div class="stats" style="margin-top:10px">
       <div><span>Out</span><b id="sOut">0 m</b></div>
       <div><span>Return leg</span><b id="sBack">0 m</b></div>
@@ -138,8 +139,9 @@ a{color:var(--rust)}
     <div class="pills" id="pills"></div>
     <canvas id="profile" width="340" height="110" style="margin-top:10px"></canvas>
     <div class="legs" id="legs" style="margin-top:8px"></div>
+    <p class="note">Each leg is checked every 30 m; the leg's slope is its steepest step, so a straight leg across a crater is flagged even if its ends are level.</p>
     <p class="note" id="truthNote"></p>
-    <p class="note">Elevation comes from Perseverance's track (MOLA-referenced), so slope is only known within 60 m of ground the rover drove. Elsewhere the leg is marked unknown rather than guessed. Dose uses 0.21 mGy/day, Curiosity RAD surface average at Gale, not Jezero (Hassler et al. 2014).</p>
+    <p class="note">Elevation comes from the USGS CTX stereo DTM (20 m, MOLA-referenced) resampled to 30 m, checked against Perseverance's track elevations where both exist (see Route comparison). If the DTM fails to load, slope falls back to the rover track and is unknown elsewhere. Dose uses 0.21 mGy/day, Curiosity RAD surface average at Gale, not Jezero (Hassler et al. 2014).</p>
   </section>
 
   <section>
@@ -259,10 +261,23 @@ const trackReady = fetch('m20_traverse.json').then(r=>r.json()).then(d=>{
   renderTargets();
 });
 
-function nearestElev(latlng){
+function roverElev(latlng){
   let best=null, bd=60;
   for(const p of pts){ if(p[2]==null) continue; const d=dist(latlng,L.latLng(p[0],p[1])); if(d<bd){bd=d;best=p[2];} }
   return best;
+}
+// Elevation at a point: bilinear in the 30 m CTX DTM grid when loaded, else nearest rover vertex within 60 m.
+function nearestElev(latlng){
+  if(G.ready&&G.dtm){
+    const fx=(latlng.lng-G.lon0)*G.mLon/CELL-.5, fy=(G.lat0-latlng.lat)*G.mLat/CELL-.5;
+    const x0=Math.floor(fx), y0=Math.floor(fy);
+    if(x0>=0&&y0>=0&&x0<G.nx-1&&y0<G.ny-1){
+      const tx=fx-x0, ty=fy-y0, e=G.elev, i=y0*G.nx+x0;
+      const v=e[i]*(1-tx)*(1-ty)+e[i+1]*tx*(1-ty)+e[i+G.nx]*(1-tx)*ty+e[i+G.nx+1]*tx*ty;
+      if(!isNaN(v)) return v;
+    }
+  }
+  return roverElev(latlng);
 }
 
 // ---- Terrain grid for auto-routing: 30 m cells over the HiRISE bbox.
@@ -270,7 +285,7 @@ function nearestElev(latlng){
 const CELL = 30;
 const M_PER_DEG = R*Math.PI/180;
 const G = { ready:false };
-function buildGrid(nirCanvas){
+function buildGrid(nirCanvas, dtmBuf){
   const lat0=JEZ[1][0], lat1=JEZ[0][0], lon0=JEZ[0][1], lon1=JEZ[1][1];
   const latC=(lat0+lat1)/2, mLon=M_PER_DEG*Math.cos(latC*Math.PI/180), mLat=M_PER_DEG;
   const nx=Math.ceil((lon1-lon0)*mLon/CELL), ny=Math.ceil((lat0-lat1)*mLat/CELL), n=nx*ny;
@@ -294,11 +309,19 @@ function buildGrid(nirCanvas){
     for(let dy=-2;dy<=2;dy++) for(let dx=-2;dx<=2;dx++){ const xx=x+dx, yy=y+dy; if(xx>=0&&yy>=0&&xx<nx&&yy<ny&&dx*dx+dy*dy<=4) driven[yy*nx+xx]=1; }
     if(p[2]!=null){ elev[i]=(isNaN(elev[i])?0:elev[i]*ecount[i])/(ecount[i]+1)+p[2]/(ecount[i]+1); ecount[i]++; }
   }
-  Object.assign(G,{ready:true,nx,ny,n,sand,driven,elev,lat0,lon0,mLon,mLat,toCell,p15,p65,
+  // CTX stereo DTM (USGS, 20 m) resampled to this grid by data/build_dtm.py: Int16 decimetres, row-major, same nx x ny.
+  let dtm=false, dtmNote='';
+  if(dtmBuf&&dtmBuf.byteLength===n*2){
+    const d=new Int16Array(dtmBuf); let sum=0,sum2=0,cnt=0;
+    for(let i=0;i<n;i++){ if(d[i]!==-32768){ const v=d[i]/10; if(!isNaN(elev[i])){ const df=v-elev[i]; sum+=df; sum2+=df*df; cnt++; } elev[i]=v; } }
+    const mean=cnt?sum/cnt:0, sd=cnt?Math.sqrt(Math.max(0,sum2/cnt-mean*mean)):0;
+    dtm=true; dtmNote=' Elevation: CTX stereo DTM 20 m '+OBS+' on every cell; against '+cnt+' rover-track cells it differs by '+mean.toFixed(1)+' m on average (spread '+sd.toFixed(1)+' m).';
+  } else dtmNote=' DTM not loaded: slope known only within 60 m of the rover track.';
+  Object.assign(G,{ready:true,nx,ny,n,sand,driven,elev,dtm,lat0,lon0,mLon,mLat,toCell,p15,p65,
     cellLL:i=>L.latLng(lat0-((i/nx|0)+.5)*CELL/mLat, lon0+((i%nx)+.5)*CELL/mLon)});
   let drv=0; for(let i=0;i<n;i++) drv+=driven[i];
-  $('gridStatus').innerHTML='Terrain grid ready: '+nx+' × '+ny+' cells of '+CELL+' m. Night-IR brightness '+Math.round(p15)+' (sandy) to '+Math.round(p65)+' (rock) sets the sand proxy. '+drv+' cells within 60 m of the rover track count as proven ground.';
-  renderTargets();
+  $('gridStatus').innerHTML='Terrain grid ready: '+nx+' × '+ny+' cells of '+CELL+' m. Night-IR brightness '+Math.round(p15)+' (sandy) to '+Math.round(p65)+' (rock) sets the sand proxy. '+drv+' cells within 60 m of the rover track count as proven ground.'+dtmNote;
+  renderTargets(); recompute();
 }
 function loadNight(){
   const c=document.createElement('canvas'); c.width=512; c.height=512; const ctx=c.getContext('2d');
@@ -309,7 +332,8 @@ function loadNight(){
   }));
   return Promise.all(jobs).then(()=>c);
 }
-Promise.all([loadNight(),trackReady]).then(([c])=>buildGrid(c)).catch(e=>{ $('gridStatus').textContent='Terrain grid unavailable: THEMIS tiles did not load ('+e+'). Manual waypoints still work.'; });
+const dtmReady=fetch('data/jez_dtm_30m.i16').then(r=>r.ok?r.arrayBuffer():null).catch(()=>null);
+Promise.all([loadNight(),trackReady,dtmReady]).then(([c,,b])=>buildGrid(c,b)).catch(e=>{ $('gridStatus').textContent='Terrain grid unavailable: THEMIS tiles did not load ('+e+'). Manual waypoints still work.'; });
 
 function sandAt(ll){ if(!G.ready) return null; const i=G.toCell(ll.lat,ll.lng); return i<0?null:G.sand[i]; }
 function drivenAt(ll){ if(!G.ready) return null; const i=G.toCell(ll.lat,ll.lng); return i<0?null:G.driven[i]; }
@@ -443,7 +467,14 @@ const routeLine = L.polyline([],{color:'#e0683a',weight:4}).addTo(planGroup);
 const backLine = L.polyline([],{color:'#e0683a',weight:2,dashArray:'4 6',opacity:.8}).addTo(planGroup);
 let waypoints = []; let wpMarkers = []; let truthLen = null;
 hab.on('drag dragend',()=>{ circle.setLatLng(hab.getLatLng()); recompute(); });
-map.on('click',e=>addWaypoint(e.latlng));
+map.on('click',e=>{
+  const from=waypoints.length?waypoints[waypoints.length-1]:hab.getLatLng();
+  if($('autoRoute').checked&&G.ready&&dist(from,e.latlng)>CELL*2){
+    const path=astar(from,e.latlng,'best',+$('slope').value);
+    if(path){ path.forEach(ll=>addWaypoint(ll,true)); recompute(); return; }
+  }
+  addWaypoint(e.latlng);
+});
 function addWaypoint(ll, quiet){
   waypoints.push(ll); truthLen=null;
   const m = L.marker(ll,{draggable:true,icon:L.divIcon({className:'',html:'<div class="wp-icon"></div>',iconSize:[12,12],iconAnchor:[6,6]})}).addTo(planGroup);
@@ -481,17 +512,21 @@ function recompute(){
   const h=hab.getLatLng();
   routeLine.setLatLngs(waypoints);
   backLine.setLatLngs(waypoints.length?[waypoints[waypoints.length-1],h]:[]);
-  let out=0, far=0, elevs=[];
+  let out=0, far=0, up=0, dn=0, knownN=0, totN=0;
   const prev=[h,...waypoints];
+  const eH=nearestElev(h); const prof=[[0,eH]]; let px=0;
   legInfo=[];
+  // every leg is walked in 30 m steps: slope is the steepest step, climb/drop and the profile come from the same samples
   for(let i=1;i<prev.length;i++){
     const d=dist(prev[i-1],prev[i]); out+=d;
     far=Math.max(far,dist(h,prev[i]));
-    const e0=nearestElev(prev[i-1]), e1=nearestElev(prev[i]);
-    let slope=null; if(e0!=null&&e1!=null&&d>1) slope=Math.atan2(e1-e0,d)*180/Math.PI;
-    const mid=L.latLng((prev[i-1].lat+prev[i].lat)/2,(prev[i-1].lng+prev[i].lng)/2);
-    legInfo.push({d,slope,e1,sand:sandAt(mid)});
-    elevs.push(e1);
+    const sp=samples(prev[i-1],prev[i],CELL); let ePrev=nearestElev(sp[0]), slope=null, sandyN=0;
+    for(let k=1;k<sp.length;k++){
+      const dd=dist(sp[k-1],sp[k]), e1=nearestElev(sp[k]); px+=dd; prof.push([px,e1]); totN++;
+      if(e1!=null){ knownN++; if(ePrev!=null&&dd>1){ const st=Math.atan2(e1-ePrev,dd)*180/Math.PI; if(slope==null||Math.abs(st)>Math.abs(slope)) slope=st; const g=e1-ePrev; if(g>0) up+=g; else dn-=g; } ePrev=e1; }
+      const sd=sandAt(sp[k]); if(sd!=null&&sd>0.5) sandyN++;
+    }
+    legInfo.push({d,slope,e1:nearestElev(prev[i]),sand:G.ready?sandyN/(sp.length-1):null});
   }
   const back=waypoints.length?dist(waypoints[waypoints.length-1],h):0;
   const total=out+back, mins=total/(speed*1000/60);
@@ -499,34 +534,31 @@ function recompute(){
   $('sDose').textContent=Math.round(mins*DOSE_PER_MIN)+' µGy';
   const [sh,sm]=$('start').value.split(':').map(Number); const startMin=sh*60+sm, endMin=startMin+mins;
   $('sEnd').textContent=waypoints.length?lmst(endMin):'--:--';
-  const known=elevs.filter(e=>e!=null); $('sElev').textContent=known.length+' / '+elevs.length+' pts';
-  let up=0,dn=0,lastE=nearestElev(h);
-  elevs.forEach(e=>{ if(e!=null&&lastE!=null){ const dd=e-lastE; if(dd>0)up+=dd; else dn-=dd; } if(e!=null) lastE=e; });
-  $('sGain').textContent=known.length?('+'+Math.round(up)+' / -'+Math.round(dn)+' m'):'--';
+  $('sElev').textContent=knownN+' / '+totN+' pts';
+  $('sGain').textContent=knownN?('+'+Math.round(up)+' / -'+Math.round(dn)+' m'):'--';
   const pills=[];
   if(!waypoints.length) pills.push(['mute','no route']);
   else{
     pills.push(far<=radius?['ok','walk-back OK']:['bad','walk-back breach '+fmtM(far-radius)+' past limit']);
     const bad=legInfo.filter(l=>l.slope!=null&&Math.abs(l.slope)>slopeLim).length, unk=legInfo.filter(l=>l.slope==null).length;
-    pills.push(bad?['bad','slope breach on '+bad+' leg'+(bad>1?'s':'')]:unk===legInfo.length?['warn','slope unknown (no rover elevation here)']:['ok','slope OK where known']);
+    pills.push(bad?['bad','slope breach on '+bad+' leg'+(bad>1?'s':'')]:unk===legInfo.length?['warn','slope unknown (no elevation here)']:['ok','slope OK where known']);
     pills.push(startMin>=DAY_START&&endMin<=DAY_END?['ok','inside daylight window']:['bad','outside 07:00 to 17:00 LMST']);
-    const sandy=legInfo.filter(l=>l.sand!=null&&l.sand>0.5).length;
+    const sandy=legInfo.filter(l=>l.sand!=null&&l.sand>0.25).length;
     if(G.ready) pills.push(sandy?['warn',sandy+' leg'+(sandy>1?'s':'')+' over sandy ground (night IR proxy)']:['ok','no sandy legs (night IR proxy)']);
     if(truthLen!=null) pills.push([Math.abs(out-truthLen)/truthLen<0.03?'ok':'warn','vs NASA '+fmtM(truthLen)+' ('+((out-truthLen)/truthLen*100).toFixed(1)+'%)']);
   }
   $('pills').innerHTML=pills.map(p=>'<span class="pill '+p[0]+'">'+p[1]+'</span>').join('');
-  $('legs').innerHTML=legInfo.map((l,i)=>'<div class="'+(l.slope==null?'unk':Math.abs(l.slope)>slopeLim?'bad':'')+'">leg '+(i+1)+'  '+String(Math.round(l.d)).padStart(5)+' m  '+(l.slope==null?'slope n/a':'slope '+l.slope.toFixed(1)+'°')+(l.e1!=null?'  el '+Math.round(l.e1)+' m':'')+(l.sand!=null&&l.sand>0.5?'  sandy':'')+'</div>').join('');
-  drawProfile(elevs, legInfo, h);
+  $('legs').innerHTML=legInfo.map((l,i)=>'<div class="'+(l.slope==null?'unk':Math.abs(l.slope)>slopeLim?'bad':'')+'">leg '+(i+1)+'  '+String(Math.round(l.d)).padStart(5)+' m  '+(l.slope==null?'slope n/a':'max '+l.slope.toFixed(1)+'°')+(l.e1!=null?'  el '+Math.round(l.e1)+' m':'')+(l.sand!=null&&l.sand>0.25?'  sandy '+Math.round(l.sand*100)+'%':'')+'</div>').join('');
+  drawProfile(prof);
   simReset();
 }
-function drawProfile(elevs, legs, h){
+function drawProfile(series){
   const c=$('profile'), ctx=c.getContext('2d'); const W=c.width=c.clientWidth*2, H=c.height=220; ctx.scale(1,1);
   ctx.fillStyle='#14110e'; ctx.fillRect(0,0,W,H);
-  const e0=nearestElev(h); const series=[[0,e0]]; let x=0;
-  legs.forEach((l,i)=>{ x+=l.d; series.push([x,elevs[i]]); });
+  const x=series[series.length-1][0];
   const known=series.filter(s=>s[1]!=null);
   ctx.font='20px IBM Plex Mono'; ctx.fillStyle='#a3978a';
-  if(known.length<2){ ctx.fillText(waypoints.length?'No rover elevation along this route':'Elevation profile appears here',16,H/2+6); return; }
+  if(known.length<2){ ctx.fillText(waypoints.length?'No elevation along this route':'Elevation profile appears here',16,H/2+6); return; }
   const minE=Math.min(...known.map(s=>s[1]))-5, maxE=Math.max(...known.map(s=>s[1]))+5, tot=x||1;
   const X=v=>20+v/tot*(W-40), Y=v=>H-24-(v-minE)/(maxE-minE)*(H-50);
   ctx.strokeStyle='#3a322a'; ctx.beginPath(); for(let g=0;g<=4;g++){ const y=24+g*(H-50)/4; ctx.moveTo(20,y); ctx.lineTo(W-20,y);} ctx.stroke();

@@ -1,0 +1,46 @@
+Read the challenge again and did some digging on the data side. Here's what I think we build and what I'll take.
+
+The idea in one line: a Marswalk planner. An astronaut picks a science target in Jezero, the app draws a safe route on top of real NASA data, and while they walk, a wearable tag puts them live on the same map. The challenge literally says "plan and carry out a Marswalk" so we cover both halves.
+
+Why Jezero works for us
+- It has the best data stack on Mars. NASA Trek serves a 25 cm HiRISE mosaic, a 6 m CTX mosaic, THEMIS day/night thermal, MOLA/HRSC relief, all as plain map tiles we can load straight into a browser. I tested the links today, they work.
+- Perseverance's full path is public (46 km, 559 drives, with elevation at every point). I recomputed the distance and got the same number NASA publishes, so we can prove our route maths against a rover that actually drove it. https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_traverse.json
+- Weather and radiation have real numbers to cite: MEDA on Perseverance for temperature/dust, RAD on Curiosity for radiation (about 0.21 mGy per day on the surface, Hassler et al. 2014 in Science).
+
+Safety rules the app enforces (that's the "astronaut safety first" part)
+- 30 min walk-back limit, about 1.8 km at 3.5 km/h. From a 2026 NASA JSC suit paper: https://ntrs.nasa.gov/api/citations/20260005410/downloads/Mars_Mass_ICES2026_Presentation_Final.pdf
+- Slope limit (no published Mars number, we label it draft and make it adjustable)
+- Daylight-only walking window from the temperature swing
+- Running radiation dose counter
+- Buddy rule: two astronauts, alarm if they separate
+
+Where your rover research plugs in
+- Every obstacle a rover failed on becomes a rule or a hazard layer in the planner. That's the link between the research split and the tool.
+
+What I'll take
+- The map base: real NASA layers + Perseverance track in a browser map. Helena, that gives you a working base to make interactive.
+- The route engine and safety rules above.
+- The wearable tag. I already have an ESP32 tag + base from another project (fall detection, heart rate, radio link, console). I'll repurpose it as the suit tag so there's a physical demo on the table.
+- Perseverance as my rover for the research split.
+
+One honest note: Jezero is outside the subsurface ice belt (SWIM map, https://swim.psi.edu). I'd show that on the map as a finding, not hide it.
+
+Full write-up with the exact layer names and links: https://claude.ai/artifact/Y1MY1LGi5Jv57RVJeKdFiK
+Let's lock the form factor on Saturday (crew tablet first, helmet view if time).
+
+----------------------------------------------------------------
+Tighter variant:
+
+Re-read the challenge, here's my take.
+
+We build a Marswalk planner for Jezero: pick a science target, the app draws a safe route over real NASA layers, and a wearable tag shows the astronaut live on the same map. Covers both "plan" and "carry out".
+
+Why Jezero: best data on Mars (HiRISE 25 cm, CTX, THEMIS thermal, MOLA, all loadable as map tiles, tested today) and Perseverance's 46 km track is public with elevation, so we can prove our route maths against a real drive.
+
+Safety rules in the app: 30 min walk-back (1.8 km, NASA JSC 2026 suit paper), slope limit (draft), daylight-only window, radiation dose counter (0.21 mGy/day, Curiosity RAD), buddy separation alarm.
+
+Your rover research becomes the hazard rules in the planner.
+
+I'll take: the map base with the NASA layers + rover track (Helena builds the interaction on top), the route engine, and the wearable tag (I have an ESP32 tag + base from another project). Perseverance is my rover for the research.
+
+Links and layer names here: https://claude.ai/artifact/Y1MY1LGi5Jv57RVJeKdFiK

@@ -1,0 +1,134 @@
+<title>Jezero Marswalk Brief</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: ops-sheet. One 68ch column, left-ruled sections, a status chip per data layer. */
+:root{
+  --bg:#f6f3ee; --panel:#fffdf9; --fg:#1f1b17; --mute:#6b625a; --line:#d9d1c6;
+  --rust:#b7471d; --rust-soft:#f3e2d8; --ok:#2e7d4f; --ok-soft:#dcefe3; --warn:#9a6a00; --warn-soft:#f6ecd0;
+  --display:"Archivo",system-ui,sans-serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#17130f;--panel:#201b16;--fg:#efe8df;--mute:#a79d91;--line:#3b332b;--rust:#e0683a;--rust-soft:#3a2219;--ok:#6fcf97;--ok-soft:#1b3326;--warn:#e5b64a;--warn-soft:#3a2f14;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#17130f;--panel:#201b16;--fg:#efe8df;--mute:#a79d91;--line:#3b332b;--rust:#e0683a;--rust-soft:#3a2219;--ok:#6fcf97;--ok-soft:#1b3326;--warn:#e5b64a;--warn-soft:#3a2f14;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);line-height:1.55;font-size:15px}
+.wrap{max-width:72ch;margin:0 auto;padding-block:40px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,5vw,40px);line-height:1.1;margin:0 0 8px;text-wrap:balance}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--rust);margin:0 0 10px}
+.lede{font-size:17px;color:var(--fg);margin:0 0 28px;max-width:62ch}
+h2{font-family:var(--display);font-weight:700;font-size:20px;margin:36px 0 12px;padding-left:12px;border-left:3px solid var(--rust)}
+h3{font-family:var(--display);font-size:15px;margin:18px 0 6px}
+p{margin:0 0 12px;max-width:68ch}
+ul{padding-left:20px;margin:0 0 12px}li{margin:0 0 6px}
+code{font-family:var(--mono);font-size:13px;background:var(--panel);border:1px solid var(--line);padding:1px 5px;border-radius:3px}
+pre{font-family:var(--mono);font-size:12.5px;background:var(--panel);border:1px solid var(--line);padding:12px;overflow-x:auto;border-radius:4px;line-height:1.5}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+.tw{overflow-x:auto;margin:0 0 12px}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);font-weight:500}
+.chip{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:3px;white-space:nowrap}
+.ok{background:var(--ok-soft);color:var(--ok)}.warn{background:var(--warn-soft);color:var(--warn)}.rust{background:var(--rust-soft);color:var(--rust)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:14px;margin:0 0 12px}
+.kv dt{font-family:var(--mono);color:var(--mute);font-size:12.5px}.kv dd{margin:0;font-variant-numeric:tabular-nums}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin:0 0 14px}
+.mute{color:var(--mute)}
+a{color:var(--rust)}
+@media (max-width:480px){.kv{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+<p class="eyebrow">HackAthlone 2026 · Interplanetary Survival Guide: Martian Map · brainstorm brief · 6 Nov 2026</p>
+<h1>Jezero Marswalk Brief</h1>
+<p class="lede">Proposal: a crew-tablet EVA planner for Jezero crater that layers verified NASA orbital data, uses Perseverance's real traverse as ground truth, and shows a live astronaut position from a wearable tag we already have on the bench.</p>
+
+<h2>The pitch in one paragraph</h2>
+<p>An astronaut opens the tablet inside the habitat, taps a science target on a 25 cm HiRISE image of Jezero, and the planner draws a route that stays inside the 30-minute walk-back circle, avoids steep ground, shows how the thermal and mineral layers change along the way, and tells them what the surface will look like when they get there using Perseverance's own photos from that spot. During the walk the same map shows where the astronaut is, their heart rate and the fall alarm, relayed by a LoRa tag. The judges see a map that is honest about what is measured and what is modelled.</p>
+
+<h2>Why Jezero and not Gale or a blank site</h2>
+<ul>
+<li><strong>Most data of any spot on Mars.</strong> NASA Trek serves a controlled 25 cm HiRISE mosaic, a 6 m CTX mosaic, a 1 m HiRISE DTM and a 20 m CTX DTM for Jezero only. No other site has that stack in one place.</li>
+<li><strong>Ground truth exists.</strong> Perseverance has driven 46 km over 559 drive segments since sol 14, and NASA publishes the full track with elevation at every vertex. We can prove our distance and slope numbers against a rover that actually drove them.</li>
+<li><strong>Human-scale science is on the map.</strong> The delta front, Séítah, Three Forks sample depot and the crater rim (Witch Hazel Hill, Bright Angel) are the exact kind of places a Marswalk would target, and they already have published mineralogy from CRISM and from the rover.</li>
+<li><strong>Weather and radiation have real numbers.</strong> MEDA on Perseverance gives Jezero temperature and dust; RAD on Curiosity gives the surface dose rate. We can cite both instead of inventing a "danger" colour.</li>
+</ul>
+
+<h2>Data layers (verified today from this machine)</h2>
+<p>Everything below with a green chip returned a real tile with <code>Access-Control-Allow-Origin: *</code>, so a browser map can load it directly with no server. URL pattern:</p>
+<pre>https://trek.nasa.gov/tiles/Mars/EQ/{LAYER}/1.0.0/default/default028mm/{z}/{row}/{col}.png
+Jezero sits at zoom 10 row 407 col 1464 (two tiles wide at zoom 0, equirectangular)</pre>
+<div class="tw"><table>
+<tr><th>Kind</th><th>Layer (Trek identifier)</th><th>Mission</th><th>What the astronaut gets from it</th><th>Status</th></tr>
+<tr><td>Optical, 25 cm</td><td><code>JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd</code></td><td>MRO HiRISE</td><td>Boulders, dunes, scarps. Obstacle avoidance at walking scale.</td><td><span class="chip ok">tile OK</span></td></tr>
+<tr><td>Optical, 6 m</td><td><code>JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0</code></td><td>MRO CTX</td><td>Context when zoomed out, fills HiRISE gaps.</td><td><span class="chip ok">tile OK</span></td></tr>
+<tr><td>Optical, regional</td><td><code>NES_JEZ_MID_Visible_Mosaic_HiRISE_CTX_HRSC_GCS_MARS_07-10-2018</code></td><td>HiRISE+CTX+HRSC</td><td>Jezero to NE Syrtis corridor, the long-range route.</td><td><span class="chip ok">tile OK</span></td></tr>
+<tr><td>Thermal, day</td><td><code>THEMIS_DayIR_ControlledMosaics_100m_v2_oct2018</code></td><td>Odyssey THEMIS</td><td>Warm vs cold ground by day.</td><td><span class="chip ok">tile OK</span></td></tr>
+<tr><td>Thermal, night</td><td><code>THEMIS_NightIR_ControlledMosaics_100m_v2_oct2018</code></td><td>Odyssey THEMIS</td><td>Night-warm = bedrock or coarse material (high thermal inertia), night-cold = dust and sand. Doubles as a trafficability layer.</td><td><span class="chip ok">tile OK</span></td></tr>
+<tr><td>Topographic</td><td><code>Mars_MGS_MOLA_ClrShade_merge_global_463m</code> and <code>Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw</code></td><td>MGS MOLA, MEX HRSC</td><td>Colour relief for the overview map.</td><td><span class="chip ok">tile OK</span></td></tr>
+<tr><td>Topographic, numeric</td><td>Perseverance traverse JSON (lon, lat, elevation per vertex, length per drive)</td><td>Mars 2020</td><td>Real elevation profile and slope along 46 km of driven ground.</td><td><span class="chip ok">JSON OK, 1.7 MB</span></td></tr>
+<tr><td>Global base</td><td><code>Mars_Viking_MDIM21_ClrMosaic_global_232m</code></td><td>Viking</td><td>Planet-wide context.</td><td><span class="chip ok">tile OK</span></td></tr>
+<tr><td>Topographic, numeric</td><td><code>JEZ_hirise_soc_006_DTM_..._1m</code> and <code>JEZ_ctx_B_soc_008_DTM_..._20m</code></td><td>MRO</td><td>Slope map at walking scale. Listed in the Trek catalogue but not served as image tiles. Needs the GeoTIFF from USGS Astropedia or the Trek DEM service.</td><td><span class="chip warn">catalogued, tiles 404</span></td></tr>
+<tr><td>Spectral</td><td>CRISM carbonate, olivine, Fe-Mg phyllosilicate indicators (<code>frt_07_br*_mtr3_ll</code> series), Hydrous Mineral Detections</td><td>MRO CRISM</td><td>Where to sample: carbonates in the delta and margin unit.</td><td><span class="chip warn">catalogued, tile path unknown</span></td></tr>
+<tr><td>Geophysical</td><td>TES Thermal Inertia, MOLA roughness, TES dust cover</td><td>MGS</td><td>Surface strength and dust depth.</td><td><span class="chip warn">catalogued, tile path unknown</span></td></tr>
+<tr><td>Water ice</td><td>SWIM 2.0 combined ice consistency, 0 to 1 m and deeper</td><td>Multi-mission (SHARAD, neutron, THEMIS)</td><td>Honest answer: Jezero at 18 N is outside the mid-latitude ice belt. Show the map and say so; that is a finding, not a failure.</td><td><span class="chip warn">GeoTIFF download, 3 km pixels</span></td></tr>
+<tr><td>Atmospheric</td><td>MEDA (Perseverance) temperature, pressure, dust opacity; REMS (Curiosity)</td><td>Mars 2020, MSL</td><td>Diurnal temperature swing for suit thermal budget and when to walk.</td><td><span class="chip warn">PDS Atmospheres node, to pull</span></td></tr>
+<tr><td>Radiation</td><td>RAD dose rate</td><td>MSL Curiosity</td><td>Surface GCR dose about 0.21 mGy/day (Hassler et al. 2014, 0.67 mSv/day equivalent). Use for an EVA dose counter and a solar-storm "go/no-go" flag.</td><td><span class="chip ok">published figure</span></td></tr>
+<tr><td>Point of view</td><td>Mastcam-Z and Navcam images by sol and site</td><td>Mars 2020</td><td>"This is what the target looks like from the ground" at each waypoint.</td><td><span class="chip warn">NASA raw image API, to check</span></td></tr>
+</table></div>
+<p class="mute">Three kinds required by the challenge; the green rows alone cover optical, thermal and topographic. Spectral and radiation take us to five.</p>
+
+<h2>Safety rules the planner should enforce</h2>
+<ul>
+<li><strong>Walk-back limit.</strong> A 2026 NASA JSC paper on Mars suit mass proposes a 30-minute walk-back, about 1.8 km at 3.5 km/h. Draw that circle around the habitat or rover, and shrink it as consumables drop.</li>
+<li><strong>Slope.</strong> Apollo crews struggled above roughly 15 to 20 degrees with tools in hand. No published Mars suit number yet, so label ours "draft" and make it a slider.</li>
+<li><strong>Thermal.</strong> Jezero swings from roughly minus 80 C at night to around minus 20 C at midday in summer (MEDA; pull the exact sol series before quoting). Walk window = daylight hours only.</li>
+<li><strong>Radiation.</strong> Dose accumulates per minute outside; show a running mGy counter and a solar-event lockout.</li>
+<li><strong>Dust and visibility.</strong> MEDA optical depth; above a threshold, cancel the walk.</li>
+<li><strong>Buddy rule.</strong> Two astronauts, both tagged; alarm if separation exceeds a set distance.</li>
+</ul>
+
+<h2>Hardware we already have (from the Red Cross safety-tag bench)</h2>
+<div class="box">
+<dl class="kv">
+<dt>Tag</dt><dd>ESP32-S3 with MPU-6500 fall detection, MAX30102 heart rate and SpO2, DHT11 temperature, NEO-6M GPS, E32 LoRa at 868 MHz</dd>
+<dt>Network</dt><dd>Base and repeater boards, acknowledged compact packets, 1.4 s ping round trip, signal-lost after 50 to 95 s</dd>
+<dt>Positioning</dt><dd>GPS outdoors, Wi-Fi FTM ranging to fixed anchors indoors at plus or minus 0.25 to 1.5 m, BLE search mode</dd>
+<dt>Console</dt><dd>Browser console with a positions radar, vitals as green/amber/red, man-down flow verified end to end</dd>
+</dl>
+<p>Mars has no GPS, so the honest demo is: tag sends vitals, fall alarm and a position from the FTM anchors (habitat and rover as anchors), and the console draws it on the Jezero map. Rename the man-down flow to "suit emergency". Swap the heat-index rule for a cold-exposure rule. This gives the team a physical thing on the judges' table that no map-only team will have.</p>
+</div>
+
+<h2>Suggested split for three people</h2>
+<ul>
+<li><strong>Map and route engine.</strong> Leaflet with a Mars CRS over the Trek tiles above, click-to-plan waypoints, distance on the Mars radius, walk-back circle, elevation profile from the traverse data, slope flags.</li>
+<li><strong>Science and environment layers.</strong> Pull SWIM, MEDA, RAD numbers; place the science targets (delta front, Séítah, Three Forks depot, Bright Angel) with the CRISM reason for each; collect Mastcam-Z point-of-view images per target.</li>
+<li><strong>Crew tag and console.</strong> Port the LoRa tag to the EVA story, feed its position and vitals into the map, build the "suit emergency" alert and the buddy-separation alarm.</li>
+</ul>
+
+<h2>Ground truth check we can show the judges</h2>
+<div class="kv">
+<dt>NASA drive segments</dt><dd>559, sols 14 to 2022</dd>
+<dt>NASA stated total</dt><dd>46.05 km</dd>
+<dt>Our spherical distance</dt><dd>46.05 km on a 3396.19 km radius</dd>
+<dt>Elevation range</dt><dd>minus 2586 m, a few vertices read 0 and must be filtered</dd>
+</div>
+<p>If our planner's distance and slope for Perseverance's own track match NASA's odometry, the same code can be trusted for a human route.</p>
+
+<h2>Open questions, in order</h2>
+<ul>
+<li>Form factor: habitat tablet first, helmet HUD view as a stretch. Decide Saturday.</li>
+<li>Get the 1 m Jezero DTM as a GeoTIFF and sample it for slope, or settle for the traverse elevations only.</li>
+<li>Find the tile paths for the CRISM and TES layers on Trek, or render them from the USGS Astropedia GeoTIFFs.</li>
+<li>Check whether the official NASA Space Apps resources list (opens 13 Nov) adds datasets we have not seen.</li>
+<li>Decide whether the tag demo runs live at the venue or as a recorded loop.</li>
+</ul>
+
+<h2>Sources</h2>
+<ul class="mute" style="font-size:13px">
+<li>Challenge: hackathlone.com/challenges/interplanetary-survival-guide-martian-map (mirror of the NASA Space Apps 2026 page)</li>
+<li>NASA Mars Trek tile and catalogue services: trek.nasa.gov/tiles/Mars/EQ/… and trek.nasa.gov/mars/TrekServices/ws/index/eq/searchItems</li>
+<li>Perseverance traverse: mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_traverse.json</li>
+<li>Hassler et al. 2014, Science, Mars surface radiation from MSL RAD: 0.210 mGy/day</li>
+<li>SWIM 2.0 products: swim.psi.edu/SWIM4MIMProducts.php; Putzig et al. 2020, USGS</li>
+<li>Mars suit mass and 30-minute walk-back: NASA JSC, ICES 2026, ntrs.nasa.gov/api/citations/20260005410</li>
+<li>Virtual spacesuit walk-back study: ttu-ir.tdl.org/handle/2346/74208</li>
+</ul>
+</div>

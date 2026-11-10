@@ -85,3 +85,11 @@ Existing ESP32-S3 safety tag from a previous project: MPU-6500 fall detection, M
 - CRISM mineral layers (same).
 - MEDA temperature series for the daylight window.
 - Real ESP32 tag feed into the crew panel.
+
+## 10. Auto-router (added 10 Nov)
+
+- 30 m grid over the HiRISE mosaic bbox (677 x 717 cells). Cost per cell = 1 + 2.5 x sand, where sand is the THEMIS night-IR brightness scaled between the grid's 15th percentile (56, sandy) and 65th percentile (121, rock); cells within 60 m of the Perseverance track cost x0.6 (proven ground). "Recommended" adds +1.0 off proven ground and refuses steps steeper than the slope limit where both cells have rover elevation.
+- Check against the rover: Seitah (which Perseverance detoured around for sand) reads 85 in night IR; Bright Angel 164; crater rim 182; Neretva Vallis shows as a dark sand-filled channel. Habitat-to-delta-front: shortest route 24 percent sandy, terrain-aware 5 percent, recommended stays 43 percent on proven ground.
+- Night-IR tiles are read as pixels in the browser (CORS allowed on trek.nasa.gov): z9 rows 202-203, cols 731-732, 81 m per pixel at Jezero.
+- Spoken warnings use the browser speech API; track back replans from the live simulated position on the recommended cost.
+- Reference for thermal inertia as a sand proxy: Christensen et al. 2004, THEMIS on Mars Odyssey.

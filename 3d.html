@@ -413,7 +413,8 @@ $('slope').onchange = () => { drawStatic(); if (cand) compareRoutes(cand.t); reb
 const pts = []; if (JZ) for (const s of trav.segments) for (const p of s.pts) pts.push([p[1], p[0], p[2]]);
 Core.loadThemis(site.bounds).then(nir => {
   G = Core.buildGrid({ site, nirCanvas: nir, dtmBuf, roughBuf, pts });
-  $('gridStatus').innerHTML = 'Routing grid ready: ' + G.nx + ' × ' + G.ny + ' cells of 30 m. ' + (JZ ? G.drv + ' cells near the rover track count as proven ground.' : Math.round(G.shotN / G.n * 100) + '% of cells have a MOLA laser shot; the rest are not characterized.');
+  const aeb = JZ ? Core.rasterAeb(G, sandMap) : 0;                            // same sand-ridge avoidance as the 2D planner
+  $('gridStatus').innerHTML = 'Routing grid ready: ' + G.nx + ' × ' + G.ny + ' cells of 30 m. ' + (JZ ? G.drv + ' cells near the rover track count as proven ground; ' + aeb + ' cells of mapped sand ridges (USGS Aeb) are avoided.' :Math.round(G.shotN / G.n * 100) + '% of cells have a MOLA laser shot; the rest are not characterized.');
   drawStatic(); renderTargets(); rebuild();
 }).catch(e => { $('gridStatus').textContent = 'Routing grid unavailable: THEMIS tiles did not load (' + e + '). Waypoints are joined by straight lines.'; });
 

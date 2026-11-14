@@ -106,6 +106,23 @@ function buildGrid({ site, nirCanvas, dtmBuf, roughBuf, pts = [] }) {
     dtmCheck: { cnt, mean, sd }, cellLL: i => ({ lat: lat0 - ((i / nx | 0) + .5) * CELL / mLat, lng: lon0 + ((i % nx) + .5) * CELL / mLon }) };
 }
 
+// USGS 1:75K Jezero geologic map (SIM 3464): mapped sand ridges (unit Aeb), rasterised onto the routing grid.
+// Sets G.usgs: 1 = mapped sand, 2 = margin cell next to it, so routes keep a cell (30 m) of clearance and the drawn,
+// straightened route (12 m tolerance) cannot clip the edge of a sand field. Returns the number of mapped cells.
+function rasterAeb(G, geo) {
+  if (!geo || !G || !G.ready) return 0;
+  const { nx, ny, lat0, lon0, mLon, mLat } = G, c = document.createElement('canvas'); c.width = nx; c.height = ny;
+  const g = c.getContext('2d'); g.fillStyle = '#fff';
+  for (const f of geo.features) { if (f.properties.u !== 'Aeb') continue;
+    const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+    for (const poly of polys) { g.beginPath(); for (const ring of poly) ring.forEach(([lo, la], k) => { const x = (lo - lon0) * mLon / CELL, y = (lat0 - la) * mLat / CELL; k ? g.lineTo(x, y) : g.moveTo(x, y); }); g.fill('evenodd'); } }
+  const d = g.getImageData(0, 0, nx, ny).data, u = new Uint8Array(nx * ny); let cnt = 0;
+  for (let i = 0; i < nx * ny; i++) if (d[4 * i + 3] > 127) { u[i] = 1; cnt++; }
+  for (let y = 0; y < ny; y++) for (let x = 0; x < nx; x++) { const i = y * nx + x; if (u[i]) continue;
+    for (let dy = -1; dy <= 1 && !u[i]; dy++) for (let dx = -1; dx <= 1; dx++) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < nx && yy < ny && u[yy * nx + xx] === 1) { u[i] = 2; break; } } }
+  G.usgs = u; return cnt;
+}
+
 // Elevation at a point: bilinear in the grid; null where any corner has no data.
 function elevAt(G, ll) {
   if (!G || !G.ready || !G.dtm) return null;
@@ -130,7 +147,9 @@ function astar(G, from, to, mode, slopeLim) {
   const pop = () => { const t = hp[0], l = hp.pop(); if (hp.length) { hp[0] = l; let k = 0; for (;;) { const a = 2 * k + 1, b = a + 1; let s = k; if (a < hp.length && hp[a][0] < hp[s][0]) s = a; if (b < hp.length && hp[b][0] < hp[s][0]) s = b; if (s === k) break; [hp[s], hp[k]] = [hp[k], hp[s]]; k = s; } } return t; };
   const tx = t0 % nx, ty = (t0 / nx) | 0;
   const h = i => { const dx = Math.abs(i % nx - tx), dy = Math.abs(((i / nx) | 0) - ty); return (Math.max(dx, dy) + (Math.SQRT2 - 1) * Math.min(dx, dy)) * CELL * 0.6; };
+  const usgs = G.usgs;
   const mu = j => { let m = 1 + 2.5 * (isNaN(sand[j]) ? 0 : sand[j]);
+    if (usgs) m += usgs[j] === 1 ? 3 : usgs[j] === 2 ? 1 : 0;                         // Jezero: mapped sand ridges (USGS Aeb) and their margin
     if (rough && !isNaN(rough[j])) m += 1.5 * rough[j];                                // Arcadia: HRSC texture, yardang proxy
     if (driven[j]) m *= 0.6; else if (mode === 'best' || mode === 'soft') m += 1.0;
     if (arc && (mode === 'best' || mode === 'soft') && isNaN(elev[j])) m += 0.5;          // Arcadia: prefer cells where MOLA has a shot
@@ -188,5 +207,5 @@ function routeMetrics(G, path, from, { slopeLim, radius, hab, elevFn }) {
   return { len, sandy: sandy / len, drv: drv / len, rough: rgh / len, known: known / len, breaks, far };
 }
 
-root.MarswalkCore = { R, CELL, M_PER_DEG, NIGHT_ID, dist, SITES, geom, themisTiles, loadThemis, buildGrid, elevAt, sandAt, roughAt, drivenAt, astar, routeTo, simplify, samples, routeMetrics };
+root.MarswalkCore = { R, CELL, M_PER_DEG, NIGHT_ID, dist, SITES, geom, themisTiles, loadThemis, buildGrid, rasterAeb, elevAt, sandAt, roughAt, drivenAt, astar, routeTo, simplify, samples, routeMetrics };
 })(window);

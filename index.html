@@ -162,7 +162,7 @@ ul.claims b{font-weight:600}
     <div id="gIceRow"><div class="row" id="gIce" role="group" aria-label="Ice evidence layer" style="gap:6px;align-items:center"><span class="note" style="margin:0">Ice layers</span>
       <button type="button" class="quiet" data-k="off" aria-pressed="true">Off</button><button type="button" class="quiet" data-k="top1" aria-pressed="false">Top 1 m</button><button type="button" class="quiet" data-k="d1to5" aria-pressed="false">1 to 5 m deep</button><button type="button" class="quiet" data-k="abund" aria-pressed="false">Abundance</button><button type="button" class="quiet" data-k="collapse" aria-pressed="false">Collapse risk</button><button type="button" class="quiet" data-k="value" aria-pressed="false">Resource value</button><button type="button" class="quiet" data-k="combo" aria-pressed="false">All three</button></div>
       <p class="note" id="gIceNote" hidden style="margin:6px 0 0"><span id="gIceText"></span> Mapped 60°N to 60°S only; values read from SWIM's published map images, so approximate. Green dashes: ±50° latitude, the limit for human landing sites (Bussey &amp; Hoffman, NASA 2016). Jezero: none in the top metre; at 1 to 5 m a weak zone reaches about 20°N, just short of it.</p></div>
-    <p class="note" style="margin:0"><a href="3d.html">Mars in 3D →</a> · <a href="identify">Identify the ground in a photo →</a></p>
+    <p class="note" style="margin:0"><a href="3d.html">Mars in 3D →</a> · <a href="identify">Identify the ground in a photo →</a> · <a href="helmet" data-helmet-qr>Helmet view on your phone</a></p>
     <div id="gStatus">Loading Viking colour mosaic…</div>
   </div>
   <div id="gZoom"><button id="gIn" aria-label="Zoom in">+</button><button id="gOut" aria-label="Zoom out">−</button></div>
@@ -174,7 +174,7 @@ ul.claims b{font-weight:600}
       <button id="toGlobe" class="quiet" style="padding:3px 8px;font-size:12px;white-space:nowrap">◐ Globe</button>
     </div>
     <h1 id="railTitle">Jezero Marswalk Planner</h1>
-    <p class="note" style="margin:4px 0 0"><a href="3d.html" id="rail3d">Jezero in 3D →</a> · <a href="identify">Identify the ground in a photo →</a></p>
+    <p class="note" style="margin:4px 0 0"><a href="3d.html" id="rail3d">Jezero in 3D →</a> · <a href="identify">Identify the ground in a photo →</a> · <a href="helmet" data-helmet-qr>Helmet view on your phone</a></p>
     <p class="glHint" style="margin-top:6px">Dotted words: hover or tap for a plain explanation.</p>
     <p class="note jz jzOnly">Click the map to add waypoints; the planner routes between them over the terrain. Drag a waypoint or right-click to remove it and the legs around it are re-routed. Press Route on a science target to compare three computed routes. Drag the green habitat marker to move base. Every layer is live from NASA Mars Trek; the rover track is NASA's published Perseverance traverse.</p>
     <p class="note jz arcOnly">Click the map to add waypoints; the planner routes between them on a 30 m grid. Press Route on a target to compare three candidate routes. No rover has driven here, so there is no ground truth: slope is calculated from MOLA laser altimetry in bins of about 463 m, and anything walk-sized is not characterized. Every route on this map is a candidate that requires review.</p>
@@ -239,9 +239,9 @@ ul.claims b{font-weight:600}
   <section class="jz">
     <h2>Route comparison <span class="ev orb">orbital proxy</span> <span class="ev obs">observed</span></h2>
     <p class="note" id="gridStatus">Terrain grid: loading THEMIS night IR…</p>
-    <div id="cmpWrap"></div>
+    <div id="cmpWrap"><p class="note" style="margin:0">Press <b>Route</b> on a target below to compare three routes from the habitat: shortest, terrain-aware and recommended.</p></div>
     <p class="note arcOnly">Three candidate routes from the habitat to the chosen target, computed on a 30 m grid of about 15 × 18 km. Shortest ignores terrain. Terrain-aware penalises ground that is dark in THEMIS night IR (loose-sand proxy) and ground with strong HRSC image texture (yardang roughness proxy). Recommended adds a preference for cells where MOLA has a laser shot and refuses steps steeper than the slope limit there. No ground has been driven or walked, so there is no proven-ground term. Time is plain distance over walk speed. Click a row to adopt it.</p>
-    <p class="note jzOnly">Three routes from the habitat to the chosen target, computed on a 30 m grid inside the HiRISE mosaic. Shortest ignores terrain. Terrain-aware penalises ground that is dark in THEMIS night IR (low thermal inertia, a proxy for loose sand) and favours ground Perseverance drove. Recommended adds a preference for proven ground and refuses legs steeper than the slope limit where the rover measured elevation. Time is plain distance over walk speed; no terrain speed factor is invented. Click a row to adopt it.</p>
+    <p class="note jzOnly">Three routes from the habitat to the chosen target, computed on a 30 m grid inside the HiRISE mosaic. Shortest ignores terrain. Terrain-aware penalises ground that is dark in THEMIS night IR (low thermal inertia, a proxy for loose sand) and favours ground Perseverance drove. Recommended adds a preference for proven ground and refuses legs steeper than the slope limit where the rover measured elevation. Time is plain distance over walk speed; no terrain speed factor is invented. Both terrain-aware and recommended also avoid sand ridges mapped on the USGS 1:75K Jezero geologic map (unit Aeb). Click a row to adopt it.</p>
   </section>
 
   <section class="jz">
@@ -364,7 +364,7 @@ const crewGroup = L.layerGroup().addTo(map);
 // Arcadia hazard layers (empty on Jezero)
 const roughGroup = L.layerGroup(), sandGroup = L.layerGroup(), ejectaGroup = L.layerGroup(), nodataGroup = L.layerGroup();
 const OBS='<span class="ev obs">observed</span>', ORB='<span class="ev orb">orbital</span>', RULE='<span class="ev rule">rule</span>', SIM='<span class="ev sim">simulated</span>', CALC='<span class="ev calc">calculated</span>', PH='<span class="ev ph">placeholder</span>';
-L.control.layers({}, ARC ? {
+const layerCtl = L.control.layers({}, ARC ? {
   ['Viking colour, global (232 m; 1976 to 1980) '+ORB]:layers.viking,
   ['MOLA + HRSC relief, global (200 m; MOLA 1997 to 2001) '+ORB]:layers.mola,
   ['HRSC orbit 26333 context (100 m browse; 10 Nov 2024) '+ORB]:layers.hrscCtx,
@@ -487,7 +487,16 @@ const loadNight=()=>Core.loadThemis(GB);
 const getBuf=u=>fetch(u).then(r=>r.ok?r.arrayBuffer():null).catch(()=>null);
 const dtmReady=getBuf(SITE.dtm);
 const roughReady=SITE.rough?getBuf(SITE.rough):Promise.resolve(null);
-Promise.all([loadNight(),trackReady,dtmReady,roughReady]).then(([c,,b,rb])=>buildGrid(c,b,rb)).catch(e=>{ $('gridStatus').textContent='Terrain grid unavailable: THEMIS tiles did not load ('+e+'). Manual waypoints still work.'; });
+// Jezero: USGS 1:75K geologic map (SIM 3464), mapped sand ridges (unit Aeb), avoided by terrain-aware and recommended routes
+const usgsReady=ARC?Promise.resolve(null):fetch('habitat/web/data/sim3464_walk.geojson').then(r=>r.ok?r.json():null).catch(()=>null);
+Promise.all([loadNight(),trackReady,dtmReady,roughReady]).then(([c,,b,rb])=>buildGrid(c,b,rb)).then(()=>usgsReady).then(geo=>{
+  if(!geo) return;
+  const cells=Core.rasterAeb(G,geo);
+  const lyr=L.geoJSON({type:'FeatureCollection',features:geo.features.filter(f=>f.properties.u==='Aeb')},{interactive:false,style:{color:'#e5b64a',weight:1,fillColor:'#e5b64a',fillOpacity:.25}}).addTo(map);
+  layerCtl.addOverlay(lyr,'Sand ridges, USGS geologic map (unit Aeb) '+ORB);
+  $('gridStatus').innerHTML+=' Mapped sand ridges (USGS SIM 3464, unit Aeb) cover '+cells+' cells and are avoided by the terrain-aware and recommended routes.';
+  rebuild();
+}).catch(e=>{ $('gridStatus').textContent='Terrain grid unavailable: THEMIS tiles did not load ('+e+'). Manual waypoints still work.'; });
 
 const sandAt=ll=>Core.sandAt(G,ll), roughAt=ll=>Core.roughAt(G,ll), drivenAt=ll=>Core.drivenAt(G,ll);
 const toLL=p=>p&&p.map(q=>L.latLng(q.lat,q.lng));
@@ -1159,5 +1168,6 @@ addEventListener('scroll',hideTip,true);
 annotate(document.body); observe();
 })();
 </script>
+<script src="helmet-qr.js"></script>
 </body>
 </html>

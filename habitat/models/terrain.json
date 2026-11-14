@@ -3,7 +3,9 @@
   "soil",
   "bedrock",
   "sand",
-  "big_rock"
+  "big_rock",
+  "rover",
+  "far_or_sky"
  ],
  "size": 384,
  "mean": 0.45,
@@ -12,14 +14,16 @@
  "license": "model code BSD-3 (torchvision); data AI4Mars CC0",
  "final": {
   "epoch": 6,
-  "train_loss": 0.2589,
-  "miou": 0.7496,
+  "train_loss": 0.2864,
+  "miou": 0.7822,
   "iou": {
-   "soil": 0.8699,
-   "bedrock": 0.9139,
-   "sand": 0.8017,
-   "big_rock": 0.4129
+   "soil": 0.8742,
+   "bedrock": 0.8289,
+   "sand": 0.8404,
+   "big_rock": 0.3386,
+   "rover": 0.9099,
+   "far_or_sky": 0.9014
   },
-  "minutes": 6.8
+  "minutes": 12.6
  }
 }

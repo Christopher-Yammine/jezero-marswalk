@@ -270,9 +270,10 @@ async function terrainModel() {
 }
 async function runTerrain(blob) {
   const { cfg, session } = await terrainModel();
-  const S = cfg.size, bmp = await createImageBitmap(blob);
+  const S = cfg.size;
+  let bmp; try { bmp = await createImageBitmap(blob, { resizeWidth: S, resizeHeight: S, resizeQuality: 'high' }); } catch (_) { bmp = await createImageBitmap(blob); }
   const c = document.createElement('canvas'); c.width = S; c.height = S;
-  const g = c.getContext('2d'); g.drawImage(bmp, 0, 0, S, S);
+  const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(bmp, 0, 0, S, S);
   const px = g.getImageData(0, 0, S, S).data, n = S * S, x = new Float32Array(3 * n);
   for (let i = 0; i < n; i++) {                        // greyscale, normalised, repeated to 3 channels (as trained)
     const v = ((0.299 * px[4 * i] + 0.587 * px[4 * i + 1] + 0.114 * px[4 * i + 2]) / 255 - cfg.mean) / cfg.std;
@@ -308,10 +309,14 @@ function renderDetections(url, r, secs, sample, terr) {
     }
     share = {}; for (const c in cnt) share[c] = cnt[c] / Math.max(1, ground);
     share._ground = ground / (S * S);
-    if (share.sand >= 0.15) groups.sand = { n: 0, terrain: share.sand };
-    if (share.bedrock >= 0.2) groups.bedrock = { n: 0, terrain: share.bedrock };
-    if (share.big_rock >= 0.04 && !groups.boulders) groups.boulders = { n: 0, terrain: share.big_rock };
-    tnote = `terrain model ${terr.ms} ms in this browser`;
+    if (share._ground < 0.1) {                         // percentages of a sliver of ground would mislead
+      tnote = `terrain model ${terr.ms} ms: only ${Math.round(share._ground * 100)}% of the photo reads as ground, too little to judge`;
+    } else {
+      if (share.sand >= 0.15) groups.sand = { n: 0, terrain: share.sand };
+      if (share.bedrock >= 0.2) groups.bedrock = { n: 0, terrain: share.bedrock };
+      if (share.big_rock >= 0.04 && !groups.boulders) groups.boulders = { n: 0, terrain: share.big_rock };
+      tnote = `terrain model ${terr.ms} ms in this browser`;
+    }
   } else if (terr && terr.error) tnote = 'terrain model unavailable (' + escH(terr.error) + ')';
   const cls = Object.keys(groups).sort((a, b) => (ORDER[(HZ[a] || {}).level] ?? 9) - (ORDER[(HZ[b] || {}).level] ?? 9));
   const ignored = r.detections.length - dets.length + (dets.length - shown.length);

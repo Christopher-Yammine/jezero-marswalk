@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jezero in 3D</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Full-screen terrain with one floating control panel; planner palette. */
+:root{--bg:#14110e;--panel:rgba(28,24,20,.92);--fg:#efe7dc;--mute:#a3978a;--line:#3a322a;--rust:#e0683a;--rust-soft:#3d2219;--ok:#6fcf97;--warn:#e5b64a;
+  --display:"Archivo",system-ui,sans-serif;--body:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 var(--body);overflow:hidden}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#panel{position:fixed;left:max(16px,env(safe-area-inset-left));top:max(16px,env(safe-area-inset-top));width:330px;max-width:calc(100% - 32px);max-height:calc(100% - 32px);overflow:auto;
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;backdrop-filter:blur(6px);display:flex;flex-direction:column;gap:12px}
+.eyebrow{font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--rust);margin:0}
+h1{font:700 22px/1.1 var(--display);margin:2px 0 0}
+h2{font:700 11px var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--mute);margin:0 0 6px}
+p{margin:0}.note{font-size:12px;color:var(--mute)}
+a{color:var(--rust)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+button{font:500 12px var(--body);background:transparent;color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:5px 9px;cursor:pointer}
+button[aria-pressed="true"]{background:var(--rust);border-color:var(--rust);color:#140c08}
+button:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
+label.tg{display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer}
+#probe{font:12px/1.5 var(--mono);color:var(--fg);min-height:3em}
+#probe .w{color:var(--warn)}#probe .h{color:#ef6b6b}
+#load{position:fixed;inset:0;display:grid;place-items:center;font:13px var(--mono);color:var(--mute);pointer-events:none}
+@media (max-width:700px){#panel{top:auto;bottom:max(16px,env(safe-area-inset-bottom));max-height:46vh}}
+</style>
+</head>
+<body>
+<canvas id="cv" aria-label="3D terrain of Jezero crater"></canvas>
+<div id="load">Loading terrain grid and imagery…</div>
+<aside id="panel">
+  <div>
+    <p class="eyebrow">Marswalk · <a href="./">map</a> · <a href="identify">identify</a></p>
+    <h1>Jezero in 3D</h1>
+    <p class="note" style="margin-top:4px">Drag to orbit, right-drag or two fingers to pan, scroll or pinch to zoom. Click the ground for its elevation, slope and mapped unit.</p>
+  </div>
+  <div><h2>Vertical scale</h2><div class="seg" id="exag" role="group" aria-label="Vertical scale">
+    <button type="button" data-x="1" aria-pressed="true">1× true</button><button type="button" data-x="2" aria-pressed="false">2×</button><button type="button" data-x="4" aria-pressed="false">4×</button></div>
+    <p class="note" style="margin-top:4px">Above 1× the relief is exaggerated so slopes are easier to see.</p></div>
+  <div><h2>Layers</h2>
+    <label class="tg"><input type="checkbox" id="lSand" checked> Sand ridges (USGS unit Aeb)</label>
+    <label class="tg"><input type="checkbox" id="lTrack" checked> Perseverance track, sols 14 to 2022</label>
+    <label class="tg"><input type="checkbox" id="lSteep"> Steep ground over 15°</label>
+  </div>
+  <div><h2>Point</h2><div id="probe">Click the terrain.</div></div>
+  <div class="seg"><button type="button" id="home">Reset view</button><button type="button" id="habView">Habitat close-up</button></div>
+  <p class="note">Terrain: USGS CTX stereo DTM (20 m), resampled to 30 m. Imagery: MRO CTX 6 m controlled mosaic via NASA Mars Trek. Sand: USGS SIM 3464 geologic map. Track: Mars 2020 traverse (NASA/JPL-Caltech).</p>
+</aside>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(async function () {
+const $ = id => document.getElementById(id);
+// ---- georeference: same grid as the planner (HiRISE mosaic bounds, 30 m cells, Mars radius 3396190 m)
+const JEZ = [[18.3067994, 77.2229331], [18.669315, 77.583964]], R = 3396190, MPD = R * Math.PI / 180, CELL = 30;
+const lat0 = JEZ[1][0], lon0 = JEZ[0][1], mLat = MPD, mLon = MPD * Math.cos(((JEZ[0][0] + JEZ[1][0]) / 2) * Math.PI / 180);
+const HAB = { lat: 18.444627, lon: 77.450886 };
+// ---- imagery tiles: Trek EQ zoom 12 (10 m/px), covering the grid
+const Z = 12, TD = 180 / 2 ** Z, TX0 = 5853, TX1 = 5861, TY0 = 1623, TY1 = 1631;
+const TLON0 = TX0 * TD - 180, TLAT0 = 90 - TY0 * TD, TW = (TX1 - TX0 + 1) * 256, TH = (TY1 - TY0 + 1) * 256, TSPAN = (TX1 - TX0 + 1) * TD;
+
+const [meta, buf, sand, trav] = await Promise.all([
+  fetch('data/jez_dtm_30m.json').then(r => r.json()),
+  fetch('data/jez_dtm_30m.i16').then(r => r.arrayBuffer()),
+  fetch('habitat/web/data/sim3464_walk.geojson').then(r => r.json()),
+  fetch('m20_traverse.json').then(r => r.json()),
+]);
+const NX = meta.nx, NY = meta.ny, D = new Int16Array(buf);
+const elevRaw = (ix, iy) => { ix = Math.max(0, Math.min(NX - 1, ix)); iy = Math.max(0, Math.min(NY - 1, iy)); const v = D[iy * NX + ix]; return v === -32768 ? NaN : v / 10; };
+let emin = Infinity, emax = -Infinity; for (const v of D) if (v !== -32768) { emin = Math.min(emin, v / 10); emax = Math.max(emax, v / 10); }
+const elev = (ix, iy) => { const v = elevRaw(ix, iy); return isNaN(v) ? emin : v; };
+const slopeAt = (ix, iy) => { const dx = (elev(ix + 1, iy) - elev(ix - 1, iy)) / (2 * CELL), dy = (elev(ix, iy + 1) - elev(ix, iy - 1)) / (2 * CELL); return Math.atan(Math.hypot(dx, dy)) * 180 / Math.PI; };
+// local metres: x east, z south, origin at the habitat
+const hx = (HAB.lon - lon0) * mLon, hz = (lat0 - HAB.lat) * mLat;
+const toXZ = (lat, lon) => [(lon - lon0) * mLon - hx, (lat0 - lat) * mLat - hz];
+const habElev = elev(Math.floor((hx) / CELL), Math.floor((hz) / CELL));
+
+// ---- scene
+const cv = $('cv'), renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x14110e); scene.fog = new THREE.Fog(0x14110e, 30000, 60000);
+const cam = new THREE.PerspectiveCamera(45, 1, 10, 200000);
+scene.add(new THREE.HemisphereLight(0xfff1e0, 0x2a1d14, 0.75));
+const sun = new THREE.DirectionalLight(0xffffff, 0.8); sun.position.set(-1, 1.2, -0.6); scene.add(sun);   // low sun from the north-west, like most orbital images
+
+// ---- terrain mesh (every second cell: about 122k vertices)
+const STEP = 2, gx = Math.ceil(NX / STEP), gy = Math.ceil(NY / STEP);
+const pos = new Float32Array(gx * gy * 3), uv = new Float32Array(gx * gy * 2), base = new Float32Array(gx * gy);
+for (let j = 0; j < gy; j++) for (let i = 0; i < gx; i++) {
+  const ix = Math.min(NX - 1, i * STEP), iy = Math.min(NY - 1, j * STEP), k = j * gx + i;
+  const lon = lon0 + (ix + .5) * CELL / mLon, lat = lat0 - (iy + .5) * CELL / mLat;
+  pos[3 * k] = (ix + .5) * CELL - hx; pos[3 * k + 2] = (iy + .5) * CELL - hz; base[k] = elev(ix, iy) - habElev; pos[3 * k + 1] = base[k];
+  uv[2 * k] = (lon - TLON0) / TSPAN; uv[2 * k + 1] = 1 - (TLAT0 - lat) / TSPAN;
+}
+const idx = new Uint32Array((gx - 1) * (gy - 1) * 6); let t = 0;
+for (let j = 0; j < gy - 1; j++) for (let i = 0; i < gx - 1; i++) { const a = j * gx + i, b = a + 1, c = a + gx, d = c + 1; idx.set([a, c, b, b, c, d], t); t += 6; }
+const geo = new THREE.BufferGeometry();
+geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); geo.setIndex(new THREE.BufferAttribute(idx, 1));
+geo.computeVertexNormals();
+const tex = document.createElement('canvas'); tex.width = TW; tex.height = TH;
+const tctx = tex.getContext('2d'), imgCv = document.createElement('canvas'); imgCv.width = TW; imgCv.height = TH;
+const ictx = imgCv.getContext('2d'); ictx.fillStyle = '#5b4a3d'; ictx.fillRect(0, 0, TW, TH);
+const texture = new THREE.CanvasTexture(tex); texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: texture })); scene.add(mesh);
+
+// ---- overlays drawn into the texture (they follow the ground exactly)
+const px = (lat, lon) => [(lon - TLON0) / TSPAN * TW, (TLAT0 - lat) / TSPAN * TH];
+function compose() {
+  tctx.drawImage(imgCv, 0, 0);
+  if ($('lSteep').checked) {                     // red where the 30 m grid is steeper than 15 degrees
+    tctx.fillStyle = 'rgba(239,107,107,.55)';
+    const [x0] = px(lat0, lon0), w = CELL / mLon / TSPAN * TW, h = CELL / mLat / TSPAN * TH;
+    for (let iy = 0; iy < NY; iy++) for (let ix = 0; ix < NX; ix++) if (slopeAt(ix, iy) > 15) {
+      const [x, y] = px(lat0 - iy * CELL / mLat, lon0 + ix * CELL / mLon); tctx.fillRect(x, y, w + .5, h + .5); }
+  }
+  if ($('lSand').checked) {
+    tctx.fillStyle = 'rgba(229,182,74,.42)'; tctx.strokeStyle = 'rgba(229,182,74,.9)'; tctx.lineWidth = 1.5;
+    for (const f of sand.features) { if (f.properties.u !== 'Aeb') continue;
+      const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+      for (const poly of polys) { tctx.beginPath(); for (const ring of poly) ring.forEach(([lo, la], i) => { const [x, y] = px(la, lo); i ? tctx.lineTo(x, y) : tctx.moveTo(x, y); }); tctx.fill('evenodd'); tctx.stroke(); } }
+  }
+  if ($('lTrack').checked) {
+    const maxSol = trav.segments[trav.segments.length - 1].sol; tctx.lineWidth = 3;
+    for (const s of trav.segments) { tctx.strokeStyle = `hsl(${200 - 200 * s.sol / maxSol},80%,60%)`; tctx.beginPath();
+      s.pts.forEach((p, i) => { const [x, y] = px(p[1], p[0]); i ? tctx.lineTo(x, y) : tctx.moveTo(x, y); }); tctx.stroke(); }
+  }
+  texture.needsUpdate = true;
+}
+let loaded = 0;
+for (let ty = TY0; ty <= TY1; ty++) for (let tx = TX0; tx <= TX1; tx++) {
+  const im = new Image(); im.crossOrigin = 'anonymous';
+  im.onload = () => { ictx.drawImage(im, (tx - TX0) * 256, (ty - TY0) * 256); if (++loaded % 9 === 0 || loaded === 81) compose(); };
+  im.onerror = () => { if (++loaded === 81) compose(); };
+  im.src = `https://trek.nasa.gov/tiles/Mars/EQ/JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0/1.0.0/default/default028mm/${Z}/${ty}/${tx}.png`;
+}
+compose();
+['lSand', 'lTrack', 'lSteep'].forEach(id => $(id).onchange = compose);
+
+// ---- habitat marker
+const hab = new THREE.Mesh(new THREE.ConeGeometry(60, 180, 4), new THREE.MeshBasicMaterial({ color: 0x6fcf97 }));
+hab.position.set(0, 90, 0); scene.add(hab);
+
+// ---- vertical scale
+let EX = 1;
+function setExag(x) {
+  EX = x; const p = geo.attributes.position.array;
+  for (let k = 0; k < base.length; k++) p[3 * k + 1] = base[k] * EX;
+  geo.attributes.position.needsUpdate = true; geo.computeVertexNormals(); geo.computeBoundingSphere();
+  hab.position.y = 90;
+  document.querySelectorAll('#exag button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.x === x));
+}
+document.querySelectorAll('#exag button').forEach(b => b.onclick = () => setExag(+b.dataset.x));
+
+// ---- camera
+const ctl = new THREE.OrbitControls(cam, cv); ctl.enableDamping = true; ctl.maxPolarAngle = Math.PI * 0.49; ctl.minDistance = 200; ctl.maxDistance = 60000;
+function home() { cam.position.set(-4000, 9000, 14000); ctl.target.set(-2500, 0, 0); ctl.update(); }
+function habView() { cam.position.set(-900, 700, 1400); ctl.target.set(0, 0, 0); ctl.update(); }
+$('home').onclick = home; $('habView').onclick = habView; home();
+
+// ---- click: elevation, slope, mapped unit
+const units = sand.units || {};
+const inRing = (ring, la, lo) => { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const [xi, yi] = ring[i], [xj, yj] = ring[j]; if (((yi > la) !== (yj > la)) && lo < (xj - xi) * (la - yi) / (yj - yi) + xi) c = !c; } return c; };
+function unitAt(la, lo) { for (const f of sand.features) { const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates; for (const poly of polys) if (inRing(poly[0], la, lo)) return f.properties.u; } return null; }
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(); let down = null;
+cv.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; });
+cv.addEventListener('pointerup', e => {
+  if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;
+  const r = cv.getBoundingClientRect(); mouse.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+  ray.setFromCamera(mouse, cam); const hit = ray.intersectObject(mesh)[0]; if (!hit) return;
+  const X = hit.point.x + hx, Zs = hit.point.z + hz, ix = Math.floor(X / CELL), iy = Math.floor(Zs / CELL);
+  const lon = lon0 + X / mLon, lat = lat0 - Zs / mLat, s = slopeAt(ix, iy), u = unitAt(lat, lon), dHab = Math.hypot(hit.point.x, hit.point.z);
+  $('probe').innerHTML = `${lat.toFixed(5)}°N ${lon.toFixed(5)}°E<br>elevation ${elev(ix, iy).toFixed(0)} m (MOLA datum)<br>slope <span class="${s > 15 ? 'h' : s > 10 ? 'w' : ''}">${s.toFixed(1)}°</span> · ${(dHab / 1000).toFixed(2)} km from habitat<br>${u === 'Aeb' ? '<span class="w">sand ridges (USGS Aeb)</span>' : u === 'su' ? '<span class="w">smooth unit, possibly loose</span>' : 'no mapped sand unit'}`;
+});
+
+function resize() { renderer.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); }
+addEventListener('resize', resize); resize();
+$('load').remove();
+(function loop() { requestAnimationFrame(loop); ctl.update(); renderer.render(scene, cam); })();
+window.__three = { cam, ctl, setExag };
+})().catch(e => { document.getElementById('load').textContent = 'The 3D view could not load: ' + e.message; });
+</script>
+</body>
+</html>

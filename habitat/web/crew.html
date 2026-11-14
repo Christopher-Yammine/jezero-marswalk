@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Marswalk Crew</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{--bg:#0d0b09;--panel:#1c1814;--fg:#f4ece1;--mute:#a3978a;--line:#3a322a;--rust:#e0683a;--ok:#6fcf97;--warn:#e5b64a;--bad:#ef6b6b;
+  --display:"Archivo",system-ui,sans-serif;--body:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;color-scheme:dark}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:16px/1.4 var(--body);display:grid;grid-template-rows:auto auto auto auto auto minmax(220px,1fr) auto;min-height:100%;
+  padding:max(12px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));gap:12px}
+#banner{border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--panel);border:2px solid var(--line)}
+#banner.ok{border-color:var(--ok)}#banner.warn{border-color:var(--warn);background:#2b2210}#banner.bad{border-color:var(--bad);background:#3a1414}#banner.stale{border-style:dashed}
+#who{font:500 13px var(--mono);color:var(--mute)}
+#stateTxt{font:700 34px/1 var(--display);letter-spacing:.02em}
+#msg{font:600 18px var(--body);text-align:right;max-width:60%}
+#tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.tile span{display:block;font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:.05em}
+.tile b{font:600 28px/1.15 var(--mono);font-variant-numeric:tabular-nums}
+.tile b.small{font-size:16px;font-weight:500;color:var(--mute)}
+.tile.warn b{color:var(--warn)}.tile.bad b{color:var(--bad)}
+#map{border-radius:10px;border:1px solid var(--line);min-height:220px}
+footer{display:flex;justify-content:space-between;gap:10px;font:12px var(--mono);color:var(--mute);flex-wrap:wrap}
+.sim{color:var(--warn);border:1px dashed var(--warn);padding:1px 6px;border-radius:3px}
+select{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:4px;font:13px var(--body);padding:3px}
+.leaflet-container{background:#000}.leaflet-control-attribution{background:rgba(13,11,9,.8);color:var(--mute)}.leaflet-control-attribution a{color:var(--rust)}
+.leaflet-bar a{background:var(--panel);color:var(--fg);border-color:var(--line)}
+.me{width:20px;height:20px;border-radius:50%;background:var(--warn);border:3px solid #140c08;box-shadow:0 0 0 4px rgba(229,182,74,.35)}
+.hab{width:16px;height:16px;background:var(--ok);border:2px solid #140c08;transform:rotate(45deg)}
+.groundbox{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;font-size:15px}
+.groundbox b{font-family:var(--display)}.groundbox .w{color:var(--warn);font-weight:600}.groundbox .h{color:var(--bad);font-weight:600}.groundbox .mute{color:var(--mute);font-size:12px}
+body.hud .groundbox{font-size:20px}
+.povbox{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.povbox h4{margin:0 0 6px;font:600 14px var(--body)}.povbox .strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.povbox a{flex:none;display:block;position:relative;line-height:0;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.povbox img{height:96px;width:auto}.povbox a span{position:absolute;left:4px;bottom:4px;font:500 10px/14px var(--mono);background:rgba(13,11,9,.8);color:var(--fg);padding:0 4px;border-radius:2px}
+body.hud .povbox{display:none}
+.idbox{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+.idhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.idhead b{font:700 18px var(--display)}
+.upl{background:var(--rust);color:#140c08;font:600 15px var(--body);padding:10px 14px;border-radius:8px;cursor:pointer}
+.upl.ghost{background:transparent;color:var(--fg);border:1px solid var(--rust)}
+#samplePick{margin-top:10px}
+#samplePick h4{margin:10px 0 6px;font:600 13px var(--body);color:var(--mute);text-transform:uppercase;letter-spacing:.05em}
+#samplePick .row{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px}
+#samplePick button{padding:0;border:2px solid transparent;border-radius:6px;overflow:hidden;background:none;cursor:pointer;line-height:0}
+#samplePick button:hover,#samplePick button:focus-visible{border-color:var(--rust);outline:none}
+#samplePick img{width:100%;aspect-ratio:4/3;object-fit:cover}
+.upl:focus-within{outline:2px solid var(--warn);outline-offset:2px}
+.idnote{font-size:12px;color:var(--mute);margin:6px 0 0}
+.shot{position:relative;margin-top:10px;border-radius:8px;overflow:hidden;line-height:0}
+.shot img{width:100%;display:block}
+.bx{position:absolute;border:3px solid;border-radius:3px}
+.bx span{position:absolute;left:-3px;top:-20px;font:600 11px/18px var(--mono);padding:0 5px;border-radius:3px;color:#140c08;white-space:nowrap}
+.lv-high{border-color:var(--bad)}.lv-high span{background:var(--bad)}
+.lv-medium{border-color:var(--warn)}.lv-medium span{background:var(--warn)}
+.lv-low{border-color:var(--ok)}.lv-low span{background:var(--ok)}
+.lv-safe{border-color:#7fb3e6}.lv-safe span{background:#7fb3e6}
+.shot canvas.terr{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;image-rendering:pixelated}
+.shot.noterr canvas.terr{display:none}
+.tlegend{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:13px;color:var(--mute);margin-top:8px}
+.tlegend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.tlegend label{margin-left:auto;display:flex;gap:6px;align-items:center;cursor:pointer}
+.cards{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.card{border:1px solid var(--line);border-left:5px solid var(--mute);border-radius:8px;padding:10px 12px;background:var(--bg)}
+.card.high{border-left-color:var(--bad)}.card.medium{border-left-color:var(--warn)}.card.low{border-left-color:var(--ok)}.card.safe{border-left-color:#7fb3e6}
+.card h3{margin:0;font:700 17px var(--display);display:flex;justify-content:space-between;gap:8px}
+.card h3 small{font:500 12px var(--mono);color:var(--mute)}
+.card p{margin:6px 0 0;font-size:14px}.card p.do{font-weight:600}
+.card button{margin-top:8px;font:600 14px var(--body);background:transparent;color:var(--fg);border:1px solid var(--rust);border-radius:6px;padding:7px 12px;cursor:pointer}
+.card button:disabled{opacity:.6;cursor:default}
+body.hud .idbox{display:none}
+@media (max-width:700px){#tiles{grid-template-columns:repeat(2,1fr)}#stateTxt{font-size:28px}#msg{font-size:15px}}
+/* helmet mode: no map, bigger numbers, high contrast */
+body.hud #map{display:none}body.hud .tile b{font-size:40px}
+</style>
+</head>
+<body>
+<div id="banner" class="stale" role="status" aria-live="assertive">
+  <div><div id="who">Waiting for tag…</div><div id="stateTxt">—</div></div>
+  <div id="msg">Connecting to the habitat</div>
+</div>
+<div id="tiles">
+  <div class="tile" id="tDist"><span>To habitat</span><b>—</b></div>
+  <div class="tile" id="tWb"><span>Walk-back margin</span><b>—</b></div>
+  <div class="tile" id="tHr"><span>Heart rate</span><b>—</b></div>
+  <div class="tile" id="tTemp"><span>Suit temp</span><b>—</b></div>
+</div>
+<div class="groundbox" id="ground" role="status" aria-live="polite"><span class="mute">Ground: loading terrain grid and geologic map…</span></div>
+<div class="povbox" id="pov" hidden></div>
+<div class="idbox" id="ident">
+  <div class="idhead"><b>Identify what's ahead</b>
+    <span style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="upl ghost" id="sampleBtn">Try a sample photo</button>
+    <label class="upl">Upload or take photo<input type="file" id="file" accept="image/*" hidden></label></span></div>
+  <div id="samplePick" hidden></div>
+  <p class="idnote" id="idNote">Photo goes to the habitat laptop for analysis. The detector is not trained on Mars yet: treat its boxes as suggestions and check with your own eyes.</p>
+  <div id="idResult"></div>
+</div>
+<div id="map"></div>
+<footer>
+  <span>Tag <select id="pick" aria-label="Which tag is mine"></select></span>
+  <span id="link">link —</span>
+  <span id="mode"></span>
+  <label><input type="checkbox" id="hud"> Helmet mode</label>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/ort.min.js"></script>
+<script src="/view.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const WALKBACK_M = 1800;   // 30 min at 3.5 km/h, NASA JSC ICES 2026 suit-mass paper (same rule as the planner)
+let me = new URLSearchParams(location.search).get('tag');
+let map, mk, trail, lastCmd = null, spokenFor = new Set();
+const say = t => { try { if ('speechSynthesis' in window) speechSynthesis.speak(new SpeechSynthesisUtterance(t)); } catch (_) {} };
+const MSG = {
+  EVAC_RECEIVED: ['bad', 'RETURN TO HABITAT NOW'], LOCATE_ACK: ['', 'Habitat is locating you'], PONG: ['', 'Habitat checked your link'],
+  ACK_FROM_BASE: ['ok', 'Habitat acknowledged your alarm'], STANDDOWN_ACK: ['ok', 'Stand down: continue the walk'],
+  PREALARM: ['warn', 'No movement detected: move or press OK'], MANDOWN: ['bad', 'MAN DOWN sent to habitat'], HELP: ['bad', 'HELP sent to habitat'],
+  HAZARD: ['warn', 'Hazard reported to habitat'],
+};
+
+function pickList() {
+  const ids = Object.keys(MW.state.tags).sort();
+  if (!me && ids.length) me = ids[0];
+  $('pick').innerHTML = ids.map(i => `<option ${i === me ? 'selected' : ''}>${i}</option>`).join('');
+}
+$('pick').onchange = e => { me = e.target.value; history.replaceState(null, '', '?tag=' + me); render(); };
+$('hud').onchange = e => { document.body.classList.toggle('hud', e.target.checked); setTimeout(() => map && map.invalidateSize(), 50); };
+
+// ---- ground at my position (terrain grid + USGS geologic map); warnings spoken once per approach
+const GSAID = new Set();
+function renderGround(t) {
+  const el = $('ground'), G = MW.ground;
+  if (!G.dtm) return;
+  if (!t || !t.pos) { el.innerHTML = '<span class="mute">Ground: position unknown, so no map check.</span>'; return; }
+  const a = G.around(t.pos.lat, t.pos.lon);
+  if (!a || !a.inGrid) { el.innerHTML = '<span class="mute">Ground: outside the Jezero terrain grid.</span>'; return; }
+  const parts = [];
+  const slopeCls = a.slope > G.SLOPE_LIM ? 'h' : a.slope > G.SLOPE_LIM - 5 ? 'w' : '';
+  parts.push(`<span>Slope here <b class="${slopeCls}">${a.slope.toFixed(0)}°</b></span>`);
+  if (a.steep) parts.push(`<span class="${a.steep.dist <= 45 ? 'h' : 'w'}">Steep ground (${a.steep.slope.toFixed(0)}°) ${Math.round(a.steep.dist)} m ${G.compass(a.steep.bearing)}</span>`);
+  if (a.unit === 'Aeb') parts.push('<span class="h">On mapped sand ridges (USGS unit Aeb)</span>');
+  else if (a.nearSand) parts.push(`<span class="w">Mapped sand ridges ${a.nearSand.dist} m ${G.compass(a.nearSand.bearing)}</span>`);
+  if (a.unit === 'su') parts.push('<span class="w">Smooth unit: may be loose sand or pebbles</span>');
+  if (!a.steep && !a.unit && !a.nearSand) parts.push('<span>No mapped hazard within 90 m</span>');
+  parts.push('<span class="mute">orbital data: CTX terrain 30 m, USGS SIM 3464. Rocks and small pits need your eyes or Identify.</span>');
+  el.innerHTML = parts.join('');
+  const speakOnce = (k, msg) => { if (!GSAID.has(k)) { GSAID.add(k); say(msg); } };
+  if (a.unit === 'Aeb') speakOnce('sand-in-' + Math.round(t.pos.lat * 2000), 'You are on mapped sand ridges. Test the ground before each step.');
+  else if (a.nearSand && a.nearSand.dist <= 30) speakOnce('sand-' + Math.round(t.pos.lat * 2000), 'Sand ridges ' + a.nearSand.dist + ' metres ' + G.compass(a.nearSand.bearing) + '.');
+  if (a.steep && a.steep.dist <= 45) speakOnce('steep-' + Math.round(t.pos.lat * 1000) + Math.round(t.pos.lon * 1000), 'Steep ground ' + Math.round(a.steep.dist) + ' metres ' + G.compass(a.steep.bearing) + '.');
+}
+MW.ground.load().then(G => { if (map && !map._sand) map._sand = G.layer(L).addTo(map); render(); }).catch(() => { $('ground').innerHTML = '<span class="mute">Ground: terrain grid or geologic map failed to load.</span>'; });
+
+// ---- what the rover saw near here: nearest Perseverance stop (site/drive joined to raw images)
+let POV = null, povShown = null;
+fetch('/data/pov_index.json').then(r => r.json()).then(j => { POV = j.waypoints; render(); }).catch(() => {});
+function renderPov(t) {
+  const box = $('pov');
+  if (!POV || !t || !t.pos) { box.hidden = true; return; }
+  let best = null, bd = Infinity;
+  for (const w of POV) { const d = MW.distM(t.pos, w); if (d < bd) { bd = d; best = w; } }
+  if (!best || bd > 400) { box.hidden = false; box.innerHTML = '<h4>What the rover saw near here</h4><p class="idnote" style="margin:0">Perseverance never stopped within 400 m of you.</p>'; povShown = null; return; }
+  if (povShown === best.site + '_' + best.drive) return;               // only redraw when the nearest stop changes
+  povShown = best.site + '_' + best.drive;
+  const dir = a => a == null ? '' : ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(((a % 360) + 360) % 360 / 45) % 8];
+  box.hidden = false;
+  box.innerHTML = `<h4>What the rover saw near here · sol ${best.sol}, ${Math.round(bd)} m from you</h4><div class="strip">${best.img.map(i =>
+    `<a href="${i.m}" target="_blank" rel="noopener" aria-label="${i.cam === 'haz' ? 'Ground ahead of the rover' : 'Navcam view facing ' + (dir(best.yaw != null ? best.yaw + i.az : null) || 'unknown')}"><img src="${i.s}" alt="" loading="lazy"><span>${i.cam === 'haz' ? 'ground' : dir(best.yaw != null ? best.yaw + i.az : null) || 'view'}</span></a>`).join('')}</div>
+    <p class="idnote" style="margin:4px 0 0">Perseverance raw images, NASA/JPL-Caltech. Direction = rover heading + mast azimuth, approximate.</p>`;
+}
+
+function render() {
+  const t = MW.state.tags[me];
+  if (!t) return;
+  const lv = MW.level(t);
+  $('banner').className = lv;
+  $('who').textContent = MW.short(t.tag) + ' · ' + (t.via === 'R1' ? 'via relay R1' : 'direct to habitat');
+  $('stateTxt').textContent = lv === 'stale' ? 'NO SIGNAL' : (t.state || '?');
+  // message: newest event addressed to me
+  const ev = MW.state.events.filter(e => e.tag === me && MSG[e.event]).slice(-1)[0];
+  if (lv === 'stale') $('msg').textContent = 'Habitat has not heard you for ' + MW.ago(t.last_seen).replace(' ago', '') + '. Head toward the relay mast.';
+  else if (ev) {
+    $('msg').textContent = MSG[ev.event][1];
+    const k = ev.event + ev.ts;
+    if (!spokenFor.has(k) && MW.ageS(ev.ts) < 20) { spokenFor.add(k); say(MSG[ev.event][1]); }
+  } else $('msg').textContent = 'All normal';
+  // tiles
+  const h = MW.state.habitat, d = t.pos && h ? MW.distM(h, t.pos) : null;
+  $('tDist').querySelector('b').textContent = d != null ? (d >= 1000 ? (d / 1000).toFixed(2) + ' km' : Math.round(d) + ' m') : 'position unknown';
+  $('tDist').querySelector('b').className = d != null ? '' : 'small';
+  const wb = d != null ? WALKBACK_M - d : null;
+  $('tWb').querySelector('b').textContent = wb != null ? Math.round(wb) + ' m' : '—';
+  $('tWb').className = 'tile' + (wb != null && wb < 0 ? ' bad' : wb != null && wb < 300 ? ' warn' : '');
+  const hr = MW.vital(t, 'hr', 'heart', v => v + ' bpm');
+  $('tHr').querySelector('b').textContent = hr.txt; $('tHr').querySelector('b').className = hr.cls ? 'small' : '';
+  const tc = MW.vital(t, 'temp_c', 'temp', v => (+v).toFixed(1) + '°');
+  $('tTemp').querySelector('b').textContent = tc.txt; $('tTemp').querySelector('b').className = tc.cls ? 'small' : '';
+  renderGround(t);
+  renderPov(t);
+  $('link').textContent = 'link: last heard ' + MW.ago(t.last_seen) + ' · loss ' + MW.loss(t) + ' %' + (t.pos ? ' · position ' + (t.pos.src === 'ftm' ? 'Wi-Fi ranging' : 'GPS mapped') : '');
+  if (map && t.pos) {
+    mk.setLatLng([t.pos.lat, t.pos.lon]); if (!map.hasLayer(mk)) { mk.addTo(map); map.setView([t.pos.lat, t.pos.lon], 16); }
+    else if (!map.getBounds().pad(-0.2).contains([t.pos.lat, t.pos.lon])) map.panTo([t.pos.lat, t.pos.lon]);
+    trail.setLatLngs(t.trail || []);
+  }
+}
+
+// ---- Identify: photo -> habitat detector -> boxes + first-timer cards
+let HZ = {};
+fetch('/hazards.json').then(r => r.json()).then(j => HZ = j).catch(() => {});
+const ORDER = { high: 0, medium: 1, low: 2, safe: 3, ignore: 4 };
+const escH = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+async function toJpeg(file) {                       // re-encode: handles HEIC (Safari), strips EXIF, shrinks upload
+  const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  const k = Math.min(1, 1280 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  return new Promise(res => c.toBlob(res, 'image/jpeg', 0.88));
+}
+$('file').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  let blob;
+  try { blob = await toJpeg(f); } catch (_) { $('idResult').innerHTML = '<p class="idnote">This browser could not open that photo. Try a JPEG or PNG.</p>'; return; }
+  e.target.value = '';
+  analyse(blob, null);
+};
+// sample photos: real Perseverance images bundled with the habitat server, so phones need no file transfer
+let SAMPLES = null;
+$('sampleBtn').onclick = async () => {
+  const box = $('samplePick');
+  if (!box.hidden) { box.hidden = true; return; }
+  if (!SAMPLES) { try { SAMPLES = await (await fetch('/samples.json')).json(); } catch (_) { SAMPLES = []; } }
+  const groups = {}; SAMPLES.forEach((s, i) => (groups[s.label] = groups[s.label] || []).push([s, i]));
+  box.innerHTML = Object.entries(groups).map(([lab, arr]) => `<h4>${escH(lab)}</h4><div class="row">${arr.map(([s, i]) =>
+    `<button type="button" data-i="${i}" aria-label="${escH(lab)}, sol ${s.sol}"><img src="/samples/${encodeURIComponent(s.file)}" alt="" loading="lazy"></button>`).join('')}</div>`).join('') +
+    '<p class="idnote">Real Perseverance raw images (NASA/JPL-Caltech, Mastcam-Z also ASU). The group name is what a person saw in the photo, for comparing with the detector.</p>';
+  box.hidden = false;
+  box.querySelectorAll('button[data-i]').forEach(b => b.onclick = async () => {
+    const s = SAMPLES[+b.dataset.i]; box.hidden = true;
+    analyse(await (await fetch('/samples/' + encodeURIComponent(s.file))).blob(), s);
+  });
+};
+async function analyse(blob, sample) {
+  const out = $('idResult');
+  const url = URL.createObjectURL(blob);
+  out.innerHTML = `<div class="shot"><img src="${url}" alt="Your photo"></div><p class="idnote" id="busy">Analysing on the habitat laptop… the first photo takes longer while the model loads.</p>`;
+  const t0 = performance.now();
+  const terrP = runTerrain(blob).catch(err => ({ error: String(err && err.message || err) }));
+  let r;
+  try { r = await (await fetch('/detect', { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob })).json(); }
+  catch (_) { $('busy').textContent = 'Could not reach the habitat server.'; return; }
+  if (!r.ok) { $('busy').textContent = 'Detector error: ' + (r.error || 'unknown'); return; }
+  const terr = await terrP;
+  renderDetections(url, r, ((performance.now() - t0) / 1000).toFixed(1), sample, terr);
+}
+// ---- terrain model: runs in this browser (onnxruntime-web, WASM), no server needed
+let TERR = null;
+async function terrainModel() {
+  if (TERR) return TERR;
+  if (!window.ort) throw new Error('model runtime did not load');
+  ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/';
+  const cfg = await (await fetch('/models/terrain.json')).json();
+  const session = await ort.InferenceSession.create('/models/terrain.onnx', { executionProviders: ['wasm'] });
+  return (TERR = { cfg, session });
+}
+async function runTerrain(blob) {
+  const { cfg, session } = await terrainModel();
+  const S = cfg.size, bmp = await createImageBitmap(blob);
+  const c = document.createElement('canvas'); c.width = S; c.height = S;
+  const g = c.getContext('2d'); g.drawImage(bmp, 0, 0, S, S);
+  const px = g.getImageData(0, 0, S, S).data, n = S * S, x = new Float32Array(3 * n);
+  for (let i = 0; i < n; i++) {                        // greyscale, normalised, repeated to 3 channels (as trained)
+    const v = ((0.299 * px[4 * i] + 0.587 * px[4 * i + 1] + 0.114 * px[4 * i + 2]) / 255 - cfg.mean) / cfg.std;
+    x[i] = v; x[n + i] = v; x[2 * n + i] = v;
+  }
+  const t0 = performance.now();
+  const out = await session.run({ image: new ort.Tensor('float32', x, [1, 3, S, S]) });
+  const p = out.probs.data, C = cfg.classes.length, cls = new Uint8Array(n), conf = new Float32Array(n);
+  for (let i = 0; i < n; i++) { let b = 0, bv = -1; for (let k = 0; k < C; k++) { const v = p[k * n + i]; if (v > bv) { bv = v; b = k; } } cls[i] = b; conf[i] = bv; }
+  return { S, cls, conf, classes: cfg.classes, ms: Math.round(performance.now() - t0) };
+}
+const TCOL = { soil: null, bedrock: [80, 200, 120], sand: [240, 170, 40], big_rock: [235, 60, 60] };   // soil left clear on purpose
+function renderDetections(url, r, secs, sample, terr) {
+  // OWLv2 keeps objects (boulders, ledges, tracks, rover hardware). Its sand/bedrock boxes are dropped:
+  // the terrain model judges ground type. Giant boulder boxes (> half the frame) are noise.
+  const dets = r.detections.filter(d => !['sand', 'bedrock'].includes(d.class) && !(d.class === 'boulders' && d.box[2] * d.box[3] > 0.5));
+  const hw = dets.filter(d => d.class === 'rover_hardware');
+  const shown = dets.filter(d => (HZ[d.class] || {}).level !== 'ignore');
+  const boxes = shown.map(d => { const h = HZ[d.class] || { name: d.class, level: 'medium' }; const [x, y, w, hh] = d.box;
+    return `<div class="bx lv-${h.level}" style="left:${x * 100}%;top:${y * 100}%;width:${w * 100}%;height:${hh * 100}%"><span>${escH(h.name)}</span></div>`; }).join('');
+  const groups = {};
+  shown.forEach(d => { const g = groups[d.class] || (groups[d.class] = { n: 0, best: d }); g.n++; if (d.score > g.best.score) g.best = d; });
+  // terrain shares over the ground the model is confident about (not rover, not sky, not inside rover-hardware boxes)
+  let share = null, tnote = '';
+  if (terr && terr.cls) {
+    const { S, cls, conf, classes } = terr, cnt = {}; let ground = 0;
+    const inHw = (i) => { const x = (i % S) / S, y = Math.floor(i / S) / S; return hw.some(d => x >= d.box[0] && x <= d.box[0] + d.box[2] && y >= d.box[1] && y <= d.box[1] + d.box[3]); };
+    terr.keep = new Uint8Array(S * S);
+    for (let i = 0; i < S * S; i++) {
+      const c = classes[cls[i]];
+      if (!(c in TCOL) || conf[i] < 0.5 || inHw(i)) continue;
+      terr.keep[i] = 1; ground++; cnt[c] = (cnt[c] || 0) + 1;
+    }
+    share = {}; for (const c in cnt) share[c] = cnt[c] / Math.max(1, ground);
+    share._ground = ground / (S * S);
+    if (share.sand >= 0.15) groups.sand = { n: 0, terrain: share.sand };
+    if (share.bedrock >= 0.2) groups.bedrock = { n: 0, terrain: share.bedrock };
+    if (share.big_rock >= 0.04 && !groups.boulders) groups.boulders = { n: 0, terrain: share.big_rock };
+    tnote = `terrain model ${terr.ms} ms in this browser`;
+  } else if (terr && terr.error) tnote = 'terrain model unavailable (' + escH(terr.error) + ')';
+  const cls = Object.keys(groups).sort((a, b) => (ORDER[(HZ[a] || {}).level] ?? 9) - (ORDER[(HZ[b] || {}).level] ?? 9));
+  const ignored = r.detections.length - dets.length + (dets.length - shown.length);
+  const cards = cls.map(c => { const h = HZ[c] || { name: c, level: 'medium', why: '', do: '' }, g = groups[c];
+    const meta = g.terrain != null ? `terrain model · ${Math.round(g.terrain * 100)}% of the ground in view` : `${g.n} found · top score ${g.best.score.toFixed(2)}`;
+    return `<div class="card ${h.level}"><h3>${escH(h.name)} <small>${meta}</small></h3>
+      <p>${escH(h.why)}</p><p class="do">${escH(h.do)}</p>
+      ${['high', 'medium'].includes(h.level) ? `<button data-c="${escH(c)}" data-s="${g.best ? g.best.score : ''}">Report to habitat</button>` : ''}</div>`; }).join('');
+  const legend = share ? `<div class="tlegend"><span><i style="background:rgb(240,170,40)"></i>sand</span><span><i style="background:rgb(235,60,60)"></i>big rock</span><span><i style="background:rgb(80,200,120)"></i>bedrock</span><span><i style="background:transparent;border:1px solid var(--mute)"></i>soil, rover, sky or unsure</span>
+      <label><input type="checkbox" id="terrOn" checked> Terrain colours</label></div>` : '';
+  $('idResult').innerHTML = `<div class="shot" id="shot"><img src="${url}" alt="Your photo with hazards outlined and ground types coloured">${share ? '<canvas class="terr" id="terrCv"></canvas>' : ''}${boxes}</div>
+    ${legend}
+    <p class="idnote">${shown.length} objects boxed${ignored ? ', ' + ignored + ' hidden (rover hardware, ground-type boxes, frame-wide boxes)' : ''} · ${secs} s · objects: ${escH(r.model.split('/').pop())}, zero-shot${r.tuned ? ' with tuned cut-offs' : ''}${tnote ? ' · ' + tnote : ''}. Suggestions only: check with your own eyes.</p>
+    ${sample ? `<p class="idnote">Sample: <b>${escH(sample.label)}</b> (what a person saw) · sol ${sample.sol} · <a href="${escH(sample.source)}" target="_blank" rel="noopener" style="color:var(--rust)">NASA source</a></p>` : ''}
+    <div class="cards">${cards || '<p class="idnote">Nothing recognised. That does not mean the ground is safe.</p>'}</div>`;
+  if (share) {
+    const { S, cls, classes, keep } = terr, cv = $('terrCv'); cv.width = S; cv.height = S;
+    const g2 = cv.getContext('2d'), im = g2.createImageData(S, S);
+    for (let i = 0; i < S * S; i++) { const col = keep[i] && TCOL[classes[cls[i]]]; if (col) { im.data[4 * i] = col[0]; im.data[4 * i + 1] = col[1]; im.data[4 * i + 2] = col[2]; im.data[4 * i + 3] = 105; } }
+    g2.putImageData(im, 0, 0);
+    $('terrOn').onchange = e => $('shot').classList.toggle('noterr', !e.target.checked);
+  }
+  $('idResult').querySelectorAll('button[data-c]').forEach(b => b.onclick = async () => {
+    b.disabled = true; b.textContent = 'Reporting…';
+    const res = await (await fetch('/report', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tag: me, class: b.dataset.c, label: (HZ[b.dataset.c] || {}).name, score: b.dataset.s ? +b.dataset.s : null, upload: r.upload }) })).json();
+    b.textContent = res.ok ? (res.event.pos ? 'Reported · pinned at your position' : 'Reported · your position is unknown, no pin') : 'Report failed';
+  });
+}
+
+MW.on((kind, m) => {
+  if (kind === 'snapshot') {
+    if (!map) {
+      map = MW.map('map', { zoom: 16 });
+      const h = MW.state.habitat;
+      L.marker([h.lat, h.lon], { icon: L.divIcon({ className: '', html: '<div class="hab"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }) }).bindTooltip('Habitat').addTo(map);
+      L.circle([h.lat, h.lon], { radius: WALKBACK_M, color: '#6fcf97', weight: 1, dashArray: '6 6', fill: false }).addTo(map);
+      trail = L.polyline([], { color: '#e5b64a', weight: 3 }).addTo(map);
+      mk = L.marker([0, 0], { icon: L.divIcon({ className: '', html: '<div class="me"></div>', iconSize: [20, 20], iconAnchor: [10, 10] }) });
+      MW.ground.load().then(G => { if (!map._sand) map._sand = G.layer(L).addTo(map); }).catch(() => {});
+    }
+    $('mode').innerHTML = MW.state.mode === 'sim' ? '<span class="sim">SIMULATED tags</span>' : MW.state.mode === 'replay' ? 'replay' : 'live hardware';
+    pickList(); render();
+  }
+  if (kind === 'tag') { if (!$('pick').options.length || ![...$('pick').options].some(o => o.value === m.tag.tag)) pickList(); if (m.tag.tag === me) render(); }
+  if (m && m.event && m.event.tag === me) render();
+  if (kind === 'conn' && !m) $('msg').textContent = 'Habitat server lost, retrying…';
+});
+setInterval(render, 2000);
+MW.connect();
+</script>
+</body>
+</html>

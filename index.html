@@ -85,6 +85,45 @@ a{color:var(--rust)}
 .wp-icon{width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--rust)}
 .via-icon{width:6px;height:6px;border-radius:50%;background:var(--rust);opacity:.9}
 .tgt-icon{width:14px;height:14px;border-radius:2px;background:var(--rust);border:2px solid #140c08}
+/* ---- Globe: orientation level, shown first; picking a site zooms into the map ---- */
+body.away .jz{display:none}
+#globe{position:fixed;inset:0;z-index:3000;background:radial-gradient(ellipse at 50% 45%,#1d140f 0%,#0b0907 60%,#050404 100%);overflow:hidden;transition:opacity .7s ease}
+#globe.fade{opacity:0;pointer-events:none}
+#globe[hidden]{display:none}
+#gCanvas{position:absolute;inset:0;width:100%;height:100%;cursor:grab;touch-action:none}
+#gCanvas.drag{cursor:grabbing}
+#gHead{position:absolute;left:24px;top:20px;max-width:440px;pointer-events:none}
+#gHead h1{font-size:28px}
+#gHead .note{font-size:13px}
+#gMarks{position:absolute;inset:0;pointer-events:none}
+.gm{position:absolute;transform:translate(-7px,-7px);pointer-events:auto;display:flex;align-items:center;gap:6px;background:none;border:0;padding:0;color:var(--fg);font-family:var(--mono);font-size:11px;letter-spacing:.03em;white-space:nowrap;transition:opacity .2s}
+.gm i{width:14px;height:14px;border-radius:50%;border:2px solid #140c08;background:var(--rust);box-shadow:0 0 0 3px rgba(224,104,58,.35);flex:none}
+.gm.obs i{background:var(--ok);box-shadow:0 0 0 3px rgba(111,207,151,.3)}
+.gm.orb i{background:var(--orb);box-shadow:0 0 0 3px rgba(127,179,230,.3)}
+.gm.walk i{width:18px;height:18px;transform:translate(-2px,-2px);background:var(--rust);box-shadow:0 0 0 4px rgba(224,104,58,.4),0 0 18px rgba(224,104,58,.8)}
+.gm span{background:rgba(20,17,14,.78);padding:2px 6px;border-radius:3px}
+.gm.on span{background:var(--rust);color:#140c08}
+.gm:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
+#gPanel{position:absolute;left:24px;bottom:24px;width:420px;max-width:calc(100% - 32px);background:rgba(28,24,20,.92);border:1px solid var(--line);border-radius:8px;padding:14px;backdrop-filter:blur(6px);display:flex;flex-direction:column;gap:10px;max-height:calc(100% - 160px);overflow:auto}
+#gPanel .chips{display:flex;flex-wrap:wrap;gap:6px}
+#gPanel .chips button{padding:4px 8px;font-size:12px;background:transparent;border-color:var(--line);color:var(--fg)}
+#gIce button{padding:3px 8px;font-size:12px}
+#gPanel .chips button.on{background:var(--rust);border-color:var(--rust);color:#140c08}
+#gCard b{font-family:var(--display);font-size:16px}
+#gCard p{margin:6px 0 10px}
+#gStatus{font-family:var(--mono);font-size:11px;color:var(--mute)}
+#gZoom{position:absolute;right:20px;bottom:24px;display:flex;flex-direction:column;gap:6px}
+#gZoom button{width:34px;height:34px;padding:0;font-size:18px;background:var(--panel);border-color:var(--line)}
+.leaflet-control-globe a{font-size:16px;line-height:30px;cursor:pointer}
+@media (max-width:860px){
+  #gHead{left:16px;right:104px;top:14px}
+  #gHead h1{font-size:22px}
+  #gHead .note{display:none}
+  #gPanel{left:16px;right:16px;bottom:16px;width:auto;max-height:46vh}
+  #gZoom{right:16px;top:14px;bottom:auto;flex-direction:row}
+  .gm span{display:none}
+  .gm.on span,.gm.walk span{display:inline}
+}
 @media (max-width:860px){
   body{grid-template-columns:1fr;grid-template-rows:1fr auto}
   #map{order:0;height:52vh}
@@ -93,11 +132,32 @@ a{color:var(--rust)}
 </style>
 </head>
 <body>
+<div id="globe" aria-label="Mars globe: pick a site">
+  <canvas id="gCanvas"></canvas>
+  <div id="gMarks"></div>
+  <div id="gHead">
+    <p class="eyebrow">Orientation level · NASA Space Apps 2026</p>
+    <h1>Marswalk</h1>
+    <p class="note">Drag to rotate, scroll or pinch to zoom. Pick a site to read about it, then open it to zoom into the map. Globe imagery is NASA's Viking MDIM 2.1 colour mosaic, streamed from Mars Trek. Routes are not drawn at planet scale: no data supports a footstep-scale route there.</p>
+  </div>
+  <div id="gPanel">
+    <div class="chips" id="gChips"></div>
+    <div id="gCard"><p class="note" style="margin:0">Pick a site. Jezero is the walking map: the planner, terrain routing and rover track live there.</p></div>
+    <div id="gIceRow"><div class="row" id="gIce" role="group" aria-label="Ice evidence layer" style="gap:6px;align-items:center"><span class="note" style="margin:0">Ice layers</span>
+      <button type="button" class="quiet" data-k="off" aria-pressed="true">Off</button><button type="button" class="quiet" data-k="top1" aria-pressed="false">Top 1 m</button><button type="button" class="quiet" data-k="d1to5" aria-pressed="false">1 to 5 m deep</button><button type="button" class="quiet" data-k="abund" aria-pressed="false">Abundance</button><button type="button" class="quiet" data-k="collapse" aria-pressed="false">Collapse risk</button><button type="button" class="quiet" data-k="value" aria-pressed="false">Resource value</button></div>
+      <p class="note" id="gIceNote" hidden style="margin:6px 0 0"><span id="gIceText"></span> Mapped 60°N to 60°S only; values read from SWIM's published map images, so approximate. Green dashes: ±50° latitude, the limit for human landing sites (Bussey &amp; Hoffman, NASA 2016). Jezero: none in the top metre; at 1 to 5 m a weak zone reaches about 20°N, just short of it.</p></div>
+    <div id="gStatus">Loading Viking colour mosaic…</div>
+  </div>
+  <div id="gZoom"><button id="gIn" aria-label="Zoom in">+</button><button id="gOut" aria-label="Zoom out">−</button></div>
+</div>
 <aside id="rail">
   <div>
-    <p class="eyebrow">Crew tablet · Jezero crater · NASA Space Apps 2026</p>
-    <h1>Jezero Marswalk Planner</h1>
-    <p class="note">Click the map to add waypoints; the planner routes between them over the terrain. Drag a waypoint or right-click to remove it and the legs around it are re-routed. Press Route on a science target to compare three computed routes. Drag the green habitat marker to move base. Every layer is live from NASA Mars Trek; the rover track is NASA's published Perseverance traverse.</p>
+    <div class="row" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap">
+      <p class="eyebrow" id="railEyebrow">Crew tablet · Jezero crater · NASA Space Apps 2026</p>
+      <button id="toGlobe" class="quiet" style="padding:3px 8px;font-size:12px;white-space:nowrap">◐ Globe</button>
+    </div>
+    <h1 id="railTitle">Jezero Marswalk Planner</h1>
+    <p class="note jz">Click the map to add waypoints; the planner routes between them over the terrain. Drag a waypoint or right-click to remove it and the legs around it are re-routed. Press Route on a science target to compare three computed routes. Drag the green habitat marker to move base. Every layer is live from NASA Mars Trek; the rover track is NASA's published Perseverance traverse.</p>
     <div class="evkey">
       <span><span class="ev obs">observed</span> NASA measured it (rover position, track, elevation)</span>
       <span><span class="ev orb">orbital proxy</span> inferred from orbit (THEMIS night IR: dark = fine sand, bright = rock)</span>
@@ -107,7 +167,14 @@ a{color:var(--rust)}
     </div>
   </div>
 
-  <section>
+  <section id="siteCard" hidden>
+    <h2>Site <span id="siteBadge"></span></h2>
+    <p id="siteText" style="margin:0 0 8px"></p>
+    <p class="note">The walking planner (terrain routing on the CTX stereo DTM, rover track, science targets, EVA budget) exists for Jezero only: that is the one site with footstep-scale data loaded. Here the map shows NASA's global layers: Viking colour 232 m, MOLA + HRSC relief 200 m, THEMIS day and night IR 100 m. Zooming past about level 8 only enlarges those pixels.</p>
+    <div class="row" style="margin-top:8px"><button id="goJezero">Open the Jezero planner</button><button id="backGlobe" class="quiet">Back to globe</button></div>
+  </section>
+
+  <section class="jz">
     <h2>EVA budget</h2>
     <label>Walk speed <span class="ev rule">rule</span><span class="v" id="vSpeed">3.5 km/h</span></label>
     <input type="range" id="speed" min="1.5" max="5" step="0.1" value="3.5">
@@ -119,7 +186,7 @@ a{color:var(--rust)}
     <p class="note">Walk-back: 30 min at 3.5 km/h is the 1.8 km radius proposed in NASA JSC's 2026 Mars suit mass paper. No Mars suit slope figure is published, so the slope limit is ours. Daylight window taken as 07:00 to 17:00 LMST.</p>
   </section>
 
-  <section>
+  <section class="jz">
     <h2>Route</h2>
     <div class="row">
       <button id="undo" class="quiet">Remove last</button>
@@ -145,20 +212,20 @@ a{color:var(--rust)}
     <p class="note">Elevation comes from the USGS CTX stereo DTM (20 m, MOLA-referenced) resampled to 30 m, checked against Perseverance's track elevations where both exist (see Route comparison). If the DTM fails to load, slope falls back to the rover track and is unknown elsewhere. Dose uses 0.21 mGy/day, Curiosity RAD surface average at Gale, not Jezero (Hassler et al. 2014).</p>
   </section>
 
-  <section>
+  <section class="jz">
     <h2>Route comparison <span class="ev orb">orbital proxy</span> <span class="ev obs">observed</span></h2>
     <p class="note" id="gridStatus">Terrain grid: loading THEMIS night IR…</p>
     <div id="cmpWrap"></div>
     <p class="note">Three routes from the habitat to the chosen target, computed on a 30 m grid inside the HiRISE mosaic. Shortest ignores terrain. Terrain-aware penalises ground that is dark in THEMIS night IR (low thermal inertia, a proxy for loose sand) and favours ground Perseverance drove. Recommended adds a preference for proven ground and refuses legs steeper than the slope limit where the rover measured elevation. Time is plain distance over walk speed; no terrain speed factor is invented. Click a row to adopt it.</p>
   </section>
 
-  <section>
+  <section class="jz">
     <h2>Science targets</h2>
     <p class="note" style="margin:0 0 8px">Positions are Perseverance's real position at that sol <span class="ev obs">observed</span>. Descriptions mix rover findings and orbital inference.</p>
     <ul class="targets" id="targets"></ul>
   </section>
 
-  <section>
+  <section class="jz">
     <h2>Crew tag <span class="sim">SIMULATED</span></h2>
     <div class="row">
       <button id="simStart">Start simulated walk</button>
@@ -525,7 +592,7 @@ function rebuild(){
   if(soft) speak('No route to '+(soft>1?soft+' points stays':'one point stays')+' under the '+lim+' degree limit. Showing the least steep approach; the breach is flagged.');
   else if(off) speak((off>1?off+' points are':'One point is')+' outside the terrain grid; straight line used there.');
 }
-map.on('click',e=>addWaypoint(e.latlng));
+map.on('click',e=>{ if(window.__awayFromJezero) return; addWaypoint(e.latlng); });
 function addWaypoint(ll){ anchors.push(ll); truthLen=null; rebuild(); }
 function clearRoute(){ anchors=[]; truthLen=null; rebuild(); }
 $('undo').onclick=()=>{ anchors.pop(); truthLen=null; rebuild(); };
@@ -704,6 +771,214 @@ $('trackBack').onclick=()=>{
 };
 
 recompute();
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ---- Orientation level: spinning Mars globe. Pick a site, open it, the map zooms in.
+(function(){
+const $=id=>document.getElementById(id), D=Math.PI/180, map=window.__map;
+// Sites and notes from the team's two-level prototype. Coordinates are NASA reference locations.
+// ev: obs = observed by a NASA mission at that spot, orb = inferred from orbit (regional evidence).
+const SITES=[
+ {id:'jezero',n:'Jezero Crater',la:18.44,lo:77.42,z:12,ev:'obs',walk:1,t:'Study area · walking map',x:'Ancient river-lake delta. Perseverance landed here on 18 Feb 2021. This is the one site with a footstep-scale walking map: CTX stereo terrain, HiRISE 25 cm imagery, the rover track and terrain routing.'},
+ {id:'arcadia',n:'Arcadia Planitia',la:47,lo:-160,z:6,ev:'orb',t:'Regional ice evidence',x:'Ice-consistent in the SWIM 2.0 maps both within the top metre and at 1 to 5 m (Planetary Science Institute). Regional evidence only: not a route, not a confirmed water supply.'},
+ {id:'utopia',n:'Utopia Planitia',la:46.7,lo:117.5,z:6,ev:'orb',t:'Regional ice evidence',x:'SHARAD radar found a buried deposit at 39 to 49°N holding about as much water as Lake Superior: 80 to 170 m thick, 50 to 85% ice, under 1 to 10 m of soil (NASA JPL, 2016). It shows in the SWIM 1 to 5 m map, not the top-metre map. Ice detected is not ice accessible.'},
+ {id:'phoenix',n:'Phoenix site',la:68.22,lo:-125.75,z:8,ev:'obs',t:'Ice and weather case study',x:'Phoenix scraped soil and exposed shallow water ice in 2008, then ended as sunlight faded into winter. It lies beyond 60°N, outside the SWIM maps, in the band where Odyssey found hydrogen in the top metre. Its readings do not transfer to other sites.'},
+ {id:'olympus',n:'Olympus Mons',la:18.65,lo:-133.8,z:5,ev:'obs',t:'Shield volcano',x:'About 22 km high and roughly 600 km wide. Context only: no walking data.'},
+ {id:'valles',n:'Valles Marineris',la:-13.9,lo:-59.2,z:5,ev:'obs',t:'Canyon system',x:'Roughly 4,000 km long and up to about 7 km deep. Context only.'},
+ {id:'hellas',n:'Hellas Planitia',la:-42.4,lo:70.5,z:4,ev:'obs',t:'Impact basin',x:'Roughly 2,300 km wide and about 7 km deep, with the highest surface air pressure on Mars. Context only.'},
+ {id:'gale',n:'Gale Crater',la:-4.59,lo:137.44,z:8,ev:'obs',t:'Curiosity site',x:'Source of the 0.21 mGy/day surface radiation figure this planner uses (Curiosity RAD). Measured at Gale, not Jezero.'},
+ {id:'gusev',n:'Gusev Crater',la:-14.57,lo:175.47,z:8,ev:'obs',t:'Spirit site',x:'Spirit broke through a firm-looking crust into soft sand at Troy in 2009 and never got out: surfaces can look firm and not be.'},
+ {id:'meridiani',n:'Meridiani Planum',la:-1.95,lo:-5.53,z:8,ev:'obs',t:'Opportunity site',x:'Opportunity sank more than 10 cm into a ripple about 33 cm high (Purgatory Dune, 2005) and was lost in the 2018 global dust storm.'},
+];
+const BADGE={obs:'<span class="ev obs">observed</span>',orb:'<span class="ev orb">orbital / regional</span>'};
+
+const globeEl=$('globe'), cv=$('gCanvas'), marks=$('gMarks');
+if(!window.THREE){ globeEl.hidden=true; return; } // CDN blocked: fall back to the planner
+
+// ---- three.js scene
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+const scene=new THREE.Scene(), cam=new THREE.PerspectiveCamera(35,1,.01,100);
+const CAM_FAR=3.6, CAM_NEAR=1.45; let camZ=CAM_FAR; cam.position.set(0,0,camZ);
+scene.add(new THREE.AmbientLight(0xffffff,.55));
+const sun=new THREE.DirectionalLight(0xfff1e0,.75); sun.position.set(-3,2,4); scene.add(sun);
+
+// Texture: Viking MDIM 2.1 colour mosaic from Trek, zoom 2 = 8 x 4 tiles of 256 px, equirectangular from -180.
+const TW=2048, TH=1024, tex=document.createElement('canvas'); tex.width=TW; tex.height=TH;
+const base=document.createElement('canvas'); base.width=TW; base.height=TH; const bctx=base.getContext('2d'); bctx.fillStyle='#8a4b2c'; bctx.fillRect(0,0,TW,TH);
+const tctx=tex.getContext('2d'); tctx.fillStyle='#8a4b2c'; tctx.fillRect(0,0,TW,TH);
+const texture=new THREE.CanvasTexture(tex); texture.anisotropy=4;
+const globe=new THREE.Group(); scene.add(globe);
+const sphere=new THREE.Mesh(new THREE.SphereGeometry(1,96,64),new THREE.MeshPhongMaterial({map:texture,shininess:4}));
+globe.add(sphere);
+// thin atmosphere rim
+const rim=new THREE.Mesh(new THREE.SphereGeometry(1.025,64,48),new THREE.MeshBasicMaterial({color:0xe0683a,transparent:true,opacity:.08,side:THREE.BackSide}));
+scene.add(rim);
+let loaded=0, failed=0;
+for(let y=0;y<4;y++) for(let x=0;x<8;x++){
+  const im=new Image(); im.crossOrigin='anonymous';
+  im.onload=()=>{ bctx.drawImage(im,x*256,y*256,256,256); compose(); loaded++; status(); };
+  im.onerror=()=>{ failed++; status(); };
+  im.src='https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/default/default028mm/2/'+y+'/'+x+'.jpg';
+}
+// Ice evidence: SWIM 2.0 composite ice-consistency maps (Planetary Science Institute), cut from their browse images
+// and placed on their lat/lon grid (60N to 60S). Values are approximate: read from map colours, not the data files.
+const ICE={layer:'off',img:{}};
+const ICE_SRC={top1:'data/swim2_ice_consistency_60N60S.png',d1to5:'data/swim2_ice_consistency_1to5m_60N60S.png',
+  abund:'data/ice_abundance_neutron_60N60S.png',collapse:'data/ice_collapse_risk_60N60S.png',value:'data/ice_resource_value_60N60S.png'};
+const ICE_NOTE={
+  top1:'Blue: where neutron, thermal, radar and image evidence agree on ice within the top metre (SWIM 2.0, Planetary Science Institute). Darker means stronger agreement.',
+  d1to5:'Blue: the same evidence for ice 1 to 5 m down. Utopia\'s radar-mapped deposit shows here, under its soil cover.',
+  abund:'Blue: buried hydrogen seen by Mars Odyssey\'s neutron spectrometer (SWIM neutron layer). A relative scale, not percent ice. Near the equator much of this hydrogen sits in hydrated minerals, not ice: Gale scores here with no ice at all.',
+  collapse:'Red: team-derived collapse risk = ice in the top metre × landforms that show ice degrading (SWIM geomorphology layer: scalloped pits, sublimating ground). Where both agree, ground can subside under a walker. Not a NASA product.',
+  value:'Green: team-derived resource value = easiest ice access (top metre counts fully, 1 to 5 m at 60%) × hydrogen abundance × landing reach (full inside ±50° latitude, 30% outside). Not a NASA product.'};
+let ICEGRID=null; fetch('data/ice_grid_1deg.json').then(r=>r.json()).then(j=>{ICEGRID=j; if(sel!=null) select(sel);}).catch(()=>{});
+function iceAt(la,lo){ if(!ICEGRID||la>=60||la<-60) return null; const y=Math.floor(60-la), x=Math.floor(lo+180)%360; const g=k=>ICEGRID[k][y][x];
+  return {top1:g('top1'),d1to5:g('d1to5'),abund:g('abund'),collapse:g('collapse'),value:g('value')}; }
+function compose(){
+  tctx.drawImage(base,0,0);
+  const im=ICE.img[ICE.layer];
+  if(im&&im.complete&&im.naturalWidth) tctx.drawImage(im,0,TH*30/180,TW,TH*120/180);
+  texture.needsUpdate=true;
+}
+function setIce(k){
+  ICE.layer=k;
+  document.querySelectorAll('#gIce button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===k));
+  if(k!=='off'&&!ICE.img[k]){ const im=new Image(); im.onload=compose; im.src=ICE_SRC[k]; ICE.img[k]=im; }
+  compose();
+  $('gIceNote').hidden=k==='off';
+  if(k!=='off') $('gIceText').textContent=ICE_NOTE[k];
+}
+// human landing-site limit: Exploration Zones within +-50 degrees latitude (Bussey and Hoffman 2016)
+function status(){
+  const s=$('gStatus'); if(loaded+failed<32){ s.textContent='Loading Viking colour mosaic… '+loaded+' / 32 tiles'; return; }
+  s.innerHTML=failed?('Viking mosaic: '+failed+' of 32 tiles failed to load; those areas show flat colour.'):'Imagery: Viking MDIM 2.1 colour mosaic (NASA/USGS) via <a href="https://trek.nasa.gov/mars/" target="_blank" rel="noopener">Mars Trek</a>. Marker positions are NASA reference locations.';
+}
+
+// lat/lon -> point on the unit sphere in SphereGeometry's UV frame (u=0 at lon -180, u=.5 at lon 0 = +X)
+const vec=(la,lo)=>new THREE.Vector3(Math.cos(la*D)*Math.cos(lo*D),Math.sin(la*D),-Math.cos(la*D)*Math.sin(lo*D));
+[50,-50].forEach(la=>{ const pts=[]; for(let lo=-180;lo<=180;lo+=3) pts.push(vec(la,lo).multiplyScalar(1.004));
+  globe.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineDashedMaterial({color:0x6fcf97,dashSize:.03,gapSize:.02,transparent:true,opacity:.7})).computeLineDistances()); });
+// Euler XYZ: Ry then Rx. rot.y = -90°-lon brings the meridian to +Z (camera), rot.x = lat tilts it to centre.
+let rx=20*D, ry=(-90-77)*D, tgt=null, spin=true, sel=null, dragging=false, lastMove=0;
+
+// ---- markers (HTML, so they are clickable, labelled and keyboard reachable)
+SITES.forEach((s,i)=>{
+  s.v=vec(s.la,s.lo);
+  const b=document.createElement('button'); b.className='gm '+(s.walk?'walk':s.ev); b.type='button';
+  b.innerHTML='<i></i><span>'+s.n+'</span>'; b.setAttribute('aria-label',s.n+': '+s.t);
+  b.onclick=e=>{ e.stopPropagation(); pick(i); };
+  marks.appendChild(b); s.el=b;
+});
+$('gChips').innerHTML=SITES.map((s,i)=>'<button type="button" data-i="'+i+'">'+(s.walk?'★ ':'')+s.n+'</button>').join('');
+$('gChips').querySelectorAll('button').forEach(b=>b.onclick=()=>pick(+b.dataset.i));
+document.querySelectorAll('#gIce button').forEach(b=>b.onclick=()=>setIce(b.dataset.k));
+
+function pick(i){
+  if(sel===i){ openSite(i); return; }
+  select(i);
+}
+function select(i){
+  sel=i; spin=false; const s=SITES[i];
+  tgt={x:s.la*D, y:(-90-s.lo)*D};
+  SITES.forEach((q,k)=>q.el.classList.toggle('on',k===i));
+  $('gChips').querySelectorAll('button').forEach(b=>b.classList.toggle('on',+b.dataset.i===i));
+  $('gCard').innerHTML='<b>'+s.n+'</b> '+BADGE[s.ev]+'<div class="note" style="margin:2px 0 0">'+s.t+' · '+s.la.toFixed(2)+'°, '+s.lo.toFixed(2)+'°E</div><p>'+s.x+'</p>'+
+    (()=>{ const v=iceAt(s.la,s.lo); if(!v) return s.la>=60||s.la<-60?'<p class="note" style="margin:-4px 0 8px">Ice layers: beyond 60°, outside the SWIM maps.</p>':'';
+    const f=x=>x==null?'–':x.toFixed(2);
+    return `<p class="note" style="margin:-4px 0 8px">Ice here (0 to 1, approx.): top 1 m <b>${f(v.top1)}</b> · 1 to 5 m <b>${f(v.d1to5)}</b> · hydrogen <b>${f(v.abund)}</b> · collapse risk <b>${f(v.collapse)}</b> · resource value <b>${f(v.value)}</b></p>`; })()+
+    '<div class="row"><button type="button" id="gOpen">'+(s.walk?'Open walk map: '+s.n:'Zoom into '+s.n)+'</button><button type="button" class="quiet" id="gSpin">Resume spin</button></div>';
+  $('gOpen').onclick=()=>openSite(i);
+  $('gSpin').onclick=()=>{ spin=true; tgt=null; };
+}
+
+// ---- zoom from the globe into the Leaflet map
+let zoomAnim=null;
+function openSite(i){
+  const s=SITES[i]; select(i);
+  tgt={x:s.la*D, y:(-90-s.lo)*D}; spin=false;
+  zoomAnim={t0:performance.now(), from:camZ, s};
+}
+function enterMap(s){
+  globeEl.classList.add('fade');
+  setTimeout(()=>{ globeEl.hidden=true; }, 700);
+  const away=!s.walk; window.__awayFromJezero=away;
+  document.body.classList.toggle('away',away);
+  $('siteCard').hidden=!away;
+  $('railTitle').textContent=away?s.n:'Jezero Marswalk Planner';
+  $('railEyebrow').textContent=away?'Site view · global NASA layers':'Crew tablet · Jezero crater · NASA Space Apps 2026';
+  if(away){ $('siteBadge').innerHTML=BADGE[s.ev]; $('siteText').textContent=s.t+'. '+s.x; }
+  map.invalidateSize();
+  map.setView([s.la,s.lo],3,{animate:false});
+  setTimeout(()=>map.flyTo([s.la,s.lo],s.z,{duration:2.4}),250);
+  try{ history.replaceState(null,'','#'+s.id); }catch(_){}
+}
+function showGlobe(){
+  globeEl.hidden=false; requestAnimationFrame(()=>globeEl.classList.remove('fade'));
+  camZ=CAM_FAR; zoomAnim=null; if(sel==null) spin=true;
+  try{ history.replaceState(null,'',location.pathname); }catch(_){}
+}
+window.__showGlobe=showGlobe;
+$('toGlobe').onclick=showGlobe; $('backGlobe').onclick=showGlobe;
+$('goJezero').onclick=()=>{ sel=0; enterMap(SITES[0]); };
+// globe button on the map too
+const GlobeCtl=L.Control.extend({options:{position:'topleft'},onAdd(){const d=L.DomUtil.create('div','leaflet-bar leaflet-control leaflet-control-globe');d.innerHTML='<a title="Back to globe" role="button" aria-label="Back to globe">◐</a>';L.DomEvent.on(d,'click',e=>{L.DomEvent.stop(e);showGlobe();});return d;}});
+new GlobeCtl().addTo(map);
+
+// ---- input: drag to rotate, wheel / pinch to zoom
+let px=0,py=0; const ptrs=new Map(); let pinch0=0, pinchZ=camZ;
+cv.addEventListener('pointerdown',e=>{ cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId,[e.clientX,e.clientY]); dragging=true; spin=false; tgt=null; px=e.clientX; py=e.clientY; cv.classList.add('drag');
+  if(ptrs.size===2){ const [a,b]=[...ptrs.values()]; pinch0=Math.hypot(a[0]-b[0],a[1]-b[1]); pinchZ=camZ; } });
+cv.addEventListener('pointermove',e=>{ if(!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId,[e.clientX,e.clientY]);
+  if(ptrs.size===2){ const [a,b]=[...ptrs.values()]; const d=Math.hypot(a[0]-b[0],a[1]-b[1]); if(pinch0) camZ=Math.min(CAM_FAR,Math.max(CAM_NEAR,pinchZ*pinch0/d)); return; }
+  const k=1.6/Math.max(300,Math.min(cv.clientWidth,cv.clientHeight))*(camZ-1);
+  ry+=(e.clientX-px)*k; rx=Math.max(-80*D,Math.min(80*D,rx+(e.clientY-py)*k)); px=e.clientX; py=e.clientY; lastMove=performance.now(); });
+const up=e=>{ ptrs.delete(e.pointerId); if(!ptrs.size){ dragging=false; cv.classList.remove('drag'); } };
+cv.addEventListener('pointerup',up); cv.addEventListener('pointercancel',up);
+cv.addEventListener('wheel',e=>{ e.preventDefault(); camZ=Math.min(CAM_FAR,Math.max(CAM_NEAR,camZ*(1+Math.sign(e.deltaY)*.08))); },{passive:false});
+$('gIn').onclick=()=>{ camZ=Math.max(CAM_NEAR,camZ*.85); };
+$('gOut').onclick=()=>{ camZ=Math.min(CAM_FAR,camZ/.85); };
+
+// ---- frame loop
+function resize(){ const w=globeEl.clientWidth,h=globeEl.clientHeight; renderer.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix(); }
+window.addEventListener('resize',resize); resize();
+const ang=a=>Math.atan2(Math.sin(a),Math.cos(a));
+const wp=new THREE.Vector3(), camDir=new THREE.Vector3();
+let last=performance.now();
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt=Math.min(.05,(now-last)/1000); last=now;
+  if(globeEl.hidden) return;
+  if(spin&&!dragging) ry-=dt*.12;
+  if(tgt&&!dragging){ const k=1-Math.pow(.02,dt); rx+=(tgt.x-rx)*k; ry+=ang(tgt.y-ry)*k; }
+  if(zoomAnim){
+    const p=Math.min(1,(now-zoomAnim.t0)/1400), e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+    camZ=zoomAnim.from+(1.06-zoomAnim.from)*e;
+    if(p>=.55&&!zoomAnim.done){ zoomAnim.done=true; enterMap(zoomAnim.s); }
+    if(p>=1) zoomAnim=null;
+  }
+  globe.rotation.set(rx,ry,0);
+  cam.position.z=camZ; cam.lookAt(0,0,0);
+  renderer.render(scene,cam);
+  // project markers; hide the ones on the far side
+  camDir.copy(cam.position).normalize();
+  const w=cv.clientWidth,h=cv.clientHeight;
+  for(const s of SITES){
+    wp.copy(s.v).applyEuler(globe.rotation);
+    const facing=wp.dot(camDir);
+    const p=wp.clone().project(cam);
+    s.el.style.left=((p.x+1)/2*w)+'px'; s.el.style.top=((1-p.y)/2*h)+'px';
+    const vis=facing>.12; s.el.style.opacity=vis?Math.min(1,(facing-.12)*6):0; s.el.style.pointerEvents=vis?'auto':'none';
+    s.el.tabIndex=vis?0:-1;
+  }
+}
+requestAnimationFrame(frame);
+
+// Deep link: #jezero (or any site id) skips the globe and opens that site directly.
+const h=location.hash.slice(1), di=SITES.findIndex(s=>s.id===h);
+if(di>=0){ sel=di; globeEl.hidden=true; globeEl.classList.add('fade'); enterMap(SITES[di]); }
 })();
 </script>
 </body>

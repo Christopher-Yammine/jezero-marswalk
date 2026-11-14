@@ -1,0 +1,43 @@
+{
+  "_comment": "First-timer explanation for each detected class. 'level' drives colour and sort order. Incidents cited are real rover events; advice is general caution, not a NASA procedure.",
+  "sand": {
+    "name": "Loose sand or ripple", "level": "high",
+    "why": "Loose sand can give way under your boots. Opportunity sank more than 10 cm into a ripple only about 33 cm high and was stuck for five weeks (Purgatory Dune, 2005). Spirit broke through a firm-looking crust into soft sand and never got out (Troy, 2009).",
+    "do": "Walk around it if you can. If you must cross, test the ground with one foot first and keep the crossing short. Tell the habitat where it is."
+  },
+  "boulders": {
+    "name": "Boulder or large rock", "level": "high",
+    "why": "Big rocks block your path and your line of sight to your buddy, and are easy to trip on when your suit limits how far you can see your feet.",
+    "do": "Route around, not over. Keep your buddy in sight while you pass it."
+  },
+  "sharp_rocks": {
+    "name": "Small sharp loose rocks", "level": "medium",
+    "why": "Sharp embedded rocks punctured and tore Curiosity's aluminium wheels from 2013 on, and NASA changed its route to avoid them. For a walker they mean trips, rolled ankles and wear on boots and suit.",
+    "do": "Slow down and choose each foot placement. Do not jump down onto loose rock."
+  },
+  "ledge": {
+    "name": "Ledge, scarp or drop-off", "level": "high",
+    "why": "A fall is the most serious walking injury in a suit. Rock edges can crumble or overhang, and you may not see how deep the drop is from above.",
+    "do": "Stay well back from the edge and do not stand on overhangs. Look for a gentler way down, or zig-zag across the slope instead of straight down it."
+  },
+  "pit": {
+    "name": "Small crater or pit", "level": "high",
+    "why": "Holes and small craters are tripping and ankle hazards, and their floors often collect loose sand. The orbital terrain model cannot see pits narrower than about 100 m, so your eyes are the only check.",
+    "do": "Walk around the rim, not through it. Report it so it goes on the map."
+  },
+  "bedrock": {
+    "name": "Flat bedrock", "level": "low",
+    "why": "Solid rock is usually the firmest footing. A layer of dust on top can still make it slippery on a slope.",
+    "do": "Usually a good place to walk. Take care on tilted slabs."
+  },
+  "rover_tracks": {
+    "name": "Rover tracks", "level": "safe",
+    "why": "Ground a one-tonne rover has driven over has already held its weight. That is strong evidence the surface is firm there.",
+    "do": "Following rover tracks is the safest choice when you have it."
+  },
+  "rover_hardware": {
+    "name": "Rover hardware", "level": "ignore",
+    "why": "Part of the rover is in the picture. It is not terrain.",
+    "do": "Ignored for hazard purposes."
+  }
+}

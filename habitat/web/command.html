@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marswalk Command</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{--bg:#14110e;--rail:#1c1814;--panel:#242019;--fg:#efe7dc;--mute:#a3978a;--line:#3a322a;--rust:#e0683a;--rust-soft:#3d2219;
+  --ok:#6fcf97;--ok-soft:#1b3326;--warn:#e5b64a;--warn-soft:#3a2f14;--bad:#ef6b6b;--bad-soft:#3d1c1c;--orb:#7fb3e6;--orb-soft:#172636;
+  --display:"Archivo",system-ui,sans-serif;--body:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;color-scheme:dark}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:14px/1.45 var(--body);display:grid;grid-template-columns:400px 1fr;grid-template-rows:auto 1fr;overflow:hidden}
+header{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--rail);flex-wrap:wrap}
+header h1{font:700 18px var(--display);margin:0}
+.badge{font:500 11px var(--mono);letter-spacing:.06em;padding:3px 8px;border-radius:3px;text-transform:uppercase}
+.badge.live{background:var(--ok-soft);color:var(--ok)}.badge.sim{border:1px dashed var(--warn);color:var(--warn)}.badge.replay{background:var(--orb-soft);color:var(--orb)}
+.seg{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.seg button{background:transparent;border:0;border-right:1px solid var(--line);color:var(--mute);padding:5px 10px;font:500 12px var(--body);cursor:pointer}
+.seg button:last-child{border-right:0}.seg button[aria-pressed=true]{background:var(--rust);color:#140c08}
+select{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:4px 6px;font:12px var(--body)}
+.spacer{flex:1}.mute{color:var(--mute)}
+#conn{font:12px var(--mono)}
+#rail{background:var(--rail);border-right:1px solid var(--line);overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:12px;min-height:0}
+#map{min-height:0}
+h2{font:700 12px var(--display);letter-spacing:.05em;text-transform:uppercase;color:var(--mute);margin:0 0 8px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px}
+.crew{border:1px solid var(--line);border-left:4px solid var(--mute);border-radius:5px;padding:8px 10px;background:var(--bg);margin-bottom:8px}
+.crew.ok{border-left-color:var(--ok)}.crew.warn{border-left-color:var(--warn)}.crew.bad{border-left-color:var(--bad);background:var(--bad-soft)}.crew.stale{border-left-color:var(--mute);opacity:.8}
+.crew .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.crew .id{font:700 15px var(--display)}
+.st{font:500 11px var(--mono);padding:2px 7px;border-radius:3px}
+.st.ok{background:var(--ok-soft);color:var(--ok)}.st.warn{background:var(--warn-soft);color:var(--warn)}.st.bad{background:var(--bad);color:#140c08}.st.stale{border:1px dashed var(--mute);color:var(--mute)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 10px;margin:8px 0;font-size:12px}
+.grid div{display:flex;flex-direction:column}.grid span{color:var(--mute);font-size:11px}.grid b{font:500 13px var(--mono)}
+.grid b.mute{color:var(--mute);font-weight:400}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+button.c{font:500 12px var(--body);background:var(--rust-soft);color:var(--fg);border:1px solid var(--rust);border-radius:4px;padding:4px 9px;cursor:pointer}
+button.c.danger{background:var(--bad-soft);border-color:var(--bad)}
+button.c:disabled{opacity:.4;cursor:not-allowed}
+button.c:focus-visible,.seg button:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:12px}.kv b{font:500 12px var(--mono);text-align:right}
+#log{font:12px var(--mono);display:flex;flex-direction:column;gap:2px;max-height:260px;overflow:auto}
+#log .bad{color:var(--bad)}#log .warn{color:var(--warn)}#log .tx{color:var(--orb)}
+.note{font-size:12px;color:var(--mute);margin:6px 0 0}
+#delayNote{font:12px var(--mono);color:var(--orb)}
+.leaflet-container{background:#000;font-family:var(--body)}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel);color:var(--fg)}
+.leaflet-control-attribution{background:rgba(20,17,14,.8);color:var(--mute)}.leaflet-control-attribution a{color:var(--rust)}
+.leaflet-bar a{background:var(--panel);color:var(--fg);border-color:var(--line)}
+.dot{flex:none;width:16px;height:16px;border-radius:50%;border:2px solid #140c08;box-shadow:0 0 0 3px rgba(0,0,0,.35)}
+.lbl{font:500 11px var(--mono);background:rgba(20,17,14,.85);color:var(--fg);padding:1px 5px;border-radius:3px;white-space:nowrap}
+.unit{width:12px;height:12px;background:var(--orb);border:2px solid #140c08;transform:rotate(45deg)}
+.hab{width:16px;height:16px;background:var(--ok);border:2px solid #140c08;transform:rotate(45deg)}
+@media (max-width:900px){body{grid-template-columns:1fr;grid-template-rows:auto 45vh 1fr}#map{grid-row:2}#rail{grid-row:3;border-right:0;border-top:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Marswalk Command</h1>
+  <span class="badge" id="mode">…</span>
+  <div class="seg" role="group" aria-label="Which seat">
+    <button id="seatHab" aria-pressed="true">Habitat IV crew · live</button>
+    <button id="seatEarth" aria-pressed="false">Earth MCC · delayed</button>
+  </div>
+  <select id="delay" aria-label="Light-time delay" hidden>
+    <option value="30000">30 s (demo)</option>
+    <option value="240000">4 min (closest)</option>
+    <option value="720000" selected>12 min (typical)</option>
+    <option value="1440000">24 min (farthest)</option>
+  </select>
+  <span id="delayNote"></span>
+  <span class="spacer"></span>
+  <span id="conn" class="mute">connecting…</span>
+</header>
+<aside id="rail">
+  <section>
+    <h2>Crew on EVA</h2>
+    <div id="crew"><p class="note">Waiting for the first tag to be heard.</p></div>
+    <p class="note" id="seatNote">Habitat seat: commands go out over LoRa through the base and are acknowledged by the tag.</p>
+  </section>
+  <section>
+    <h2>Radio and base</h2>
+    <div class="kv" id="base"><span class="mute">No base report yet.</span></div>
+    <p class="note">The E32 radio cannot report signal strength, so link quality is packet loss from sequence gaps.</p>
+  </section>
+  <section>
+    <h2>Event log</h2>
+    <div id="log"></div>
+  </section>
+</aside>
+<div id="map"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="/view.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+let map, layers = {}, unitLayer, rings = {};
+const COLORS = ['#e5b64a', '#7fb3e6', '#c58cf2', '#f29e6b'];
+const colorOf = id => COLORS[Object.keys(MW.state.tags).sort().indexOf(id) % COLORS.length];
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function initMap() {
+  map = MW.map('map');
+  unitLayer = L.layerGroup().addTo(map);
+  const h = MW.state.habitat;
+  L.marker([h.lat, h.lon], { icon: L.divIcon({ className: '', html: '<div class="hab"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }) })
+    .bindTooltip('Habitat').addTo(map);
+  L.circle([h.lat, h.lon], { radius: 1800, color: '#6fcf97', weight: 1, dashArray: '6 6', fill: false }).bindTooltip('Walk-back limit 1.8 km (NASA JSC ICES 2026)').addTo(map);
+  drawUnits();
+  MW.ground.load().then(G => { const lyr = G.layer(L).addTo(map); lyr.bringToBack(); }).catch(() => {});
+}
+function drawUnits() {
+  unitLayer.clearLayers();
+  for (const [k, u] of Object.entries(MW.state.units)) {
+    if (k === 'B1') continue;
+    L.marker([u.lat, u.lon], { icon: L.divIcon({ className: '', html: '<div class="unit"></div>', iconSize: [12, 12], iconAnchor: [6, 6] }) })
+      .bindTooltip(esc(u.name) + ' · fixed unit (placement scaled from the bench)').addTo(unitLayer);
+  }
+}
+
+function renderMode() {
+  const m = MW.state.mode, b = $('mode');
+  b.className = 'badge ' + (m === 'live' ? 'live' : m === 'sim' ? 'sim' : 'replay');
+  b.textContent = m === 'live' ? 'Live hardware' : m === 'sim' ? 'Simulated tags' : 'Replay';
+}
+
+function renderCrew() {
+  const tags = Object.values(MW.state.tags).sort((a, b) => a.tag.localeCompare(b.tag));
+  if (!tags.length) return;
+  const earth = MW.delayMs > 0;
+  $('crew').innerHTML = tags.map(t => {
+    const lv = MW.level(t), hr = MW.vital(t, 'hr', 'heart', v => v + ' bpm'), sp = MW.vital(t, 'spo2', 'heart', v => v + ' %');
+    const tc = MW.vital(t, 'temp_c', 'temp', v => (+v).toFixed(1) + ' °C');
+    const d = t.pos && MW.state.habitat ? Math.round(MW.distM(MW.state.habitat, t.pos)) + ' m' : '—';
+    const posSrc = t.pos ? (t.pos.src === 'ftm' ? 'Wi-Fi ranging' + (t.pos.err_m != null ? ' ±' + t.pos.err_m + ' m' : '') : 'GPS, mapped') : 'unknown';
+    const alarm = ['HELP', 'MANDOWN', 'PREALARM', 'HAZARD'].includes(t.state);
+    const stTxt = lv === 'stale' ? 'NO SIGNAL' : (t.state || '?');
+    return `<div class="crew ${lv}">
+      <div class="top"><span class="id" style="color:${colorOf(t.tag)}">${esc(MW.short(t.tag))}</span><span class="st ${lv}">${esc(stTxt)}</span></div>
+      <div class="grid">
+        <div><span>Heart rate</span><b class="${hr.cls}">${hr.txt}</b></div>
+        <div><span>SpO₂</span><b class="${sp.cls}">${sp.txt}</b></div>
+        <div><span>Suit temp</span><b class="${tc.cls}">${tc.txt}</b></div>
+        <div><span>Still for</span><b>${t.still_s != null ? t.still_s + ' s' : '—'}</b></div>
+        <div><span>From habitat</span><b>${d}</b></div>
+        <div><span>Position</span><b class="${t.pos ? '' : 'mute'}" style="font-size:11px">${posSrc}</b></div>
+        <div><span>Radio path</span><b>${t.via === 'R1' ? 'via relay R1' : esc(t.via || '—')}</b></div>
+        <div><span>Packet loss</span><b>${MW.loss(t)} %</b></div>
+        <div><span>Last heard</span><b>${MW.ago(t.last_seen)}</b></div>
+      </div>
+      <div class="btns">
+        <button class="c" data-c="PING" data-t="${esc(t.tag)}" ${earth ? 'disabled' : ''}>Ping</button>
+        <button class="c" data-c="LOCATE" data-t="${esc(t.tag)}" ${earth ? 'disabled' : ''}>Locate (buzz)</button>
+        ${alarm ? `<button class="c" data-c="ACK" data-t="${esc(t.tag)}" ${earth ? 'disabled' : ''}>Acknowledge alarm</button>` : ''}
+        <button class="c danger" data-c="EVAC" data-t="${esc(t.tag)}" ${earth ? 'disabled' : ''}>Return now</button>
+        ${t.state === 'EVAC' ? `<button class="c" data-c="STANDDOWN" data-t="${esc(t.tag)}" ${earth ? 'disabled' : ''}>Stand down</button>` : ''}
+      </div></div>`;
+  }).join('');
+  $('crew').querySelectorAll('button[data-c]').forEach(b => b.onclick = async () => {
+    b.disabled = true; const r = await MW.cmd(b.dataset.c, b.dataset.t);
+    if (!r.ok) alertLog('Command refused: ' + r.error);
+    setTimeout(() => b.disabled = false, 1500);
+  });
+}
+
+function renderMap() {
+  for (const t of Object.values(MW.state.tags)) {
+    const L1 = layers[t.tag] || (layers[t.tag] = {
+      trail: L.polyline([], { color: colorOf(t.tag), weight: 3, opacity: .8 }).addTo(map),
+      mk: L.marker([0, 0], { icon: L.divIcon({ className: '', html: '', iconSize: [16, 16], iconAnchor: [8, 8] }) }),
+    });
+    if (!t.pos) continue;
+    L1.trail.setLatLngs(t.trail || []);
+    const lv = MW.level(t), col = lv === 'bad' ? 'var(--bad)' : lv === 'warn' ? 'var(--warn)' : lv === 'stale' ? 'var(--mute)' : colorOf(t.tag);
+    L1.mk.setIcon(L.divIcon({ className: '', html: `<div style="display:flex;align-items:center;gap:6px"><div class="dot" style="background:${col}"></div><span class="lbl">${esc(MW.short(t.tag))} · ${esc(t.state || '')}</span></div>`, iconSize: [16, 16], iconAnchor: [8, 8] }));
+    L1.mk.setLatLng([t.pos.lat, t.pos.lon]);
+    if (!map.hasLayer(L1.mk)) L1.mk.addTo(map);
+  }
+}
+
+function renderBase() {
+  const b = MW.state.base; if (!b) return;
+  const rows = [['Base radio', b.radio ? 'OK' : 'MISSING'], ['Last report', MW.ago(b.last_seen)], ['Lines received', b.rx_lines],
+    ['Garbled (CRC fail)', b.rx_bad], ['Repeats dropped', b.rx_dup], ['Acks sent', b.acks], ['Channel', b.mhz ? b.mhz + ' MHz' : '—'], ['Worksite', b.site || '—']];
+  $('base').innerHTML = rows.map(([k, v]) => `<span>${k}</span><b>${esc(v ?? '—')}</b>`).join('');
+}
+
+const reported = new Set();
+function drawReports() {
+  for (const e of MW.state.events) {
+    if (e.event !== 'HAZARD_REPORT' || !e.pos || reported.has(e.ts + e.tag)) continue;
+    reported.add(e.ts + e.tag);
+    const img = e.upload ? `<br><img src="/uploads/${encodeURIComponent(e.upload)}" alt="" style="width:220px;margin-top:6px;border-radius:4px">` : '';
+    L.marker([e.pos.lat, e.pos.lon], { icon: L.divIcon({ className: '', html: '<div style="width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:16px solid var(--bad);filter:drop-shadow(0 0 2px #000)"></div>', iconSize: [18, 16], iconAnchor: [9, 16] }) })
+      .bindPopup(`<b>${esc(e.label || e.hazard)}</b><br>Reported by ${esc(MW.short(e.tag))} at ${new Date(e.ts).toLocaleTimeString()}<br><span style="color:var(--mute)">Position: ${e.pos.src === 'ftm' ? 'Wi-Fi ranging' : 'GPS mapped'} · detector suggestion, confirmed by the astronaut</span>${img}`)
+      .addTo(map);
+  }
+}
+function evClass(e) { return e.dir === 'tx' ? 'tx' : e.event === 'HAZARD_REPORT' ? 'warn' : ['MANDOWN', 'HELP', 'EVAC_RECEIVED'].includes(e.event) ? 'bad' : ['PREALARM', 'HAZARD'].includes(e.event) ? 'warn' : ''; }
+function renderLog() {
+  $('log').innerHTML = MW.state.events.slice(-80).reverse().map(e =>
+    `<div class="${evClass(e)}">${new Date(e.ts).toLocaleTimeString()} ${esc(MW.short(e.tag))} ${e.dir === 'tx' ? '→ ' + esc(e.event.replace('CMD_', '')) : e.event === 'HAZARD_REPORT' ? 'reported ' + esc(e.label || e.hazard) : esc(e.event)}</div>`).join('');
+}
+function alertLog(t) { MW.state.events.push({ ts: new Date().toISOString(), tag: 'UI', event: t }); renderLog(); }
+
+function setSeat(earth) {
+  $('seatHab').setAttribute('aria-pressed', !earth); $('seatEarth').setAttribute('aria-pressed', earth);
+  $('delay').hidden = !earth;
+  MW.delayMs = earth ? +$('delay').value : 0;
+  $('seatNote').textContent = earth
+    ? 'Earth seat: you see what the habitat saw ' + Math.round(MW.delayMs / 60000 * 10) / 10 + ' min ago, the one-way light time (the delay builds up from the moment you switch). Commands are disabled: by the time they arrive the walk has moved on. Real-time command belongs to the habitat crew.'
+    : 'Habitat seat: commands go out over LoRa through the base and are acknowledged by the tag.';
+  renderCrew();
+}
+$('seatHab').onclick = () => setSeat(false);
+$('seatEarth').onclick = () => setSeat(true);
+$('delay').onchange = () => setSeat(true);
+
+MW.on((kind, m) => {
+  if (kind === 'snapshot') { if (!map) initMap(); renderMode(); drawUnits(); renderCrew(); renderMap(); renderBase(); renderLog(); drawReports(); }
+  if (kind === 'tag') { renderCrew(); renderMap(); }
+  if (kind === 'base') renderBase();
+  if (m && m.event) { renderLog(); if (map) drawReports(); }
+  if (kind === 'conn') $('conn').textContent = m ? 'server connected' : 'server lost, retrying…';
+  if (kind === 'tick') {
+    const p = MW.pending();
+    $('delayNote').textContent = MW.delayMs ? (p ? p + ' updates in transit from Mars' : 'nothing in transit') : '';
+  }
+});
+setInterval(renderCrew, 5000); // refresh "last heard" ages
+MW.connect();
+</script>
+</body>
+</html>

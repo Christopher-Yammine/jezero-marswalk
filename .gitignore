@@ -2,3 +2,6 @@ server.log
 .vercel
 
 .vercel
+habitat/.venv/
+habitat/logs/
+__pycache__/

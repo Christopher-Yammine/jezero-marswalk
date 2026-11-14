@@ -1,0 +1,12 @@
+{
+  "_comment": "Where the fixed units stand on the bench (metres, x = east, y = north, from the base), and how the bench maps onto Jezero. Bench metres are multiplied by 'scale' so a room-sized test shows up as a walk-sized route. The scale is a demo device: positions on the Mars map are SIMULATED placements of real bench measurements.",
+  "habitat": { "lat": 18.444627, "lon": 77.450886 },
+  "scale": 20,
+  "units": {
+    "B1": { "name": "Habitat base (LoRa + FTM)", "x": 0.0, "y": 0.0 },
+    "A1": { "name": "Nav beacon A1", "x": 6.0, "y": 0.0 },
+    "A2": { "name": "Nav beacon A2", "x": 0.0, "y": 6.0 },
+    "R1": { "name": "Relay mast R1", "x": 4.0, "y": 4.0 }
+  },
+  "gps_origin": null
+}

@@ -1,0 +1,25 @@
+{
+ "classes": [
+  "soil",
+  "bedrock",
+  "sand",
+  "big_rock"
+ ],
+ "size": 384,
+ "mean": 0.45,
+ "std": 0.25,
+ "input": "greyscale repeated to 3 channels, (x/255 - mean)/std",
+ "license": "model code BSD-3 (torchvision); data AI4Mars CC0",
+ "final": {
+  "epoch": 6,
+  "train_loss": 0.2589,
+  "miou": 0.7496,
+  "iou": {
+   "soil": 0.8699,
+   "bedrock": 0.9139,
+   "sand": 0.8017,
+   "big_rock": 0.4129
+  },
+  "minutes": 6.8
+ }
+}

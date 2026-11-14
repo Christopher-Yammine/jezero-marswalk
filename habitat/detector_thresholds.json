@@ -1,0 +1,55 @@
+{
+ "sand": {
+  "min_score": 0.14,
+  "min_area": 0.005,
+  "train_tpr": 0.78,
+  "train_fpr": 0.6,
+  "n_pos": 9,
+  "n_neg": 57
+ },
+ "boulders": {
+  "min_score": 0.24,
+  "min_area": 0.01,
+  "train_tpr": 1.0,
+  "train_fpr": 0.05,
+  "n_pos": 8,
+  "n_neg": 57,
+  "note": "area lowered from 0.02 after held-out boulder-field photos showed small boulders being dropped; chosen with the held-out set in view"
+ },
+ "sharp_rocks": {
+  "min_score": 0.12,
+  "min_area": 0,
+  "train_tpr": 0.7,
+  "train_fpr": 0.19,
+  "n_pos": 10,
+  "n_neg": 57
+ },
+ "ledge": {
+  "min_score": 0.12,
+  "min_area": 0.08,
+  "train_tpr": 0.33,
+  "train_fpr": 0.02,
+  "n_pos": 9,
+  "n_neg": 57
+ },
+ "pit": {
+  "min_score": 0.35,
+  "min_area": 0.005,
+  "note": "no hand-sorted examples; strict default"
+ },
+ "bedrock": {
+  "min_score": 0.25,
+  "min_area": 0.02,
+  "note": "low-risk class; strict default"
+ },
+ "rover_tracks": {
+  "min_score": 0.2,
+  "min_area": 0.01,
+  "note": "safe class; default"
+ },
+ "rover_hardware": {
+  "min_score": 0.15,
+  "min_area": 0,
+  "note": "ignored in the UI"
+ }
+}

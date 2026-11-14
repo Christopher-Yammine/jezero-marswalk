@@ -1,0 +1,254 @@
+[
+ {
+  "file": "sand-1.jpg",
+  "scenario": "sand",
+  "label": "Sand and ripples",
+  "sol": 214,
+  "camera": "MCZ_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZL0_0214_0685935745_364ECM_N0072050ZCAM08252_1100LMJ",
+  "credit": "NASA/JPL-Caltech/ASU"
+ },
+ {
+  "file": "sand-2.jpg",
+  "scenario": "sand",
+  "label": "Sand and ripples",
+  "sol": 317,
+  "camera": "NAVCAM_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0317_0695075874_065ECM_N0090000NCAM00901_11_095J",
+  "credit": "NASA/JPL-Caltech"
+ },
+ {
+  "file": "sand-3.jpg",
+  "scenario": "sand",
+  "label": "Sand and ripples",
+  "sol": 99,
+  "camera": "MCZ_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZL0_0099_0675741775_223ECM_N0040218ZCAM08060_079085J",
+  "credit": "NASA/JPL-Caltech/ASU"
+ },
+ {
+  "file": "sand-4.jpg",
+  "scenario": "sand",
+  "label": "Sand and ripples",
+  "sol": 646,
+  "camera": "NAVCAM_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0646_0724297717_989ECM_N0311710NCAM03646_10_195J",
+  "credit": "NASA/JPL-Caltech"
+ },
+ {
+  "file": "boulders-1.jpg",
+  "scenario": "boulders",
+  "label": "Boulder field",
+  "sol": 363,
+  "camera": "MCZ_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZL0_0363_0699162361_738ECM_N0110108ZCAM08394_0340LMJ",
+  "credit": "NASA/JPL-Caltech/ASU"
+ },
+ {
+  "file": "boulders-2.jpg",
+  "scenario": "boulders",
+  "label": "Boulder field",
+  "sol": 904,
+  "camera": "NAVCAM_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0904_0747198963_066ECM_N0441012NCAM02904_10_195J",
+  "credit": "NASA/JPL-Caltech"
+ },
+ {
+  "file": "boulders-3.jpg",
+  "scenario": "boulders",
+  "label": "Boulder field",
+  "sol": 1131,
+  "camera": "FRONT_HAZCAM_LEFT_A",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/FLF_1131_0767347187_035ECM_N0520120FHAZ02008_04_095J",
+  "credit": "NASA/JPL-Caltech"
+ },
+ {
+  "file": "boulders-4.jpg",
+  "scenario": "boulders",
+  "label": "Boulder field",
+  "sol": 757,
+  "camera": "FRONT_HAZCAM_LEFT_A",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/FLF_0757_0734152245_190ECM_N0372562FHAZ02008_04_095J",
+  "credit": "NASA/JPL-Caltech"
+ },
+ {
+  "file": "ledge-1.jpg",
+  "scenario": "ledge",
+  "label": "Ledge or cliff",
+  "sol": 240,
+  "camera": "MCZ_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZL0_0240_0688258569_660ECM_N0072440ZCAM08264_1100LMJ",
+  "credit": "NASA/JPL-Caltech/ASU"
+ },
+ {
+  "file": "ledge-2.jpg",
+  "scenario": "ledge",
+  "label": "Ledge or cliff",
+  "sol": 466,
+  "camera": "MCZ_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZL0_0466_0708307737_769ECM_N0260756ZCAM08486_1100LMJ",
+  "credit": "NASA/JPL-Caltech/ASU"
+ },
+ {
+  "file": "ledge-3.jpg",
+  "scenario": "ledge",
+  "label": "Ledge or cliff",
+  "sol": 207,
+  "camera": "MCZ_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZL0_0207_0685315986_348ECM_N0071836ZCAM08235_1100LMJ",
+  "credit": "NASA/JPL-Caltech/ASU"
+ },
+ {
+  "file": "ledge-4.jpg",
+  "scenario": "ledge",
+  "label": "Ledge or cliff",
+  "sol": 207,
+  "camera": "MCZ_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZL0_0207_0685330401_159ECM_N0071836ZCAM08236_110085J",
+  "credit": "NASA/JPL-Caltech/ASU"
+ },
+ {
+  "file": "sharp_rocks-1.jpg",
+  "scenario": "sharp_rocks",
+  "label": "Sharp loose rocks",
+  "sol": 384,
+  "camera": "MCZ_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZL0_0384_0701044029_614ECM_N0132448ZCAM07115_1100LMJ",
+  "credit": "NASA/JPL-Caltech/ASU"
+ },
+ {
+  "file": "sharp_rocks-2.jpg",
+  "scenario": "sharp_rocks",
+  "label": "Sharp loose rocks",
+  "sol": 442,
+  "camera": "MCZ_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZL0_0442_0706178636_928ECM_N0250000ZCAM08458_110085J",
+  "credit": "NASA/JPL-Caltech/ASU"
+ },
+ {
+  "file": "sharp_rocks-3.jpg",
+  "scenario": "sharp_rocks",
+  "label": "Sharp loose rocks",
+  "sol": 467,
+  "camera": "MCZ_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZL0_0467_0708400470_223ECM_N0260756ZCAM08489_1100LMJ",
+  "credit": "NASA/JPL-Caltech/ASU"
+ },
+ {
+  "file": "sharp_rocks-4.jpg",
+  "scenario": "sharp_rocks",
+  "label": "Sharp loose rocks",
+  "sol": 474,
+  "camera": "MCZ_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZL0_0474_0709010918_098ECM_N0260756ZCAM08497_1100LMJ",
+  "credit": "NASA/JPL-Caltech/ASU"
+ },
+ {
+  "file": "slope-1.jpg",
+  "scenario": "slope",
+  "label": "Slope or hillside",
+  "sol": 702,
+  "camera": "NAVCAM_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0702_0729275129_387ECM_N0330402NCAM13702_04_195J",
+  "credit": "NASA/JPL-Caltech"
+ },
+ {
+  "file": "slope-2.jpg",
+  "scenario": "slope",
+  "label": "Slope or hillside",
+  "sol": 959,
+  "camera": "NAVCAM_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0959_0752050661_645ECM_N0463888NCAM13958_04_195J",
+  "credit": "NASA/JPL-Caltech"
+ },
+ {
+  "file": "slope-3.jpg",
+  "scenario": "slope",
+  "label": "Slope or hillside",
+  "sol": 1022,
+  "camera": "NAVCAM_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_1022_0757652339_020ECM_N0490370NCAM13021_04_195J",
+  "credit": "NASA/JPL-Caltech"
+ },
+ {
+  "file": "low_sun-1.jpg",
+  "scenario": "low_sun",
+  "label": "Low sun, long shadows",
+  "sol": 9,
+  "camera": "NAVCAM_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0009_0667756428_901ECM_N0030000NCAM05000_01_295J",
+  "credit": "NASA/JPL-Caltech"
+ },
+ {
+  "file": "low_sun-2.jpg",
+  "scenario": "low_sun",
+  "label": "Low sun, long shadows",
+  "sol": 555,
+  "camera": "NAVCAM_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLE_0555_0716227987_997ECM_N0270000SCAM15011_00_0LLJ",
+  "credit": "NASA/JPL-Caltech"
+ },
+ {
+  "file": "low_sun-3.jpg",
+  "scenario": "low_sun",
+  "label": "Low sun, long shadows",
+  "sol": 663,
+  "camera": "NAVCAM_LEFT",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0663_0725814030_979ECM_N0320482NCAM03663_11_095J",
+  "credit": "NASA/JPL-Caltech"
+ },
+ {
+  "file": "tracks-1.jpg",
+  "scenario": "tracks",
+  "label": "Rover tracks (safe)",
+  "sol": 645,
+  "camera": "FRONT_HAZCAM_LEFT_A",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/FLF_0645_0724201685_809ECM_N0310856FHAZ02418_01_295J",
+  "credit": "NASA/JPL-Caltech"
+ },
+ {
+  "file": "tracks-2.jpg",
+  "scenario": "tracks",
+  "label": "Rover tracks (safe)",
+  "sol": 670,
+  "camera": "FRONT_HAZCAM_LEFT_A",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/FLF_0670_0726427284_412ECM_N0320672FHAZ02008_04_095J",
+  "credit": "NASA/JPL-Caltech"
+ },
+ {
+  "file": "plain-1.jpg",
+  "scenario": "plain",
+  "label": "Plain ground (should stay quiet)",
+  "sol": 714,
+  "camera": "FRONT_HAZCAM_LEFT_A",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/FLF_0714_0730335663_571ECM_N0334752FHAZ02418_01_295J",
+  "credit": "NASA/JPL-Caltech"
+ },
+ {
+  "file": "plain-2.jpg",
+  "scenario": "plain",
+  "label": "Plain ground (should stay quiet)",
+  "sol": 895,
+  "camera": "FRONT_HAZCAM_LEFT_A",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/FLF_0895_0746408051_787ECM_N0440000FHAZ00219_01_295J",
+  "credit": "NASA/JPL-Caltech"
+ },
+ {
+  "file": "hardware-1.jpg",
+  "scenario": "hardware",
+  "label": "Rover hardware (should be ignored)",
+  "sol": 791,
+  "camera": "FRONT_HAZCAM_LEFT_A",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/FLF_0791_0737158474_168ECM_N0390926FHAZ00206_01_295J",
+  "credit": "NASA/JPL-Caltech"
+ },
+ {
+  "file": "hardware-2.jpg",
+  "scenario": "hardware",
+  "label": "Rover hardware (should be ignored)",
+  "sol": 1229,
+  "camera": "FRONT_HAZCAM_LEFT_A",
+  "source": "https://mars.nasa.gov/mars2020/multimedia/raw-images/FLF_1229_0776043682_653ECM_N0562932FHAZ00206_01_295J",
+  "credit": "NASA/JPL-Caltech"
+ }
+]

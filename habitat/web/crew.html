@@ -97,7 +97,7 @@ body.hud #map{display:none}body.hud .tile b{font-size:40px}
     <span style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="upl ghost" id="sampleBtn">Try a sample photo</button>
     <label class="upl">Upload or take photo<input type="file" id="file" accept="image/*" hidden></label></span></div>
   <div id="samplePick" hidden></div>
-  <p class="idnote" id="idNote">Photo goes to the habitat laptop for analysis. The detector is not trained on Mars yet: treat its boxes as suggestions and check with your own eyes.</p>
+  <p class="idnote" id="idNote">Photo goes to the habitat laptop for analysis.</p>
   <div id="idResult"></div>
 </div>
 <div id="map"></div>
@@ -329,7 +329,7 @@ function renderDetections(url, r, secs, sample, terr) {
       <label><input type="checkbox" id="terrOn" checked> Terrain colours</label></div>` : '';
   $('idResult').innerHTML = `<div class="shot" id="shot"><img src="${url}" alt="Your photo with hazards outlined and ground types coloured">${share ? '<canvas class="terr" id="terrCv"></canvas>' : ''}${boxes}</div>
     ${legend}
-    <p class="idnote">${shown.length} objects boxed${ignored ? ', ' + ignored + ' hidden (rover hardware, ground-type boxes, frame-wide boxes)' : ''} · ${secs} s · objects: ${escH(r.model.split('/').pop())}, zero-shot${r.tuned ? ' with tuned cut-offs' : ''}${tnote ? ' · ' + tnote : ''}. Suggestions only: check with your own eyes.</p>
+    <p class="idnote">${shown.length} objects boxed${ignored ? ', ' + ignored + ' hidden (rover hardware, ground-type boxes, frame-wide boxes)' : ''} · ${secs} s · objects: ${escH(r.model.split('/').pop())}, zero-shot${r.tuned ? ' with tuned cut-offs' : ''}${tnote ? ' · ' + tnote : ''}.</p>
     ${sample ? `<p class="idnote">Sample: <b>${escH(sample.label)}</b> (what a person saw) · sol ${sample.sol} · <a href="${escH(sample.source)}" target="_blank" rel="noopener" style="color:var(--rust)">NASA source</a></p>` : ''}
     <div class="cards">${cards || '<p class="idnote">Nothing recognised. That does not mean the ground is safe.</p>'}</div>`;
   if (share) {

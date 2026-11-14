@@ -36,8 +36,6 @@ section{background:var(--panel);border:1px solid var(--line);border-radius:8px;p
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:13px;color:var(--mute);margin-top:8px}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .legend label{margin-left:auto;display:flex;gap:6px;align-items:center;cursor:pointer}
-.bars{display:grid;grid-template-columns:110px 1fr 52px;gap:6px 10px;align-items:center;font-size:13px;margin-top:10px}
-.bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}.bar span{display:block;height:100%}
 .num{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
 .cards{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .card{border:1px solid var(--line);border-left:5px solid var(--mute);border-radius:8px;padding:10px 12px;background:var(--bg)}
@@ -73,7 +71,6 @@ td.num{text-align:right}
   <div class="legend"><span><i style="background:rgb(240,170,40)"></i>sand</span><span><i style="background:rgb(235,60,60)"></i>big rock</span><span><i style="background:rgb(80,200,120)"></i>bedrock</span><span><i style="border:1px solid var(--mute)"></i>soil, rover, sky or unsure</span>
     <label><input type="checkbox" id="on" checked> Colours</label></div>
   <p class="mute small" id="meta" style="margin-top:8px"></p>
-  <div class="bars" id="bars"></div>
   <div class="cards" id="cards"></div>
 </section>
 
@@ -81,7 +78,6 @@ td.num{text-align:right}
   <h2>About the model</h2>
   <p class="small">LR-ASPP MobileNetV3 (torchvision, BSD licence), trained on 2,100 images from <a href="https://huggingface.co/datasets/hassanjbara/AI4MARS" target="_blank" rel="noopener">AI4Mars</a> (NASA JPL, public domain), mostly Curiosity Navcam frames labelled by people. Scores on 322 test images whose labels at least three people agreed on, as overlap with the human labels (1 is perfect):</p>
   <div class="tbl"><table id="scores"><tr><th>Class</th><th>Overlap</th></tr></table></div>
-  <p class="small mute" style="margin-top:8px">Known limits: big rocks are the weakest class; bright, washed-out sky in colour photos can be read as sand; gravel reads as plain soil. Boulder, ledge and rover-track boxes come from a second detector that runs on the habitat laptop and is not available on this page. Treat every colour as a suggestion and check with your own eyes.</p>
 </section>
 </main>
 
@@ -90,7 +86,7 @@ td.num{text-align:right}
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const COL = { bedrock: [80, 200, 120], sand: [240, 170, 40], big_rock: [235, 60, 60] };   // soil, rover and sky stay clear
-const BAR = { soil: '#8a7360', bedrock: 'rgb(80,200,120)', sand: 'rgb(240,170,40)', big_rock: 'rgb(235,60,60)' };
+const GROUND = { soil: 1, bedrock: 1, sand: 1, big_rock: 1 };
 const NAME = { soil: 'Soil', bedrock: 'Bedrock', sand: 'Sand', big_rock: 'Big rock', rover: 'Rover', far_or_sky: 'Sky or far ground' };
 let CFG, SESSION, HZ = {}, SAMPLES = [];
 
@@ -143,7 +139,7 @@ async function analyse(blob, sample) {
   for (let i = 0; i < n; i++) {
     let b = 0, bv = -1; for (let k = 0; k < C; k++) { const v = p[k * n + i]; if (v > bv) { bv = v; b = k; } }
     const cls = CFG.classes[b];
-    if (bv < 0.5 || !(cls in BAR)) continue;                 // unsure, rover or sky: not counted as ground
+    if (bv < 0.5 || !(cls in GROUND)) continue;                 // unsure, rover or sky: not counted as ground
     ground++; cnt[cls] = (cnt[cls] || 0) + 1;
     const col = COL[cls]; if (col) { im.data[4 * i] = col[0]; im.data[4 * i + 1] = col[1]; im.data[4 * i + 2] = col[2]; im.data[4 * i + 3] = 105; }
   }
@@ -151,7 +147,6 @@ async function analyse(blob, sample) {
   const share = k => (cnt[k] || 0) / Math.max(1, ground);
   const tooLittle = ground / n < 0.1;                 // percentages of a sliver of ground would mislead
   $('meta').innerHTML = `${ms} ms in this browser · ${Math.round(100 * ground / n)}% of the photo read as ground${sample ? ` · sample: <b>${esc(sample.label)}</b>, sol ${sample.sol}, <a href="${esc(sample.source)}" target="_blank" rel="noopener">NASA source</a>` : ''}`;
-  $('bars').innerHTML = tooLittle ? '' : ['sand', 'big_rock', 'bedrock', 'soil'].map(k => `<span>${NAME[k]}</span><span class="bar"><span style="width:${(100 * share(k)).toFixed(1)}%;background:${BAR[k]}"></span></span><span class="num">${Math.round(100 * share(k))}%</span>`).join('');
   const cards = [];
   if (tooLittle) { $('cards').innerHTML = `<p class="mute small">Only ${Math.round(100 * ground / n)}% of this photo reads confidently as ground (the rest looks like sky, rover or the model is unsure), so the model cannot judge it. Use your own eyes, or try a photo that shows more ground.</p>`; $('result').scrollIntoView({ block: 'start' }); return; }
   if (share('sand') >= 0.15) cards.push(['sand', share('sand')]);

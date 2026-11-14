@@ -115,6 +115,13 @@ body.away .jz{display:none}
 #gZoom{position:absolute;right:20px;bottom:24px;display:flex;flex-direction:column;gap:6px}
 #gZoom button{width:34px;height:34px;padding:0;font-size:18px;background:var(--panel);border-color:var(--line)}
 .leaflet-control-globe a{font-size:16px;line-height:30px;cursor:pointer}
+/* ---- Plain-language mode: dotted space terms open a short explanation ---- */
+.gl{border-bottom:1px dotted var(--warn);cursor:help;border-radius:1px}
+.gl:hover,.gl:focus-visible{background:var(--warn-soft);outline:none}
+#gHead .gl{pointer-events:auto}
+#glTip{position:fixed;z-index:6000;max-width:290px;background:#0f0d0b;border:1px solid var(--warn);color:var(--fg);font-family:var(--body);font-size:12.5px;line-height:1.45;padding:8px 10px;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.6);pointer-events:none}
+#glTip b{display:block;color:var(--warn);font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px}
+.glHint{font-size:12px;color:var(--warn);margin:0}
 @media (max-width:860px){
   #gHead{left:16px;right:104px;top:14px}
   #gHead h1{font-size:22px}
@@ -141,10 +148,11 @@ body.away .jz{display:none}
     <p class="note">Drag to rotate, scroll or pinch to zoom. Pick a site to read about it, then open it to zoom into the map. Globe imagery is NASA's Viking MDIM 2.1 colour mosaic, streamed from Mars Trek. Routes are not drawn at planet scale: no data supports a footstep-scale route there.</p>
   </div>
   <div id="gPanel">
+    <p class="glHint">Dotted words: hover or tap for a plain explanation.</p>
     <div class="chips" id="gChips"></div>
     <div id="gCard"><p class="note" style="margin:0">Pick a site. Jezero is the walking map: the planner, terrain routing and rover track live there.</p></div>
     <div id="gIceRow"><div class="row" id="gIce" role="group" aria-label="Ice evidence layer" style="gap:6px;align-items:center"><span class="note" style="margin:0">Ice layers</span>
-      <button type="button" class="quiet" data-k="off" aria-pressed="true">Off</button><button type="button" class="quiet" data-k="top1" aria-pressed="false">Top 1 m</button><button type="button" class="quiet" data-k="d1to5" aria-pressed="false">1 to 5 m deep</button><button type="button" class="quiet" data-k="abund" aria-pressed="false">Abundance</button><button type="button" class="quiet" data-k="collapse" aria-pressed="false">Collapse risk</button><button type="button" class="quiet" data-k="value" aria-pressed="false">Resource value</button></div>
+      <button type="button" class="quiet" data-k="off" aria-pressed="true">Off</button><button type="button" class="quiet" data-k="top1" aria-pressed="false">Top 1 m</button><button type="button" class="quiet" data-k="d1to5" aria-pressed="false">1 to 5 m deep</button><button type="button" class="quiet" data-k="abund" aria-pressed="false">Abundance</button><button type="button" class="quiet" data-k="collapse" aria-pressed="false">Collapse risk</button><button type="button" class="quiet" data-k="value" aria-pressed="false">Resource value</button><button type="button" class="quiet" data-k="combo" aria-pressed="false">All three</button></div>
       <p class="note" id="gIceNote" hidden style="margin:6px 0 0"><span id="gIceText"></span> Mapped 60°N to 60°S only; values read from SWIM's published map images, so approximate. Green dashes: ±50° latitude, the limit for human landing sites (Bussey &amp; Hoffman, NASA 2016). Jezero: none in the top metre; at 1 to 5 m a weak zone reaches about 20°N, just short of it.</p></div>
     <div id="gStatus">Loading Viking colour mosaic…</div>
   </div>
@@ -157,6 +165,7 @@ body.away .jz{display:none}
       <button id="toGlobe" class="quiet" style="padding:3px 8px;font-size:12px;white-space:nowrap">◐ Globe</button>
     </div>
     <h1 id="railTitle">Jezero Marswalk Planner</h1>
+    <p class="glHint" style="margin-top:6px">Dotted words: hover or tap for a plain explanation.</p>
     <p class="note jz">Click the map to add waypoints; the planner routes between them over the terrain. Drag a waypoint or right-click to remove it and the legs around it are re-routed. Press Route on a science target to compare three computed routes. Drag the green habitat marker to move base. Every layer is live from NASA Mars Trek; the rover track is NASA's published Perseverance traverse.</p>
     <div class="evkey">
       <span><span class="ev obs">observed</span> NASA measured it (rover position, track, elevation)</span>
@@ -833,20 +842,28 @@ const ICE_NOTE={
   d1to5:'Blue: the same evidence for ice 1 to 5 m down. Utopia\'s radar-mapped deposit shows here, under its soil cover.',
   abund:'Blue: buried hydrogen seen by Mars Odyssey\'s neutron spectrometer (SWIM neutron layer). A relative scale, not percent ice. Near the equator much of this hydrogen sits in hydrated minerals, not ice: Gale scores here with no ice at all.',
   collapse:'Red: team-derived collapse risk = ice in the top metre × landforms that show ice degrading (SWIM geomorphology layer: scalloped pits, sublimating ground). Where both agree, ground can subside under a walker. Not a NASA product.',
-  value:'Green: team-derived resource value = easiest ice access (top metre counts fully, 1 to 5 m at 60%) × hydrogen abundance × landing reach (full inside ±50° latitude, 30% outside). Not a NASA product.'};
+  value:'Green: team-derived resource value = easiest ice access (top metre counts fully, 1 to 5 m at 60%) × hydrogen abundance × landing reach (full inside ±50° latitude, 30% outside). Not a NASA product.',
+  combo:'Blue: hydrogen abundance (Odyssey neutron layer). Green: team-derived resource value. Red: team-derived collapse risk, drawn on top so hazards stay visible. Where blue and green overlap they blend to teal: value is built from abundance, so green almost always sits on blue.'};
+// Stack order for "All three": widest first, hazard last so it is never hidden.
+const ICE_COMBO=['abund','value','collapse'];
 let ICEGRID=null; fetch('data/ice_grid_1deg.json').then(r=>r.json()).then(j=>{ICEGRID=j; if(sel!=null) select(sel);}).catch(()=>{});
 function iceAt(la,lo){ if(!ICEGRID||la>=60||la<-60) return null; const y=Math.floor(60-la), x=Math.floor(lo+180)%360; const g=k=>ICEGRID[k][y][x];
   return {top1:g('top1'),d1to5:g('d1to5'),abund:g('abund'),collapse:g('collapse'),value:g('value')}; }
 function compose(){
   tctx.drawImage(base,0,0);
-  const im=ICE.img[ICE.layer];
-  if(im&&im.complete&&im.naturalWidth) tctx.drawImage(im,0,TH*30/180,TW,TH*120/180);
+  const combo=ICE.layer==='combo', keys=combo?ICE_COMBO:[ICE.layer];
+  keys.forEach(k=>{ const im=ICE.img[k];
+    if(!im||!im.complete||!im.naturalWidth) return;
+    // in the combined view the lower layers are slightly see-through so overlaps blend instead of hiding
+    tctx.globalAlpha=combo&&k!=='collapse'?.8:1;
+    tctx.drawImage(im,0,TH*30/180,TW,TH*120/180); });
+  tctx.globalAlpha=1;
   texture.needsUpdate=true;
 }
 function setIce(k){
   ICE.layer=k;
   document.querySelectorAll('#gIce button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===k));
-  if(k!=='off'&&!ICE.img[k]){ const im=new Image(); im.onload=compose; im.src=ICE_SRC[k]; ICE.img[k]=im; }
+  (k==='combo'?ICE_COMBO:k==='off'?[]:[k]).forEach(j=>{ if(!ICE.img[j]){ const im=new Image(); im.onload=compose; im.src=ICE_SRC[j]; ICE.img[j]=im; } });
   compose();
   $('gIceNote').hidden=k==='off';
   if(k!=='off') $('gIceText').textContent=ICE_NOTE[k];
@@ -979,6 +996,131 @@ requestAnimationFrame(frame);
 // Deep link: #jezero (or any site id) skips the globe and opens that site directly.
 const h=location.hash.slice(1), di=SITES.findIndex(s=>s.id===h);
 if(di>=0){ sel=di; globeEl.hidden=true; globeEl.classList.add('fade'); enterMap(SITES[di]); }
+})();
+</script>
+<script>
+// ---- Plain-language mode. When on, space terms anywhere on the page (rail, globe card, map popups,
+// layer list, text that updates later) get a dotted underline; hover, focus or tap shows a plain explanation.
+(function(){
+// [label, pattern, explanation]. Patterns are case-sensitive on purpose (so "IR" is not "ir", "sol" is not "solar").
+const GLOSS=[
+  ['EVA',/\bEVA\b/,'Extravehicular activity: going outside in a spacesuit. Here, a walk on foot away from the habitat.'],
+  ['Sol',/\b[Ss]ols?\b/,'A Mars day: 24 hours 40 minutes. Rover missions count days as sols since landing.'],
+  ['DTM',/\bDTM\b/,'Digital terrain model: a height map of the ground. The planner uses it to work out how steep each step is.'],
+  ['CTX',/\bCTX\b/,'Context Camera on NASA\'s Mars Reconnaissance Orbiter. It photographs Mars at about 6 m per pixel; two photos from different angles give 3-D height.'],
+  ['HiRISE',/\bHiRISE\b/,'The sharpest camera orbiting Mars. At 25 cm per pixel it can make out something the size of a desk.'],
+  ['THEMIS',/\bTHEMIS\b/,'A heat camera on NASA\'s Mars Odyssey orbiter. It sees Mars in infrared (heat) instead of visible light.'],
+  ['Infrared (IR)',/\b(?:IR|infrared|[Ii]nfrared)\b/,'Infrared: heat radiation, invisible to the eye. At night solid rock stays warm and looks bright; loose sand cools quickly and looks dark.'],
+  ['Thermal inertia',/\bthermal inertia\b/,'How well the ground holds on to daytime heat. Solid rock holds it (high); dust and sand lose it fast (low).'],
+  ['Thermal',/\bthermal\b/,'To do with heat. Thermal images show how warm the ground is.'],
+  ['MOLA',/\bMOLA\b/,'Mars Orbiter Laser Altimeter: a laser that measured the height of the whole planet from orbit. Mars has no sea, so MOLA defines its "sea level".'],
+  ['HRSC',/\bHRSC\b/,'High Resolution Stereo Camera on the European Space Agency\'s Mars Express orbiter. Takes colour and 3-D images.'],
+  ['Viking',/\bViking\b/,'NASA\'s 1970s Mars orbiters and landers. Their photos still make the standard colour map of the whole planet.'],
+  ['MDIM',/\bMDIM\b/,'Mars Digital Image Model: one global photo map stitched together from Viking images.'],
+  ['Mosaic',/\bmosaics?\b/i,'Many overlapping photos stitched together into one seamless map.'],
+  ['Stereo',/\bstereo\b/i,'Two photos of the same spot taken from different angles, combined to measure height, the way two eyes judge depth.'],
+  ['Orbital proxy',/\borbital proxy\b/,'A clue seen from a spacecraft circling Mars, not measured on the ground. Indirect: for example, how fast ground cools hints at sand or rock.'],
+  ['Orbital',/\b(?:[Oo]rbital|from orbit|orbiter)\b/,'Seen from a spacecraft circling Mars, rather than measured by a rover on the ground.'],
+  ['Proxy',/\bproxy\b/,'An indirect clue that stands in for something we cannot measure directly.'],
+  ['LMST',/\b(?:LMST|local mean solar time)\b/,'Local mean solar time: the Mars clock for this spot, set by the Sun. Noon is when the Sun is highest. Mars hours are about 3% longer than Earth hours.'],
+  ['GCR',/\bGCR\b/,'Galactic cosmic rays: very fast particles from outside the solar system. Mars has a thin atmosphere and no global magnetic field, so more of them reach the ground than on Earth.'],
+  ['Radiation dose',/\b[Dd]ose\b/,'How much radiation energy the body absorbs. More dose means more long-term health risk.'],
+  ['Gray (µGy, mGy)',/(?:µGy|mGy)\b/,'Units of absorbed radiation dose. 1 mGy = 1000 µGy. The Mars surface gives about 210 µGy a day, many times Earth\'s natural background.'],
+  ['Perseverance',/\bPerseverance\b/,'NASA\'s car-sized rover, exploring Jezero crater since February 2021. Its real path is drawn on the map.'],
+  ['Curiosity',/\bCuriosity\b/,'NASA\'s earlier rover, exploring Gale crater since 2012.'],
+  ['RAD',/\bRAD\b/,'Radiation Assessment Detector on the Curiosity rover. It measures radiation at the surface of Mars.'],
+  ['Mars Odyssey',/\bOdyssey\b/,'NASA\'s Mars Odyssey orbiter, circling Mars since 2001. It carries THEMIS and a neutron spectrometer.'],
+  ['MRO',/\bMRO\b/,'Mars Reconnaissance Orbiter: the NASA spacecraft that carries the HiRISE and CTX cameras.'],
+  ['SWIM',/\bSWIM\b/,'Subsurface Water Ice Mapping: a NASA-funded project that combined several orbiter data sets to map where buried ice is likely.'],
+  ['Neutron spectrometer',/\bneutron spectrometer\b/,'An instrument that counts neutrons (tiny particles) escaping from the ground. Hydrogen soaks them up, so fewer neutrons means more hydrogen, often water ice.'],
+  ['Neutron',/\bneutrons?\b/,'A tiny particle from inside atoms. Cosmic rays knock them out of the ground; counting them from orbit reveals buried hydrogen.'],
+  ['Hydrogen',/\bhydrogen\b/i,'Half of water (H₂O) is hydrogen. Finding it underground hints at ice or at minerals with water locked inside.'],
+  ['Hydrated minerals',/\bhydrated minerals?\b/,'Minerals with water built into their crystals, like clay. Not ice you could simply melt.'],
+  ['Delta',/\bdelta\b/i,'A fan of mud and sand that a river drops where it flows into a lake. Jezero\'s delta shows a lake once filled the crater.'],
+  ['Crater',/\bcraters?\b/i,'A bowl-shaped hole blasted out by an asteroid or comet impact.'],
+  ['Latitude',/\blatitude\b|°N\b|°S\b/,'How far north or south of the equator, in degrees. 0° is the equator; 90° is a pole.'],
+  ['Scalloped pits',/\bscalloped\b/,'Shallow scoop-shaped hollows that form when buried ice turns to gas and the ground above sags.'],
+  ['Sublimation',/\bsublimat\w*/,'Ice turning straight into gas without melting first, as happens in Mars\'s thin air.'],
+  ['Geomorphology',/\bgeomorpholog\w*/,'The study of landforms: their shapes and how they formed.'],
+  ['Radar',/\bradar\b/i,'Radio waves sent from orbit. They pass through soil and bounce back off buried layers, such as ice.'],
+  ['Traverse',/\btraverse\b/,'The path a rover has driven.'],
+  ['Waypoint',/\bwaypoints?\b/i,'A point you click on the map that the walk must pass through.'],
+  ['Habitat',/\bhabitat\b/i,'The crew\'s base: the sealed living module where every walk starts and ends.'],
+  ['Walk-back limit',/\b[Ww]alk-back\b/,'How far the crew may go so that, if a suit or system fails, they can still walk home in time.'],
+  ['Slope',/\b[Ss]lope\b/,'How steep the ground is, in degrees. 0° is flat; about 15° is a steep hiking trail.'],
+  ['Elevation',/\b[Ee]lev(?:ation)?\b/,'Height above Mars\'s reference level. With no sea on Mars, that level is defined from MOLA laser measurements.'],
+  ['Mars Trek',/\bMars Trek\b/,'NASA\'s online map viewer for Mars. This page streams its map images.'],
+  ['Gale crater',/\bGale\b/,'Gale crater, near Mars\'s equator, where the Curiosity rover landed in 2012.'],
+  ['Utopia Planitia',/\bUtopia\b/,'Utopia Planitia: a huge low plain in Mars\'s northern half, with a large ice sheet buried under the soil.'],
+  ['JSC',/\bJSC\b/,'NASA\'s Johnson Space Center in Houston, where astronauts train and spacesuits are developed.'],
+  ['LoRa',/\bLoRa\b/,'A long-range, low-power radio used by small sensors.'],
+  ['ESP32',/\bESP32\b/,'A small, cheap computer chip that would run the suit tag.'],
+  ['SpO2',/\bSpO2\b/,'Blood oxygen saturation: how much oxygen the blood is carrying. Healthy is about 95 to 100%.'],
+  ['Regolith',/\bregolith\b/i,'The loose dust, soil and broken rock covering Mars.'],
+];
+const SKIP='script,style,button,a,input,textarea,select,option,canvas,svg,.gl,#glTip,.ev,.sim,.leaflet-control-attribution,.glHint';
+const BLOCK='p,li,label,h1,h2,td,th,.stats>div,.leaflet-popup-content,section,div';
+
+const tip=document.createElement('div'); tip.id='glTip'; tip.setAttribute('role','tooltip'); tip.hidden=true; document.body.appendChild(tip);
+let tipFor=null;
+function showTip(el){
+  const g=GLOSS[+el.dataset.g]; if(!g) return;
+  tip.innerHTML='<b></b><span></span>'; tip.firstChild.textContent=g[0]; tip.lastChild.textContent=g[2];
+  tip.hidden=false; tipFor=el;
+  const r=el.getBoundingClientRect(), tw=tip.offsetWidth, th=tip.offsetHeight;
+  let x=Math.max(8,Math.min(innerWidth-tw-8,r.left+r.width/2-tw/2)), y=r.top-th-8;
+  if(y<8) y=r.bottom+8;
+  tip.style.left=x+'px'; tip.style.top=y+'px';
+}
+function hideTip(){ tip.hidden=true; tipFor=null; }
+
+// wrap the first occurrence of each term per text block, so long paragraphs are not a sea of underlines
+function annotate(root){
+  if(!root) return;
+  if(root.nodeType===3) root=root.parentNode;
+  if(!root||root.nodeType!==1||root.closest(SKIP)) return;
+  const tw=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.nodeValue.trim()&&!n.parentNode.closest(SKIP)?1:2});
+  const nodes=[]; while(tw.nextNode()) nodes.push(tw.currentNode);
+  nodes.forEach(n=>{
+    const block=n.parentNode.closest(BLOCK)||n.parentNode;
+    let node=n;
+    while(node){
+      const s=node.nodeValue; let best=null;
+      GLOSS.forEach((g,i)=>{ const m=g[1].exec(s); if(m&&(!best||m.index<best.i||(m.index===best.i&&m[0].length>best.m.length))) best={i:m.index,m:m[0],g:i}; });
+      if(!best) break;
+      const after=node.splitText(best.i), rest=after.splitText(best.m.length);
+      if(block.querySelector('.gl[data-g="'+best.g+'"]')){ node=rest; continue; } // already explained in this block
+      const sp=document.createElement('span'); sp.className='gl'; sp.dataset.g=best.g; sp.tabIndex=0;
+      sp.setAttribute('aria-label',best.m+': '+GLOSS[best.g][2]);
+      after.parentNode.replaceChild(sp,after); sp.appendChild(after);
+      node=rest;
+    }
+  });
+}
+
+// re-annotate text the page writes later (site cards, popups, route stats, warnings)
+let pending=new Set(), raf=0;
+const mo=new MutationObserver(recs=>{
+  for(const r of recs){ if(r.target===tip||tip.contains(r.target)) continue;
+    if(r.type==='characterData') pending.add(r.target.parentNode); else r.addedNodes.forEach(n=>pending.add(n)); }
+  if(pending.size&&!raf) raf=requestAnimationFrame(flush);
+});
+function flush(){ raf=0; const list=[...pending]; pending.clear();
+  mo.disconnect(); list.forEach(n=>{ if(n&&n.isConnected) annotate(n); }); mo.takeRecords(); observe(); }
+function observe(){ mo.observe(document.body,{childList:true,subtree:true,characterData:true}); }
+
+
+document.addEventListener('mouseover',e=>{ const g=e.target.closest&&e.target.closest('.gl'); if(g) showTip(g); });
+document.addEventListener('mouseout',e=>{ const g=e.target.closest&&e.target.closest('.gl'); if(g&&!g.contains(e.relatedTarget)) hideTip(); });
+document.addEventListener('focusin',e=>{ if(e.target.classList&&e.target.classList.contains('gl')) showTip(e.target); });
+document.addEventListener('focusout',e=>{ if(e.target===tipFor) hideTip(); });
+// tap: toggle the explanation; stop the tap from also ticking a layer checkbox or selecting a row
+document.addEventListener('click',e=>{ const g=e.target.closest&&e.target.closest('.gl');
+  if(g){ e.preventDefault(); e.stopPropagation(); tipFor===g&&!tip.hidden?hideTip():showTip(g); } else if(!tip.hidden) hideTip(); },true);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') hideTip(); });
+addEventListener('scroll',hideTip,true);
+
+annotate(document.body); observe();
 })();
 </script>
 </body>

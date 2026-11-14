@@ -91,7 +91,12 @@ function tick() { const c = marsClock(); $('lmst').textContent = '≈ ' + c.text
 tick(); setInterval(tick, 10000);
 
 // ---- heading from the phone's compass (iOS asks permission on the start tap)
+// camera elevation from the tilt sensor: the back camera looks along the phone's -Z axis, so its angle above
+// the horizontal is asin(-cos(beta)·cos(gamma)) (W3C device orientation angles). Used to find the horizon.
+let CAM_ELEV = null;
+const HFOV = 63;                                       // typical phone main camera, landscape, degrees
 function onOrient(e) {
+  if (e.beta != null && e.gamma != null) { const r = Math.PI / 180; CAM_ELEV = Math.asin(Math.max(-1, Math.min(1, -Math.cos(e.beta * r) * Math.cos(e.gamma * r)))) / r; }
   const h = e.webkitCompassHeading != null ? e.webkitCompassHeading : (e.absolute && e.alpha != null ? 360 - e.alpha : null);
   if (h == null) return;
   const d = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(h / 45) % 8];
@@ -143,7 +148,14 @@ async function loop() {
       const ms = performance.now() - t0, C = CFG.classes.length;
       const ov = $('ov'); ov.width = S; ov.height = S; const o = ov.getContext('2d'), im = o.createImageData(S, S);
       const cnt = {}; let ground = 0;
+      // horizon: rows above it are sky, so they are neither coloured nor counted (needs the tilt sensor)
+      let skyRows = 0;
+      if (CAM_ELEV != null) {
+        const vfov = HFOV * innerHeight / innerWidth, yh = 0.5 + CAM_ELEV / vfov;   // horizon height, 0 = top of view
+        skyRows = Math.max(0, Math.min(S, Math.round((yh + 0.02) * S)));
+      }
       for (let i = 0; i < n; i++) {
+        if (i < skyRows * S) continue;
         let b = 0, bv = -1; for (let k = 0; k < C; k++) { const val = p[k * n + i]; if (val > bv) { bv = val; b = k; } }
         const cls = CFG.classes[b]; if (bv < 0.5 || !(cls in GROUND)) continue;
         ground++; cnt[cls] = (cnt[cls] || 0) + 1;

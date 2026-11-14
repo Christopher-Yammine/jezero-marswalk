@@ -226,8 +226,8 @@ body.away .jz{display:none}
   <section class="jz">
     <h2>Route comparison <span class="ev orb">orbital proxy</span> <span class="ev obs">observed</span></h2>
     <p class="note" id="gridStatus">Terrain grid: loading THEMIS night IR…</p>
-    <div id="cmpWrap"></div>
-    <p class="note">Three routes from the habitat to the chosen target, computed on a 30 m grid inside the HiRISE mosaic. Shortest ignores terrain. Terrain-aware penalises ground that is dark in THEMIS night IR (low thermal inertia, a proxy for loose sand) and favours ground Perseverance drove. Recommended adds a preference for proven ground and refuses legs steeper than the slope limit where the rover measured elevation. Time is plain distance over walk speed; no terrain speed factor is invented. Click a row to adopt it.</p>
+    <div id="cmpWrap"><p class="note" style="margin:0">Press <b>Route</b> on a science target below to compare three routes from the habitat: shortest, terrain-aware and recommended.</p></div>
+    <p class="note">Three routes from the habitat to the chosen target, computed on a 30 m grid inside the HiRISE mosaic. Shortest ignores terrain. Terrain-aware penalises ground that is dark in THEMIS night IR (low thermal inertia, a proxy for loose sand) and favours ground Perseverance drove. Recommended adds a preference for proven ground and refuses legs steeper than the slope limit where the rover measured elevation. Time is plain distance over walk speed; no terrain speed factor is invented. Both terrain-aware and recommended also avoid sand ridges mapped on the USGS 1:75K Jezero geologic map (unit Aeb). Click a row to adopt it.</p>
   </section>
 
   <section class="jz">
@@ -311,7 +311,7 @@ const candGroup = L.layerGroup().addTo(map);
 const slopeGroup = L.layerGroup().addTo(map);
 const crewGroup = L.layerGroup().addTo(map);
 const OBS='<span class="ev obs">observed</span>', ORB='<span class="ev orb">orbital</span>', RULE='<span class="ev rule">rule</span>', SIM='<span class="ev sim">simulated</span>';
-L.control.layers({}, {
+const layerCtl = L.control.layers({}, {
   ['Viking colour (global, 232 m) '+ORB]:layers.viking,
   ['MOLA + HRSC relief (200 m) '+ORB]:layers.mola,
   ['Jezero regional mosaic (HiRISE+CTX+HRSC) '+ORB]:layers.region,
@@ -366,6 +366,23 @@ function nearestElev(latlng){
 const CELL = 30;
 const M_PER_DEG = R*Math.PI/180;
 const G = { ready:false };
+// USGS 1:75K Jezero geologic map (SIM 3464): mapped sand ridges (unit Aeb), rasterised onto the routing grid.
+const usgsReady=fetch('habitat/web/data/sim3464_walk.geojson').then(r=>r.ok?r.json():null).catch(()=>null);
+function rasterUsgs(geo){
+  if(!geo||!G.ready) return 0;
+  const {nx,ny,lat0,lon0,mLon,mLat}=G, c=document.createElement('canvas'); c.width=nx; c.height=ny;
+  const g=c.getContext('2d'); g.fillStyle='#fff';
+  for(const f of geo.features){ if(f.properties.u!=='Aeb') continue;
+    const polys=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates;
+    for(const poly of polys){ g.beginPath(); for(const ring of poly) ring.forEach(([lo,la],k)=>{ const x=(lo-lon0)*mLon/CELL, y=(lat0-la)*mLat/CELL; k?g.lineTo(x,y):g.moveTo(x,y); }); g.fill('evenodd'); } }
+  const d=g.getImageData(0,0,nx,ny).data, u=new Uint8Array(nx*ny); let cnt=0;
+  for(let i=0;i<nx*ny;i++) if(d[4*i+3]>127){ u[i]=1; cnt++; }
+  // margin: cells next to mapped sand get a smaller penalty, so routes keep a cell (30 m) of clearance and
+  // the drawn, straightened route (12 m tolerance) cannot clip the edge of a sand field
+  for(let y=0;y<ny;y++) for(let x=0;x<nx;x++){ const i=y*nx+x; if(u[i]) continue;
+    for(let dy=-1;dy<=1&&!u[i];dy++) for(let dx=-1;dx<=1;dx++){ const xx=x+dx, yy=y+dy; if(xx>=0&&yy>=0&&xx<nx&&yy<ny&&u[yy*nx+xx]===1){ u[i]=2; break; } } }
+  G.usgs=u; return cnt;
+}
 function buildGrid(nirCanvas, dtmBuf){
   const lat0=JEZ[1][0], lat1=JEZ[0][0], lon0=JEZ[0][1], lon1=JEZ[1][1];
   const latC=(lat0+lat1)/2, mLon=M_PER_DEG*Math.cos(latC*Math.PI/180), mLat=M_PER_DEG;
@@ -431,7 +448,14 @@ function loadNight(){
   return Promise.all(jobs).then(()=>c);
 }
 const dtmReady=fetch('data/jez_dtm_30m.i16').then(r=>r.ok?r.arrayBuffer():null).catch(()=>null);
-Promise.all([loadNight(),trackReady,dtmReady]).then(([c,,b])=>buildGrid(c,b)).catch(e=>{ $('gridStatus').textContent='Terrain grid unavailable: THEMIS tiles did not load ('+e+'). Manual waypoints still work.'; });
+Promise.all([loadNight(),trackReady,dtmReady]).then(([c,,b])=>buildGrid(c,b)).then(()=>usgsReady).then(geo=>{
+  if(!geo) return;
+  const cells=rasterUsgs(geo);
+  const lyr=L.geoJSON({type:'FeatureCollection',features:geo.features.filter(f=>f.properties.u==='Aeb')},{interactive:false,style:{color:'#e5b64a',weight:1,fillColor:'#e5b64a',fillOpacity:.25}}).addTo(map);
+  layerCtl.addOverlay(lyr,'Sand ridges, USGS geologic map (unit Aeb) '+ORB);
+  $('gridStatus').innerHTML+=' Mapped sand ridges (USGS SIM 3464, unit Aeb) cover '+cells+' cells and are avoided by the terrain-aware and recommended routes.';
+  rebuild();
+}).catch(e=>{ $('gridStatus').textContent='Terrain grid unavailable: THEMIS tiles did not load ('+e+'). Manual waypoints still work.'; });
 
 function sandAt(ll){ if(!G.ready) return null; const i=G.toCell(ll.lat,ll.lng); return i<0?null:G.sand[i]; }
 function drivenAt(ll){ if(!G.ready) return null; const i=G.toCell(ll.lat,ll.lng); return i<0?null:G.driven[i]; }
@@ -446,7 +470,7 @@ function astar(from, to, mode, slopeLim){
   const pop=()=>{ const t=hp[0], l=hp.pop(); if(hp.length){ hp[0]=l; let k=0; for(;;){ const a=2*k+1,b=a+1; let s=k; if(a<hp.length&&hp[a][0]<hp[s][0]) s=a; if(b<hp.length&&hp[b][0]<hp[s][0]) s=b; if(s===k) break; [hp[s],hp[k]]=[hp[k],hp[s]]; k=s; } } return t; };
   const tx=t0%nx, ty=(t0/nx)|0;
   const h=i=>{ const dx=Math.abs(i%nx-tx), dy=Math.abs(((i/nx)|0)-ty); return (Math.max(dx,dy)+(Math.SQRT2-1)*Math.min(dx,dy))*CELL*0.6; };
-  const mu=j=>{ let m=1+2.5*sand[j]; if(driven[j]) m*=0.6; else if(mode==='best'||mode==='soft') m+=1.0; return m; };
+  const mu=j=>{ let m=1+2.5*sand[j]+(G.usgs?(G.usgs[j]===1?3:G.usgs[j]===2?1:0):0); if(driven[j]) m*=0.6; else if(mode==='best'||mode==='soft') m+=1.0; return m; };
   g[s0]=0; push(h(s0),s0); let expanded=0;
   while(hp.length){
     const [,i]=pop(); if(done[i]) continue; done[i]=1; if(i===t0) break; if(++expanded>400000) return null;

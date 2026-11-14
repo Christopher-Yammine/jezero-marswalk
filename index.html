@@ -122,6 +122,14 @@ body.away .jz{display:none}
 #glTip{position:fixed;z-index:6000;max-width:290px;background:#0f0d0b;border:1px solid var(--warn);color:var(--fg);font-family:var(--body);font-size:12.5px;line-height:1.45;padding:8px 10px;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.6);pointer-events:none}
 #glTip b{display:block;color:var(--warn);font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px}
 .glHint{font-size:12px;color:var(--warn);margin:0}
+/* ---- per-site copy: the planner runs one walk site at a time (#jezero or #arcadia) */
+body.site-arcadia .jzOnly{display:none!important}
+body:not(.site-arcadia) .arcOnly{display:none!important}
+.ev.calc{background:transparent;color:var(--orb);border:1px dashed var(--orb)}
+.ev.ph{background:transparent;color:var(--bad);border:1px dashed var(--bad)}
+ul.claims{margin:6px 0 0;padding-left:18px;font-size:12.5px}
+ul.claims li{margin:3px 0}
+ul.claims b{font-weight:600}
 @media (max-width:860px){
   #gHead{left:16px;right:104px;top:14px}
   #gHead h1{font-size:22px}
@@ -150,11 +158,11 @@ body.away .jz{display:none}
   <div id="gPanel">
     <p class="glHint">Dotted words: hover or tap for a plain explanation.</p>
     <div class="chips" id="gChips"></div>
-    <div id="gCard"><p class="note" style="margin:0">Pick a site. Jezero is the walking map: the planner, terrain routing and rover track live there.</p></div>
+    <div id="gCard"><p class="note" style="margin:0">Pick a site. Jezero and Arcadia Planitia have walking maps: Jezero with the rover track and CTX stereo terrain, Arcadia with orbital data only.</p></div>
     <div id="gIceRow"><div class="row" id="gIce" role="group" aria-label="Ice evidence layer" style="gap:6px;align-items:center"><span class="note" style="margin:0">Ice layers</span>
       <button type="button" class="quiet" data-k="off" aria-pressed="true">Off</button><button type="button" class="quiet" data-k="top1" aria-pressed="false">Top 1 m</button><button type="button" class="quiet" data-k="d1to5" aria-pressed="false">1 to 5 m deep</button><button type="button" class="quiet" data-k="abund" aria-pressed="false">Abundance</button><button type="button" class="quiet" data-k="collapse" aria-pressed="false">Collapse risk</button><button type="button" class="quiet" data-k="value" aria-pressed="false">Resource value</button><button type="button" class="quiet" data-k="combo" aria-pressed="false">All three</button></div>
       <p class="note" id="gIceNote" hidden style="margin:6px 0 0"><span id="gIceText"></span> Mapped 60°N to 60°S only; values read from SWIM's published map images, so approximate. Green dashes: ±50° latitude, the limit for human landing sites (Bussey &amp; Hoffman, NASA 2016). Jezero: none in the top metre; at 1 to 5 m a weak zone reaches about 20°N, just short of it.</p></div>
-    <p class="note" style="margin:0"><a href="3d">Jezero in 3D →</a> · <a href="identify">Identify the ground in a photo →</a></p>
+    <p class="note" style="margin:0"><a href="3d.html">Mars in 3D →</a> · <a href="identify">Identify the ground in a photo →</a></p>
     <div id="gStatus">Loading Viking colour mosaic…</div>
   </div>
   <div id="gZoom"><button id="gIn" aria-label="Zoom in">+</button><button id="gOut" aria-label="Zoom out">−</button></div>
@@ -166,14 +174,18 @@ body.away .jz{display:none}
       <button id="toGlobe" class="quiet" style="padding:3px 8px;font-size:12px;white-space:nowrap">◐ Globe</button>
     </div>
     <h1 id="railTitle">Jezero Marswalk Planner</h1>
-    <p class="note" style="margin:4px 0 0"><a href="3d">Jezero in 3D →</a> · <a href="identify">Identify the ground in a photo →</a></p>
+    <p class="note" style="margin:4px 0 0"><a href="3d.html" id="rail3d">Jezero in 3D →</a> · <a href="identify">Identify the ground in a photo →</a></p>
     <p class="glHint" style="margin-top:6px">Dotted words: hover or tap for a plain explanation.</p>
-    <p class="note jz">Click the map to add waypoints; the planner routes between them over the terrain. Drag a waypoint or right-click to remove it and the legs around it are re-routed. Press Route on a science target to compare three computed routes. Drag the green habitat marker to move base. Every layer is live from NASA Mars Trek; the rover track is NASA's published Perseverance traverse.</p>
+    <p class="note jz jzOnly">Click the map to add waypoints; the planner routes between them over the terrain. Drag a waypoint or right-click to remove it and the legs around it are re-routed. Press Route on a science target to compare three computed routes. Drag the green habitat marker to move base. Every layer is live from NASA Mars Trek; the rover track is NASA's published Perseverance traverse.</p>
+    <p class="note jz arcOnly">Click the map to add waypoints; the planner routes between them on a 30 m grid. Press Route on a target to compare three candidate routes. No rover has driven here, so there is no ground truth: slope is calculated from MOLA laser altimetry in bins of about 463 m, and anything walk-sized is not characterized. Every route on this map is a candidate that requires review.</p>
     <div class="evkey">
-      <span><span class="ev obs">observed</span> NASA measured it (rover position, track, elevation)</span>
-      <span><span class="ev orb">orbital proxy</span> inferred from orbit (THEMIS night IR: dark = fine sand, bright = rock)</span>
+      <span class="jzOnly"><span class="ev obs">observed</span> NASA measured it (rover position, track, elevation)</span>
+      <span class="arcOnly"><span class="ev obs">observed</span> measured by a spacecraft instrument (MOLA laser shots, HRSC image)</span>
+      <span><span class="ev orb">orbital proxy</sspan> inferred from orbit (THEMIS night IR: dark = fine sand, bright = rock)</span>
+      <span class="arcOnly"><span class="ev calc">calculated</span> computed by this app from orbital data (slope, image texture)</span>
       <span><span class="ev rule">rule</span> from a NASA paper</span>
       <span><span class="ev draft">draft</span> our assumption, adjustable</span>
+      <span class="arcOnly"><span class="ev ph">placeholder</span> position not established</span>
       <span><span class="ev sim">simulated</span> not real data</span>
     </div>
   </div>
@@ -181,8 +193,8 @@ body.away .jz{display:none}
   <section id="siteCard" hidden>
     <h2>Site <span id="siteBadge"></span></h2>
     <p id="siteText" style="margin:0 0 8px"></p>
-    <p class="note">The walking planner (terrain routing on the CTX stereo DTM, rover track, science targets, EVA budget) exists for Jezero only: that is the one site with footstep-scale data loaded. Here the map shows NASA's global layers: Viking colour 232 m, MOLA + HRSC relief 200 m, THEMIS day and night IR 100 m. Zooming past about level 8 only enlarges those pixels.</p>
-    <div class="row" style="margin-top:8px"><button id="goJezero">Open the Jezero planner</button><button id="backGlobe" class="quiet">Back to globe</button></div>
+    <p class="note">The walking planner (terrain routing, science targets, EVA budget) exists for Jezero, the one site with footstep-scale data (CTX stereo DTM, rover track), and for Arcadia Planitia, where slope comes from MOLA only. Here the map shows NASA's global layers: Viking colour 232 m, MOLA + HRSC relief 200 m, THEMIS day and night IR 100 m. Zooming past about level 8 only enlarges those pixels.</p>
+    <div class="row" style="margin-top:8px"><button id="site3d">View in 3D</button><button id="goJezero" class="quiet">Open the Jezero planner</button><button id="backGlobe" class="quiet">Back to globe</button></div>
   </section>
 
   <section class="jz">
@@ -202,9 +214,9 @@ body.away .jz{display:none}
     <div class="row">
       <button id="undo" class="quiet">Remove last</button>
       <button id="clear" class="quiet">Clear</button>
-      <button id="truth">Load Perseverance sols 1170 to 1200</button>
+      <button id="truth" class="jzOnly">Load Perseverance sols 1170 to 1200</button>
     </div>
-    <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;cursor:pointer;font-size:13px"><input type="checkbox" id="autoRoute" checked style="margin-top:3px"><span>Route clicks over terrain: recommended cost, slope limit enforced on the CTX DTM <span class="ev obs">observed</span>. Untick for straight lines.</span></label>
+    <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;cursor:pointer;font-size:13px"><input type="checkbox" id="autoRoute" checked style="margin-top:3px"><span class="jzOnly">Route clicks over terrain: recommended cost, slope limit enforced on the CTX DTM <span class="ev obs">observed</span>. Untick for straight lines.</span><span class="arcOnly">Route clicks over terrain: recommended cost, slope limit enforced where a MOLA laser shot exists <span class="ev calc">calculated</span>; not characterized elsewhere. Untick for straight lines.</span></label>
     <div class="stats" style="margin-top:10px">
       <div><span>Out</span><b id="sOut">0 m</b></div>
       <div><span>Return leg</span><b id="sBack">0 m</b></div>
@@ -220,19 +232,22 @@ body.away .jz{display:none}
     <div class="legs" id="legs" style="margin-top:8px"></div>
     <p class="note">Each leg is checked every 30 m; the leg's slope is its steepest step, so a straight leg across a crater is flagged even if its ends are level.</p>
     <p class="note" id="truthNote"></p>
-    <p class="note">Elevation comes from the USGS CTX stereo DTM (20 m, MOLA-referenced) resampled to 30 m, checked against Perseverance's track elevations where both exist (see Route comparison). If the DTM fails to load, slope falls back to the rover track and is unknown elsewhere. Dose uses 0.21 mGy/day, Curiosity RAD surface average at Gale, not Jezero (Hassler et al. 2014).</p>
+    <p class="note arcOnly">Elevation: MGS MOLA MEGDR, 128 px per degree (bins about 463 m), laser shots from 1999 to 2001, interpolated to 30 m cells. About two thirds of cells sit in bins with no laser shot (the archive fills those by interpolation): their slope is not characterized. A 463 m bin cannot show 20 m yardangs, boulders or crater rims, so a calculated slope under the limit does not mean the ground is walkable. No rover track exists here to check against. Dose uses 0.21 mGy/day, Curiosity RAD surface average at Gale (Hassler et al. 2014), not measured at Arcadia.</p>
+    <p class="note jzOnly">Elevation comes from the USGS CTX stereo DTM (20 m, MOLA-referenced) resampled to 30 m, checked against Perseverance's track elevations where both exist (see Route comparison). If the DTM fails to load, slope falls back to the rover track and is unknown elsewhere. Dose uses 0.21 mGy/day, Curiosity RAD surface average at Gale, not Jezero (Hassler et al. 2014).</p>
   </section>
 
   <section class="jz">
     <h2>Route comparison <span class="ev orb">orbital proxy</span> <span class="ev obs">observed</span></h2>
     <p class="note" id="gridStatus">Terrain grid: loading THEMIS night IR…</p>
     <div id="cmpWrap"></div>
-    <p class="note">Three routes from the habitat to the chosen target, computed on a 30 m grid inside the HiRISE mosaic. Shortest ignores terrain. Terrain-aware penalises ground that is dark in THEMIS night IR (low thermal inertia, a proxy for loose sand) and favours ground Perseverance drove. Recommended adds a preference for proven ground and refuses legs steeper than the slope limit where the rover measured elevation. Time is plain distance over walk speed; no terrain speed factor is invented. Click a row to adopt it.</p>
+    <p class="note arcOnly">Three candidate routes from the habitat to the chosen target, computed on a 30 m grid of about 15 × 18 km. Shortest ignores terrain. Terrain-aware penalises ground that is dark in THEMIS night IR (loose-sand proxy) and ground with strong HRSC image texture (yardang roughness proxy). Recommended adds a preference for cells where MOLA has a laser shot and refuses steps steeper than the slope limit there. No ground has been driven or walked, so there is no proven-ground term. Time is plain distance over walk speed. Click a row to adopt it.</p>
+    <p class="note jzOnly">Three routes from the habitat to the chosen target, computed on a 30 m grid inside the HiRISE mosaic. Shortest ignores terrain. Terrain-aware penalises ground that is dark in THEMIS night IR (low thermal inertia, a proxy for loose sand) and favours ground Perseverance drove. Recommended adds a preference for proven ground and refuses legs steeper than the slope limit where the rover measured elevation. Time is plain distance over walk speed; no terrain speed factor is invented. Click a row to adopt it.</p>
   </section>
 
   <section class="jz">
     <h2>Science targets</h2>
-    <p class="note" style="margin:0 0 8px">Positions are Perseverance's real position at that sol <span class="ev obs">observed</span>. Descriptions mix rover findings and orbital inference.</p>
+    <p class="note jzOnly" style="margin:0 0 8px">Positions are Perseverance's real position at that sol <span class="ev obs">observed</span>. Descriptions mix rover findings and orbital inference.</p>
+    <p class="note arcOnly" style="margin:0 0 8px">Positions were located by eye in the HRSC orbit 26333 image (12.5 m per pixel), accurate to roughly 100 m, and are not field-verified. Each target has a fallback. Targets outside the walk grid show no routes.</p>
     <ul class="targets" id="targets"></ul>
   </section>
 
@@ -258,16 +273,39 @@ body.away .jz{display:none}
     <h2 style="margin-top:10px">Upcoming on route</h2>
     <div class="warns" id="warns"><span class="note">Start a walk to see route warnings.</span></div>
     <p class="note">Position here is a simulation that walks the planned route at 60x speed. Warnings are spoken with the browser's own voice when Voice is on. Track back replans a return to the habitat from the current position on the recommended cost. The real feed is the ESP32 suit tag over LoRa (not connected on this page). Vitals stay blank until that link exists.</p>
+    <p class="note arcOnly">Weather: when a simulated walk runs into the afternoon (after 12:00 LMST), a dust-devil alert is raised. It is <span class="ev sim">simulated</span>, not a forecast: no weather feed exists. The numbers in it describe dust devils seen in this region from orbit (afternoon formation, up to 45 m/s and 8 km tall, usually under 100 m wide; ESA/DLR release for orbit 26333).</p>
+  </section>
+
+  <section class="jz arcOnly">
+    <h2>Arcadia: three separate questions</h2>
+    <ul class="claims">
+      <li><b>Is there buried ice?</b> Regional evidence only. SWIM 2.0 maps (Planetary Science Institute) are about 1° cells and say ice is consistent with the data, not measured here. Ice is likely near the surface, but its depth, quantity and access are not established along any route. It is not drawn on this map as a hazard or as a water supply. <span class="ev orb">orbital / regional</span></li>
+      <li><b>Are there visible ice-related landforms?</b> A candidate rampart crater (about 20 km, 43.70°N 212.27°E, about 140 km north of the habitat) has a lobate ejecta apron, which suggests volatile-rich ground, possibly ice, at impact. That is an interpretation of shape, not a detection of ice. No other ice-related landform was located in the walk area. <span class="ev orb">orbital</span></li>
+      <li><b>Can the ground be walked on?</b> Not characterized at walk scale. The inputs are a MOLA-calculated slope at about 463 m, an HRSC texture proxy for yardangs and a THEMIS night IR proxy for loose sand. None of these measures ground strength or footing. <span class="ev calc">calculated</span> <span class="ev orb">orbital proxy</span></li>
+    </ul>
+    <h2 style="margin-top:12px">Coverage here</h2>
+    <p class="note" style="margin:0">HRSC orbit 26333 nadir image, 10 Nov 2024, 12.5 m per pixel (best ground sampling 16.5 m): shown. HRSC terrain model for this orbit: not released (checked FU Berlin map server and NASA PDS, Nov 2026). HiRISE ESP_046912_2215 (29 Jul 2016, 0.5 m) covers 41.29 to 41.51°N, 211.93 to 212.09°E, over the ridge and dark deposit: exists, not loaded here. CTX (about 6 m): P05_003094_2221, B16_016082_2207, B19_017216_2208, G19_025787_2239, W04_090614_2220 (2007 to 2025): exist, not loaded. No HiRISE or CTX terrain model found.</p>
+    <h2 style="margin-top:12px">Still simulated or unknown</h2>
+    <ul class="claims">
+      <li>Crew position, vitals and the dust-devil alert: simulated.</li>
+      <li>Habitat location: our draft placement on the smoother dark terrain, not a surveyed site.</li>
+      <li>Slope at walk scale, boulders, crust strength, dust depth: unknown.</li>
+      <li>Ice depth and quantity under any route: unknown.</li>
+      <li>Target positions: located by eye from orbit, not verified on the ground.</li>
+      <li>Ice-related landform target: placeholder, not located.</li>
+    </ul>
   </section>
 
   <section>
     <h2>Sources</h2>
-    <p class="note">Tiles: <a href="https://trek.nasa.gov/mars/" target="_blank" rel="noopener">NASA Mars Trek</a> (MRO HiRISE 25 cm and CTX 6 m controlled Jezero mosaics, Odyssey THEMIS IR day/night 100 m, MGS MOLA + MEX HRSC blend, Viking MDIM 2.1).<br>Track: <a href="https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_traverse.json" target="_blank" rel="noopener">Mars 2020 traverse JSON</a>, 559 drives, sols 14 to 2022, 46.05 km.<br>Walk-back: <a href="https://ntrs.nasa.gov/api/citations/20260005410/downloads/Mars_Mass_ICES2026_Presentation_Final.pdf" target="_blank" rel="noopener">NASA JSC, ICES 2026</a>. Radiation: <a href="https://doi.org/10.1126/science.1244797" target="_blank" rel="noopener">Hassler et al. 2014</a>. Thermal inertia as a sand proxy: THEMIS night-time IR, Christensen et al. 2004 (Odyssey THEMIS).</p>
+    <p class="note arcOnly">HRSC: Mars Express orbit 26333, product HQ333_0000_ND4 and its browse image, via the <a href="https://pds-geosciences.wustl.edu/missions/mars_express/hrsc.htm" target="_blank" rel="noopener">NASA PDS Geosciences Node</a> mirror of the ESA archive. Image credit <b>ESA/DLR/FU Berlin</b>, licensed <a href="https://creativecommons.org/licenses/by-sa/3.0/igo/" target="_blank" rel="noopener">CC BY-SA 3.0 IGO</a>. Changes: cropped, reprojected from sinusoidal to the map grid, contrast stretched, and used to calculate the texture-roughness grid. The derived image and roughness files are shared under the same licence (data/arcadia/LICENSE-HRSC.txt).<br>Elevation: <a href="https://pds-geosciences.wustl.edu/mgs/mgs-m-mola-5-megdr-l3-v1/mgsl_300x/meg128/" target="_blank" rel="noopener">MGS MOLA MEGDR</a>, 128 px per degree, with shot counts.<br>Dust devils, yardangs, dark sand and the rampart crater are described in the ESA/DLR image release for this orbit.<br>Mars Trek: Viking MDIM 2.1 (232 m), MOLA + HRSC blend (200 m), THEMIS IR day and night (100 m).<br>Walk-back: <a href="https://ntrs.nasa.gov/api/citations/20260005410/downloads/Mars_Mass_ICES2026_Presentation_Final.pdf" target="_blank" rel="noopener">NASA JSC, ICES 2026</a>. Radiation: <a href="https://doi.org/10.1126/science.1244797" target="_blank" rel="noopener">Hassler et al. 2014</a>.</p>
+    <p class="note jzOnly">Tiles: <a href="https://trek.nasa.gov/mars/" target="_blank" rel="noopener">NASA Mars Trek</a> (MRO HiRISE 25 cm and CTX 6 m controlled Jezero mosaics, Odyssey THEMIS IR day/night 100 m, MGS MOLA + MEX HRSC blend, Viking MDIM 2.1).<br>Track: <a href="https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_traverse.json" target="_blank" rel="noopener">Mars 2020 traverse JSON</a>, 559 drives, sols 14 to 2022, 46.05 km.<br>Walk-back: <a href="https://ntrs.nasa.gov/api/citations/20260005410/downloads/Mars_Mass_ICES2026_Presentation_Final.pdf" target="_blank" rel="noopener">NASA JSC, ICES 2026</a>. Radiation: <a href="https://doi.org/10.1126/science.1244797" target="_blank" rel="noopener">Hassler et al. 2014</a>. Thermal inertia as a sand proxy: THEMIS night-time IR, Christensen et al. 2004 (Odyssey THEMIS).</p>
   </section>
 </aside>
 <div id="map"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="planner-core.js"></script>
 <script>
 (function(){
 const R = 3396190; // Mars mean radius, m (same as NASA MMGIS)
@@ -275,12 +313,19 @@ const DOSE_PER_MIN = 0.21/1440*1000; // µGy per minute, 0.21 mGy/day
 const DAY_START = 7*60, DAY_END = 17*60; // LMST minutes
 const BLANK = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 const $=id=>document.getElementById(id);
+// ---- Walk site: the planner runs one site per page load. #arcadia opens Arcadia Planitia, anything else Jezero.
+// The two sites share no data: each has its own grid, elevation source, targets and habitat.
+const SITE_ID = location.hash.slice(1)==='arcadia' ? 'arcadia' : 'jezero', ARC = SITE_ID==='arcadia';
+window.__plannerSite = SITE_ID;
+document.body.classList.toggle('site-arcadia', ARC);
+const Core = window.MarswalkCore, SITE = Core.SITES[SITE_ID];           // shared with the 3D view (planner-core.js)
+const ARCB = Core.SITES.arcadia.bounds, ARC_HAB = Core.SITES.arcadia.hab;
 
 // ---- Mars CRS: equirectangular, 2x1 tiles at zoom 0, matches Trek "default028mm"
 const MarsCRS = L.extend({}, L.CRS.EPSG4326, { R: R });
 function dist(a, b){ return MarsCRS.distance(a, b); }
 
-const map = L.map('map', { crs: MarsCRS, center: [18.44, 77.42], zoom: 12, minZoom: 2, maxZoom: 19, worldCopyJump:false });
+const map = L.map('map', { crs: MarsCRS, center: ARC ? ARC_HAB : [18.44, 77.42], zoom: 12, minZoom: 2, maxZoom: 19, worldCopyJump:false });
 L.control.scale({ imperial:false }).addTo(map);
 window.__map = map;
 
@@ -293,16 +338,22 @@ const JEZ = [[18.3067994,77.2229331],[18.669315,77.583964]];
 const CTXB = [[18.2110274,77.1604655],[18.7211945,77.6991776]];
 const REGB = [[17.5791654,76.7912789],[18.6926322,77.7314417]];
 const NIGHT_ID = 'THEMIS_NightIR_ControlledMosaics_100m_v2_oct2018';
+const HRSC_ATTR='HRSC orbit 26333: ESA/DLR/FU Berlin, <a href="https://creativecommons.org/licenses/by-sa/3.0/igo/" target="_blank" rel="noopener">CC BY-SA 3.0 IGO</a>, cropped and reprojected';
 const layers = {
   viking: trek('Mars_Viking_MDIM21_ClrMosaic_global_232m',{z:7,ext:'jpg',attr:'Viking MDIM 2.1 (NASA/USGS)',zi:1}),
   mola:   trek('Mars_MOLA_blend200ppx_HRSC_ClrShade_clon0dd_200mpp_lzw',{z:8,ext:'jpg',attr:'MOLA+HRSC blend (NASA/ESA/DLR)',zi:2}),
-  region: trek('NES_JEZ_MID_Visible_Mosaic_HiRISE_CTX_HRSC_GCS_MARS_07-10-2018',{z:17,b:REGB,attr:'Jezero/NE Syrtis mosaic (MRO/USGS)',zi:3}),
-  ctx:    trek('JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0',{z:13,b:CTXB,attr:'CTX 6 m controlled (MRO/MSSS)',zi:4}),
-  hirise: trek('JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd',{z:17,b:JEZ,attr:'HiRISE 25 cm controlled (MRO/UA)',zi:5}),
   themisD:trek('THEMIS_DayIR_ControlledMosaics_100m_v2_oct2018',{z:9,op:.65,attr:'THEMIS IR day (Odyssey/ASU)',zi:6}),
   themisN:trek(NIGHT_ID,{z:9,op:.65,attr:'THEMIS IR night (Odyssey/ASU)',zi:6}),
 };
-['viking','mola','region','ctx','hirise'].forEach(k=>layers[k].addTo(map));
+if(ARC){
+  layers.hrscCtx=L.imageOverlay('data/arcadia/hrsc_context.png',[[40.5,-149.61],[44.2,-147.4]],{attribution:HRSC_ATTR,zIndex:3});
+  layers.hrsc=L.imageOverlay('data/arcadia/hrsc_walk.jpg',ARCB,{attribution:HRSC_ATTR,zIndex:4});
+} else {
+  layers.region=trek('NES_JEZ_MID_Visible_Mosaic_HiRISE_CTX_HRSC_GCS_MARS_07-10-2018',{z:17,b:REGB,attr:'Jezero/NE Syrtis mosaic (MRO/USGS)',zi:3});
+  layers.ctx=trek('JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0',{z:13,b:CTXB,attr:'CTX 6 m controlled (MRO/MSSS)',zi:4});
+  layers.hirise=trek('JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd',{z:17,b:JEZ,attr:'HiRISE 25 cm controlled (MRO/UA)',zi:5});
+}
+(ARC?['viking','mola','hrscCtx','hrsc']:['viking','mola','region','ctx','hirise']).forEach(k=>layers[k].addTo(map));
 
 const trackGroup = L.layerGroup().addTo(map);
 const targetGroup = L.layerGroup().addTo(map);
@@ -310,8 +361,26 @@ const planGroup = L.layerGroup().addTo(map);
 const candGroup = L.layerGroup().addTo(map);
 const slopeGroup = L.layerGroup().addTo(map);
 const crewGroup = L.layerGroup().addTo(map);
-const OBS='<span class="ev obs">observed</span>', ORB='<span class="ev orb">orbital</span>', RULE='<span class="ev rule">rule</span>', SIM='<span class="ev sim">simulated</span>';
-L.control.layers({}, {
+// Arcadia hazard layers (empty on Jezero)
+const roughGroup = L.layerGroup(), sandGroup = L.layerGroup(), ejectaGroup = L.layerGroup(), nodataGroup = L.layerGroup();
+const OBS='<span class="ev obs">observed</span>', ORB='<span class="ev orb">orbital</span>', RULE='<span class="ev rule">rule</span>', SIM='<span class="ev sim">simulated</span>', CALC='<span class="ev calc">calculated</span>', PH='<span class="ev ph">placeholder</span>';
+L.control.layers({}, ARC ? {
+  ['Viking colour, global (232 m; 1976 to 1980) '+ORB]:layers.viking,
+  ['MOLA + HRSC relief, global (200 m; MOLA 1997 to 2001) '+ORB]:layers.mola,
+  ['HRSC orbit 26333 context (100 m browse; 10 Nov 2024) '+ORB]:layers.hrscCtx,
+  ['HRSC orbit 26333 nadir (12.5 m; 10 Nov 2024) '+ORB]:layers.hrsc,
+  ['THEMIS thermal, day (100 m; mosaic Oct 2018) '+ORB]:layers.themisD,
+  ['THEMIS thermal, night (100 m; mosaic Oct 2018) '+ORB]:layers.themisN,
+  ['Targets (located in HRSC 2024) '+ORB]:targetGroup,
+  ['Habitat '+'<span class="ev draft">draft</span>'+', walk-back circle '+RULE+', route']:planGroup,
+  ['Candidate routes (comparison)']:candGroup,
+  ['Slope from MOLA (463 m bins; 1999 to 2001): red over the limit, amber within 5° '+CALC]:slopeGroup,
+  ['Yardang roughness: HRSC image texture (60 m window; 2024) '+CALC]:roughGroup,
+  ['Loose-sand proxy: THEMIS night IR (100 m; mosaic Oct 2018) '+ORB]:sandGroup,
+  ['Fluidized-ejecta zone, candidate crater (traced in HRSC 2024; ground strength unverified) '+ORB]:ejectaGroup,
+  ['No-data cells: no MOLA laser shot (not characterized)']:nodataGroup,
+  ['Crew tag '+SIM]:crewGroup,
+} : {
   ['Viking colour (global, 232 m) '+ORB]:layers.viking,
   ['MOLA + HRSC relief (200 m) '+ORB]:layers.mola,
   ['Jezero regional mosaic (HiRISE+CTX+HRSC) '+ORB]:layers.region,
@@ -326,11 +395,18 @@ L.control.layers({}, {
   ['Steep ground, CTX DTM: red over the slope limit, amber within 5° of it '+OBS]:slopeGroup,
   ['Crew tag '+SIM]:crewGroup,
 }, { collapsed: window.innerWidth < 860 }).addTo(map);
+if(ARC){ [roughGroup,nodataGroup,ejectaGroup].forEach(g=>g.addTo(map));
+  // Candidate rampart crater, about 20 km rim to rim, centre 43.70 N 212.27 E; lobate apron reaches about 15 km from the centre.
+  // Both circles traced by eye in the HRSC orbit 26333 browse image. The crater centre lies about 140 km north of the habitat.
+  L.circle([43.70,-147.73],{radius:15500,color:'#7fb3e6',weight:1.5,dashArray:'5 5',fillOpacity:.08,interactive:true})
+    .bindPopup('<b>Fluidized-ejecta zone</b> '+ORB+'<br>Lobate apron around a candidate rampart crater, traced by eye in HRSC orbit 26333 (10 Nov 2024). The outline is approximate. Fluidized ejecta suggests volatile-rich ground, possibly ice, at the time of impact. Ground strength is unverified: not characterized.').addTo(ejectaGroup);
+  L.circle([43.70,-147.73],{radius:10300,color:'#7fb3e6',weight:1,fill:false,interactive:false}).addTo(ejectaGroup);
+}
 
 // ---- Perseverance track
 let pts = []; // [lat, lon, el, sol]
 let segsBySol = [];
-const trackReady = fetch('m20_traverse.json').then(r=>r.json()).then(d=>{
+const trackReady = ARC ? Promise.resolve().then(()=>{ truthNote.textContent='No rover has driven at Arcadia: there is no ground truth for slope or surface here.'; renderTargets(); }) : fetch('m20_traverse.json').then(r=>r.json()).then(d=>{
   segsBySol = d.segments;
   const maxSol = d.segments[d.segments.length-1].sol;
   d.segments.forEach(s=>{
@@ -366,43 +442,29 @@ function nearestElev(latlng){
 const CELL = 30;
 const M_PER_DEG = R*Math.PI/180;
 const G = { ready:false };
-function buildGrid(nirCanvas, dtmBuf){
-  const lat0=JEZ[1][0], lat1=JEZ[0][0], lon0=JEZ[0][1], lon1=JEZ[1][1];
-  const latC=(lat0+lat1)/2, mLon=M_PER_DEG*Math.cos(latC*Math.PI/180), mLat=M_PER_DEG;
-  const nx=Math.ceil((lon1-lon0)*mLon/CELL), ny=Math.ceil((lat0-lat1)*mLat/CELL), n=nx*ny;
-  const sand=new Float32Array(n), driven=new Uint8Array(n), elev=new Float32Array(n).fill(NaN), ecount=new Uint16Array(n);
-  // THEMIS z9 tiles rows 202-203, cols 731-732 stitched into a 512x512 canvas
-  const deg=360/(2*512), pxDeg=deg/256, tLon0=-180+731*deg, tLat0=90-202*deg;
-  const img=nirCanvas.getContext('2d').getImageData(0,0,512,512).data;
-  const raw=new Float32Array(n);
-  for(let y=0;y<ny;y++) for(let x=0;x<nx;x++){
-    const lon=lon0+(x+.5)*CELL/mLon, lat=lat0-(y+.5)*CELL/mLat;
-    const px=Math.min(511,Math.max(0,Math.floor((lon-tLon0)/pxDeg))), py=Math.min(511,Math.max(0,Math.floor((tLat0-lat)/pxDeg)));
-    raw[y*nx+x]=img[(py*512+px)*4];
-  }
-  // data-driven normalisation: 15th and 65th percentile of night brightness over the grid
-  const sorted=Float32Array.from(raw).sort(); const p15=sorted[Math.floor(n*.15)], p65=sorted[Math.floor(n*.65)];
-  for(let i=0;i<n;i++) sand[i]=Math.min(1,Math.max(0,(p65-raw[i])/Math.max(1,p65-p15)));
-  const toCell=(lat,lon)=>{ const x=Math.floor((lon-lon0)*mLon/CELL), y=Math.floor((lat0-lat)*mLat/CELL); return (x<0||y<0||x>=nx||y>=ny)?-1:y*nx+x; };
-  for(const p of pts){
-    const i=toCell(p[0],p[1]); if(i<0) continue;
-    const x=i%nx, y=(i/nx)|0;
-    for(let dy=-2;dy<=2;dy++) for(let dx=-2;dx<=2;dx++){ const xx=x+dx, yy=y+dy; if(xx>=0&&yy>=0&&xx<nx&&yy<ny&&dx*dx+dy*dy<=4) driven[yy*nx+xx]=1; }
-    if(p[2]!=null){ elev[i]=(isNaN(elev[i])?0:elev[i]*ecount[i])/(ecount[i]+1)+p[2]/(ecount[i]+1); ecount[i]++; }
-  }
-  // CTX stereo DTM (USGS, 20 m) resampled to this grid by data/build_dtm.py: Int16 decimetres, row-major, same nx x ny.
-  let dtm=false, dtmNote='';
-  if(dtmBuf&&dtmBuf.byteLength===n*2){
-    const d=new Int16Array(dtmBuf); let sum=0,sum2=0,cnt=0;
-    for(let i=0;i<n;i++){ if(d[i]!==-32768){ const v=d[i]/10; if(!isNaN(elev[i])){ const df=v-elev[i]; sum+=df; sum2+=df*df; cnt++; } elev[i]=v; } }
-    const mean=cnt?sum/cnt:0, sd=cnt?Math.sqrt(Math.max(0,sum2/cnt-mean*mean)):0;
-    dtm=true; dtmNote=' Elevation: CTX stereo DTM 20 m '+OBS+' on every cell; against '+cnt+' rover-track cells it differs by '+mean.toFixed(1)+' m on average (spread '+sd.toFixed(1)+' m).';
-  } else dtmNote=' DTM not loaded: slope known only within 60 m of the rover track.';
-  Object.assign(G,{ready:true,nx,ny,n,sand,driven,elev,dtm,lat0,lon0,mLon,mLat,toCell,p15,p65,
-    cellLL:i=>L.latLng(lat0-((i/nx|0)+.5)*CELL/mLat, lon0+((i%nx)+.5)*CELL/mLon)});
-  let drv=0; for(let i=0;i<n;i++) drv+=driven[i];
-  $('gridStatus').innerHTML='Terrain grid ready: '+nx+' × '+ny+' cells of '+CELL+' m. Night-IR brightness '+Math.round(p15)+' (sandy) to '+Math.round(p65)+' (rock) sets the sand proxy. '+drv+' cells within 60 m of the rover track count as proven ground.'+dtmNote;
-  renderTargets(); renderSlope(); recompute();
+const GB = SITE.bounds;                                       // grid bounds [[south,west],[north,east]]
+function buildGrid(nirCanvas, dtmBuf, roughBuf){
+  Object.assign(G, Core.buildGrid({site:SITE, nirCanvas, dtmBuf, roughBuf, pts}));
+  const {nx,ny,n,p15,p65,shotN,drv,dtm,rough,dtmCheck:{cnt,mean,sd}}=G;
+  const dtmNote = dtm
+    ? (ARC ? ' Elevation: MOLA, 128 px per degree (about 463 m bins) '+CALC+'. '+Math.round(shotN/n*100)+'% of cells sit in a bin with a laser shot; the other '+Math.round((1-shotN/n)*100)+'% are not characterized. No rover track exists to check against.'
+           : ' Elevation: CTX stereo DTM 20 m '+OBS+' on every cell; against '+cnt+' rover-track cells it differs by '+mean.toFixed(1)+' m on average (spread '+sd.toFixed(1)+' m).')
+    : (ARC ? ' Elevation file did not load: slope is not characterized anywhere.' : ' DTM not loaded: slope known only within 60 m of the rover track.');
+  $('gridStatus').innerHTML='Terrain grid ready: '+nx+' × '+ny+' cells of '+CELL+' m. Night-IR brightness '+Math.round(p15)+' (sandy) to '+Math.round(p65)+' (rock) sets the sand proxy'+(ARC?', scaled on this grid only.'+(rough?' HRSC texture roughness loaded '+CALC+'; it also rises at sharp brightness edges, such as the dark deposit’s margin.':' HRSC roughness did not load.')+' No proven ground: nothing has been driven here.':'. '+drv+' cells within 60 m of the rover track count as proven ground.')+dtmNote;
+  renderTargets(); renderSlope(); if(ARC) renderHazards(); recompute();
+}
+// Arcadia hazard overlays painted from the same grid the router uses
+function gridOverlay(group, paint){
+  const {nx,ny,lat0,lon0,mLon,mLat}=G, c=document.createElement('canvas'); c.width=nx; c.height=ny;
+  const ctx=c.getContext('2d'), img=ctx.createImageData(nx,ny);
+  for(let i=0;i<nx*ny;i++){ const p=paint(i); if(p){ img.data.set(p,i*4); } }
+  ctx.putImageData(img,0,0); group.clearLayers();
+  L.imageOverlay(c.toDataURL(),[[lat0-ny*CELL/mLat,lon0],[lat0,lon0+nx*CELL/mLon]],{opacity:.75,interactive:false,zIndex:10}).addTo(group);
+}
+function renderHazards(){
+  if(G.rough) gridOverlay(roughGroup,i=>{ const r=G.rough[i]; return r>0.5?[240,140,60,Math.round(80+(r-.5)*300)]:null; });
+  gridOverlay(sandGroup,i=>{ const s=G.sand[i]; return s>0.5?[229,182,74,Math.round(60+(s-.5)*260)]:null; });
+  gridOverlay(nodataGroup,i=>{ if(!isNaN(G.elev[i])) return null; const x=i%G.nx, y=(i/G.nx)|0; return (x+y)%6<2?[110,140,255,150]:[110,140,255,35]; });
 }
 // What the router sees: steepest 30 m step out of each cell, painted over the map so a route can be checked by eye.
 function renderSlope(){
@@ -418,81 +480,22 @@ function renderSlope(){
   }
   ctx.putImageData(img,0,0);
   slopeGroup.clearLayers();
-  L.imageOverlay(c.toDataURL(),[[lat0-ny*CELL/mLat,lon0],[lat0,lon0+nx*CELL/mLon]],{opacity:.8,interactive:false}).addTo(slopeGroup);
+  L.imageOverlay(c.toDataURL(),[[lat0-ny*CELL/mLat,lon0],[lat0,lon0+nx*CELL/mLon]],{opacity:.8,interactive:false,zIndex:11}).addTo(slopeGroup);
 }
 $('slope').addEventListener('change',renderSlope);
-function loadNight(){
-  const c=document.createElement('canvas'); c.width=512; c.height=512; const ctx=c.getContext('2d');
-  const jobs=[]; for(const r of [202,203]) for(const col of [731,732]) jobs.push(new Promise((res,rej)=>{
-    const im=new Image(); im.crossOrigin='anonymous';
-    im.onload=()=>{ ctx.drawImage(im,(col-731)*256,(r-202)*256); res(); }; im.onerror=rej;
-    im.src='https://trek.nasa.gov/tiles/Mars/EQ/'+NIGHT_ID+'/1.0.0/default/default028mm/9/'+r+'/'+col+'.png';
-  }));
-  return Promise.all(jobs).then(()=>c);
-}
-const dtmReady=fetch('data/jez_dtm_30m.i16').then(r=>r.ok?r.arrayBuffer():null).catch(()=>null);
-Promise.all([loadNight(),trackReady,dtmReady]).then(([c,,b])=>buildGrid(c,b)).catch(e=>{ $('gridStatus').textContent='Terrain grid unavailable: THEMIS tiles did not load ('+e+'). Manual waypoints still work.'; });
+const loadNight=()=>Core.loadThemis(GB);
+const getBuf=u=>fetch(u).then(r=>r.ok?r.arrayBuffer():null).catch(()=>null);
+const dtmReady=getBuf(SITE.dtm);
+const roughReady=SITE.rough?getBuf(SITE.rough):Promise.resolve(null);
+Promise.all([loadNight(),trackReady,dtmReady,roughReady]).then(([c,,b,rb])=>buildGrid(c,b,rb)).catch(e=>{ $('gridStatus').textContent='Terrain grid unavailable: THEMIS tiles did not load ('+e+'). Manual waypoints still work.'; });
 
-function sandAt(ll){ if(!G.ready) return null; const i=G.toCell(ll.lat,ll.lng); return i<0?null:G.sand[i]; }
-function drivenAt(ll){ if(!G.ready) return null; const i=G.toCell(ll.lat,ll.lng); return i<0?null:G.driven[i]; }
-
-// A* over 8-neighbour grid. mode: 'terrain' | 'best'
-function astar(from, to, mode, slopeLim){
-  if(!G.ready) return null;
-  const s0=G.toCell(from.lat,from.lng), t0=G.toCell(to.lat,to.lng); if(s0<0||t0<0) return null;
-  const {nx,ny,n,sand,driven,elev}=G;
-  const g=new Float32Array(n).fill(Infinity), par=new Int32Array(n).fill(-1), done=new Uint8Array(n);
-  const hp=[]; const push=(f,i)=>{ hp.push([f,i]); let k=hp.length-1; while(k){ const p=(k-1)>>1; if(hp[p][0]<=hp[k][0]) break; [hp[p],hp[k]]=[hp[k],hp[p]]; k=p; } };
-  const pop=()=>{ const t=hp[0], l=hp.pop(); if(hp.length){ hp[0]=l; let k=0; for(;;){ const a=2*k+1,b=a+1; let s=k; if(a<hp.length&&hp[a][0]<hp[s][0]) s=a; if(b<hp.length&&hp[b][0]<hp[s][0]) s=b; if(s===k) break; [hp[s],hp[k]]=[hp[k],hp[s]]; k=s; } } return t; };
-  const tx=t0%nx, ty=(t0/nx)|0;
-  const h=i=>{ const dx=Math.abs(i%nx-tx), dy=Math.abs(((i/nx)|0)-ty); return (Math.max(dx,dy)+(Math.SQRT2-1)*Math.min(dx,dy))*CELL*0.6; };
-  const mu=j=>{ let m=1+2.5*sand[j]; if(driven[j]) m*=0.6; else if(mode==='best'||mode==='soft') m+=1.0; return m; };
-  g[s0]=0; push(h(s0),s0); let expanded=0;
-  while(hp.length){
-    const [,i]=pop(); if(done[i]) continue; done[i]=1; if(i===t0) break; if(++expanded>400000) return null;
-    const x=i%nx, y=(i/nx)|0;
-    for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){
-      if(!dx&&!dy) continue; const xx=x+dx, yy=y+dy; if(xx<0||yy<0||xx>=nx||yy>=ny) continue;
-      const j=yy*nx+xx; if(done[j]) continue;
-      const d=Math.hypot(dx,dy)*CELL;
-      let steep=0;
-      if((mode==='best'||mode==='soft')&&j!==t0&&!isNaN(elev[i])&&!isNaN(elev[j])){ const sl=Math.atan2(Math.abs(elev[j]-elev[i]),d)*180/Math.PI; if(sl>slopeLim){ if(mode==='best') continue; steep=sl/slopeLim; } }
-      const c=g[i]+d*mu(j)*(1+8*steep);
-      if(c<g[j]){ g[j]=c; par[j]=i; push(c+h(j),j); }
-    }
-  }
-  if(!done[t0]) return null;
-  const cells=[]; for(let i=t0;i!==-1;i=par[i]) cells.push(i); cells.reverse();
-  return simplify(cells.map(i=>G.cellLL(i)), 12).slice(1,-1).concat([to]);
-}
-function simplify(ll, tol){ // Douglas-Peucker on metres
-  if(ll.length<3) return ll;
-  const perp=(p,a,b)=>{ const ax=(p.lng-a.lng)*G.mLon, ay=(p.lat-a.lat)*G.mLat, bx=(b.lng-a.lng)*G.mLon, by=(b.lat-a.lat)*G.mLat; const l2=bx*bx+by*by||1; const t=Math.max(0,Math.min(1,(ax*bx+ay*by)/l2)); return Math.hypot(ax-t*bx,ay-t*by); };
-  let idx=0,md=0; for(let i=1;i<ll.length-1;i++){ const d=perp(ll[i],ll[0],ll[ll.length-1]); if(d>md){md=d;idx=i;} }
-  if(md>tol){ const a=simplify(ll.slice(0,idx+1),tol), b=simplify(ll.slice(idx),tol); return a.slice(0,-1).concat(b); }
-  return [ll[0],ll[ll.length-1]];
-}
+const sandAt=ll=>Core.sandAt(G,ll), roughAt=ll=>Core.roughAt(G,ll), drivenAt=ll=>Core.drivenAt(G,ll);
+const toLL=p=>p&&p.map(q=>L.latLng(q.lat,q.lng));
+// A* over the 30 m grid (planner-core.js). mode: 'terrain' | 'best' | 'soft'
+function astar(from, to, mode, slopeLim){ return toLL(Core.astar(G,from,to,mode,slopeLim)); }
 // walk a leg in 30 m steps so long straight legs are judged on every cell they cross, not their midpoint
-function samples(a,b,step){ const d=dist(a,b), n=Math.max(1,Math.ceil(d/step)), out=[]; for(let k=0;k<=n;k++){ const f=k/n; out.push(L.latLng(a.lat+(b.lat-a.lat)*f,a.lng+(b.lng-a.lng)*f)); } return out; }
-function routeMetrics(path, from){
-  const full=[from,...path]; let len=0, sandy=0, drv=0, known=0, breaks=0, far=0;
-  const slopeLim=+$('slope').value, radius=circle.getRadius(), h=hab.getLatLng();
-  for(let i=1;i<full.length;i++){
-    const sp=samples(full[i-1],full[i],CELL); let ePrev=nearestElev(sp[0]);
-    for(let k=1;k<sp.length;k++){
-      const d=dist(sp[k-1],sp[k]); len+=d;
-      const mid=L.latLng((sp[k-1].lat+sp[k].lat)/2,(sp[k-1].lng+sp[k].lng)/2);
-      const s=sandAt(mid); if(s!=null&&s>0.5) sandy+=d;
-      if(drivenAt(mid)) drv+=d;
-      const e1=nearestElev(sp[k]);
-      if(ePrev!=null&&e1!=null){ known+=d; if(Math.atan2(Math.abs(e1-ePrev),d)*180/Math.PI>slopeLim) breaks++; }
-      ePrev=e1;
-      far=Math.max(far,dist(h,sp[k]));
-    }
-  }
-  if(far>radius) breaks++;
-  return {len,sandy:sandy/len,drv:drv/len,known:known/len,breaks,far};
-}
+function samples(a,b,step){ return Core.samples(a,b,step).map(q=>L.latLng(q.lat,q.lng)); }
+function routeMetrics(path, from){ return Core.routeMetrics(G,path,from,{slopeLim:+$('slope').value,radius:circle.getRadius(),hab:hab.getLatLng(),elevFn:nearestElev}); }
 
 // ---- Route comparison UI
 const CAND={short:{label:'Shortest',color:'#a3978a',dash:'2 6'},terrain:{label:'Terrain-aware',color:'#7fb3e6',dash:'6 4'},best:{label:'Recommended',color:'#6fcf97',dash:null}};
@@ -519,40 +522,41 @@ function renderCandidates(selected){
     L.polyline([from,...r.path],{color:CAND[k].color,weight:k===selected?5:3,dashArray:CAND[k].dash,opacity:k===selected?1:.85}).bindTooltip(CAND[k].label+': '+fmtM(r.metrics.len)).addTo(candGroup);
   }
   const pct=v=>Math.round(v*100)+'%';
-  $('cmpWrap').innerHTML='<p class="note" style="margin:0">To <b>'+cand.target.n+'</b> from the habitat. Computed in '+cand.ms+' ms.</p><table class="cmp"><tr><th>Route</th><th>Length</th><th>Sandy</th><th>Proven</th><th>Slope known</th><th>Breaks</th></tr>'+
+  const col3=ARC?'Rough':'Proven', v3=m=>pct(ARC?m.rough:m.drv);
+  $('cmpWrap').innerHTML='<p class="note" style="margin:0">'+(ARC?'Candidate routes to ':'To ')+'<b>'+cand.target.n+'</b> from the habitat. Computed in '+cand.ms+' ms.</p><table class="cmp"><tr><th>Route</th><th>Length</th><th>Sandy</th><th>'+col3+'</th><th>Slope known</th><th>Breaks</th></tr>'+
     Object.keys(CAND).map(k=>{ const r=cand.routes[k]; if(!r.path) return '<tr><td><span class="sw" style="background:'+CAND[k].color+'"></span>'+CAND[k].label+'</td><td colspan="5">no path within grid</td></tr>';
-      const m=r.metrics; return '<tr data-m="'+k+'" class="'+(k===selected?'sel':'')+'"><td><span class="sw" style="background:'+CAND[k].color+'"></span>'+CAND[k].label+'</td><td>'+fmtM(m.len)+'</td><td>'+pct(m.sandy)+'</td><td>'+pct(m.drv)+'</td><td>'+pct(m.known)+'</td><td>'+m.breaks+'</td></tr>'; }).join('')+
-    '</table><p class="note">Sandy: share of length over cells darker than the 65th percentile midpoint in THEMIS night IR '+ORB+'. Proven: share within 60 m of Perseverance\'s track '+OBS+'. Breaks: 30 m steps over the slope limit where elevation is known, plus one if the route leaves the walk-back circle. A route with more known slope can show more breaks; unknown ground is unchecked, not safe.</p>';
+      const m=r.metrics; return '<tr data-m="'+k+'" class="'+(k===selected?'sel':'')+'"><td><span class="sw" style="background:'+CAND[k].color+'"></span>'+CAND[k].label+'</td><td>'+fmtM(m.len)+'</td><td>'+pct(m.sandy)+'</td><td>'+v3(m)+'</td><td>'+pct(m.known)+'</td><td>'+m.breaks+'</td></tr>'; }).join('')+
+    '</table><p class="note">Sandy: share of length over cells darker than the 65th percentile midpoint in THEMIS night IR '+ORB+'. '+
+    (ARC?'Rough: share over cells in the top half of the HRSC texture scale, a yardang proxy '+CALC+'. Slope known: share where MOLA has a laser shot in the 463 m bin '+CALC+'; elsewhere slope is not characterized. ':'Proven: share within 60 m of Perseverance\'s track '+OBS+'. ')+
+    'Breaks: 30 m steps over the slope limit where elevation is known, plus one if the route leaves the walk-back circle. A route with more known slope can show more breaks; unknown ground is unchecked and requires review.'+
+    (ARC?' No ground truth exists here: every number above is computed from orbital data. Recommended means lower-risk under these stated assumptions only.':'')+'</p>';
   $('cmpWrap').querySelectorAll('tr[data-m]').forEach(tr=>tr.onclick=()=>adoptRoute(tr.dataset.m));
 }
 function adoptRoute(k){
   const r=cand&&cand.routes[k]; if(!r||!r.path) return;
   anchors=r.path.slice(); truthLen=null; rebuild(); renderCandidates(k);
-  speak(CAND[k].label+' route adopted. '+Math.round(r.metrics.len)+' metres to '+cand.target.n+'.');
+  speak(CAND[k].label+(ARC?' candidate route adopted, requires review. ':' route adopted. ')+Math.round(r.metrics.len)+' metres to '+cand.target.n+'.');
 }
 
 // ---- Science targets anchored to real rover positions
-const TARGETS = [
-  {n:'Octavia E. Butler landing site',sol:14,ll:[18.444627,77.450886],d:'Touchdown 18 Feb 2021. Crater floor, Máaz formation basalts.'},
-  {n:'Séítah',sol:200,ll:[18.432548,77.440687],d:'Olivine-rich layered rocks, first cores. Ridged, sandy ground the rover had to drive around.'},
-  {n:'Delta front, Hawksbill Gap',sol:420,ll:[18.449825,77.401363],d:'Sandstone and mudstone of the ancient delta. Clays and carbonates from orbit (CRISM).'},
-  {n:'Three Forks sample depot',sol:693,ll:[18.454176,77.408448],d:'Ten sealed sample tubes left on the surface for Mars Sample Return.'},
-  {n:'Bright Angel',sol:1182,ll:[18.497182,77.305358],d:'Light-toned rock in Neretva Vallis. Cheyava Falls leopard-spot core, July 2024.'},
-  {n:'Crater rim, Witch Hazel Hill',sol:1400,ll:[18.460553,77.264745],d:'Oldest rocks of the mission, 700 m above the floor. Steepest ground driven.'},
-  {n:'Rover now (last published drive)',sol:2022,ll:[18.435594,77.233223],d:'Position at the end of the traverse file.'},
-];
+const TARGETS = SITE.targets;                                 // planner-core.js: Jezero at rover positions, Arcadia located in HRSC
 function povUrl(sol){ return 'https://mars.nasa.gov/mars2020/multimedia/raw-images/?begin_sol='+sol+'&end_sol='+sol; }
 function renderTargets(){
   targetGroup.clearLayers();
   const ul = $('targets'); ul.innerHTML='';
   TARGETS.forEach(t=>{
-    const ll=L.latLng(t.ll); const s=sandAt(ll);
-    const sandTxt=s==null?'':' · night IR sand proxy '+Math.round(s*100)+'% '+ORB;
-    const m = L.marker(t.ll,{icon:L.divIcon({className:'',html:'<div class="tgt-icon"></div>',iconSize:[14,14],iconAnchor:[7,7]})})
-      .bindPopup('<b>'+t.n+'</b> '+OBS+' sol '+t.sol+'<br>'+t.d+sandTxt+'<br><a href="'+povUrl(t.sol)+'" target="_blank" rel="noopener">Rover photos from sol '+t.sol+'</a>').addTo(targetGroup);
     const li = document.createElement('li');
-    li.innerHTML='<span class="n">'+t.n+' <span class="ev obs">sol '+t.sol+'</span></span><span class="a"><button class="quiet" data-go>Go</button><button class="quiet" data-add>Add</button><button data-route'+(G.ready?'':' disabled')+'>Route</button></span><span class="d">'+t.d+sandTxt+' <a href="'+povUrl(t.sol)+'" target="_blank" rel="noopener">Photos, sol '+t.sol+'</a></span>';
-    li.querySelector('[data-go]').onclick=()=>{ map.flyTo(t.ll, 16); m.openPopup(); };
+    if(t.ph){ // no position established: listed, never drawn
+      li.innerHTML='<span class="n">'+t.n+' '+PH+'</span><span class="a"></span><span class="d">'+t.d+'</span>'; ul.appendChild(li); return; }
+    const ll=L.latLng(t.ll); const s=sandAt(ll), rg=roughAt(ll), inGrid=G.ready&&G.toCell(ll.lat,ll.lng)>=0;
+    const sandTxt=s==null?'':' · night IR sand proxy '+Math.round(s*100)+'% '+ORB;
+    const roughTxt=rg==null?'':' · HRSC texture '+Math.round(rg*100)+'% '+CALC;
+    const badge=t.sol!=null?'<span class="ev obs">sol '+t.sol+'</span>':'<span class="ev orb">located in HRSC</span>'+(t.alt?' <span class="ev draft">fallback</span>':'');
+    const photo=t.sol!=null?' <a href="'+povUrl(t.sol)+'" target="_blank" rel="noopener">Photos, sol '+t.sol+'</a>':'';
+    const m = L.marker(t.ll,{icon:L.divIcon({className:'',html:'<div class="tgt-icon"'+(t.alt?' style="opacity:.6"':'')+'></div>',iconSize:[14,14],iconAnchor:[7,7]})})
+      .bindPopup('<b>'+t.n+'</b> '+(t.sol!=null?OBS+' sol '+t.sol:badge)+'<br>'+t.d+sandTxt+roughTxt+(t.sol!=null?'<br><a href="'+povUrl(t.sol)+'" target="_blank" rel="noopener">Rover photos from sol '+t.sol+'</a>':'')).addTo(targetGroup);
+    li.innerHTML='<span class="n">'+t.n+' '+badge+'</span><span class="a"><button class="quiet" data-go>Go</button><button class="quiet" data-add'+(ARC&&!inGrid?' disabled':'')+'>Add</button><button data-route'+(inGrid?'':' disabled')+'>'+(G.ready&&!inGrid?'Out of grid':'Route')+'</button></span><span class="d">'+t.d+sandTxt+roughTxt+photo+'</span>';
+    li.querySelector('[data-go]').onclick=()=>{ map.flyTo(t.ll, inGrid||!ARC?16:9); m.openPopup(); };
     li.querySelector('[data-add]').onclick=()=>{ addWaypoint(ll); };
     li.querySelector('[data-route]').onclick=()=>compareRoutes(t);
     ul.appendChild(li);
@@ -560,7 +564,7 @@ function renderTargets(){
 }
 
 // ---- Habitat and plan
-const hab = L.marker([18.444627,77.450886],{draggable:true,zIndexOffset:1000,icon:L.divIcon({className:'',html:'<div class="hab-icon"></div>',iconSize:[16,16],iconAnchor:[8,8]})}).bindTooltip('Habitat (drag to move)').addTo(planGroup);
+const hab = L.marker(SITE.hab,{draggable:true,zIndexOffset:1000,icon:L.divIcon({className:'',html:'<div class="hab-icon"></div>',iconSize:[16,16],iconAnchor:[8,8]})}).bindTooltip(ARC?'Habitat, draft location (drag to move)':'Habitat (drag to move)').addTo(planGroup);
 const circle = L.circle(hab.getLatLng(),{radius:1750,color:'#6fcf97',weight:1.5,fillOpacity:.06,dashArray:'6 4'}).addTo(planGroup);
 const routeLine = L.polyline([],{color:'#e0683a',weight:4}).addTo(planGroup);
 const backLine = L.polyline([],{color:'#e0683a',weight:2,dashArray:'4 6',opacity:.8}).addTo(planGroup);
@@ -571,10 +575,7 @@ let anchors = [], backPath = []; // backPath: routed return from the last anchor
 hab.on('drag',()=>{ circle.setLatLng(hab.getLatLng()); backPath=[hab.getLatLng()]; recompute(); });
 hab.on('dragend',()=>{ circle.setLatLng(hab.getLatLng()); rebuild(); });
 // Route under the slope limit; if no such path exists (a point inside a crater), take the least steep one and say so.
-function routeTo(from,to,lim){
-  let path=astar(from,to,'best',lim); if(path) return {path,soft:false};
-  path=astar(from,to,'soft',lim); return path?{path,soft:true}:null;
-}
+function routeTo(from,to,lim){ const r=Core.routeTo(G,from,to,lim); return r&&{path:toLL(r.path),soft:r.soft}; }
 function rebuild(){
   wpMarkers.forEach(m=>planGroup.removeLayer(m)); wpMarkers=[]; waypoints=[];
   const auto=$('autoRoute').checked&&G.ready, lim=+$('slope').value;
@@ -646,13 +647,14 @@ function recompute(){
   for(let i=1;i<prev.length;i++){
     const d=dist(prev[i-1],prev[i]); out+=d;
     far=Math.max(far,dist(h,prev[i]));
-    const sp=samples(prev[i-1],prev[i],CELL); let ePrev=nearestElev(sp[0]), slope=null, sandyN=0;
+    const sp=samples(prev[i-1],prev[i],CELL); let ePrev=nearestElev(sp[0]), slope=null, sandyN=0, roughN=0;
     for(let k=1;k<sp.length;k++){
       const dd=dist(sp[k-1],sp[k]), e1=nearestElev(sp[k]); px+=dd; prof.push([px,e1]); totN++;
       if(e1!=null){ knownN++; if(ePrev!=null&&dd>1){ const st=Math.atan2(e1-ePrev,dd)*180/Math.PI; if(slope==null||Math.abs(st)>Math.abs(slope)) slope=st; const g=e1-ePrev; if(g>0) up+=g; else dn-=g; } ePrev=e1; }
       const sd=sandAt(sp[k]); if(sd!=null&&sd>0.5) sandyN++;
+      const rg=roughAt(sp[k]); if(rg!=null&&rg>0.5) roughN++;
     }
-    legInfo.push({d,slope,e1:nearestElev(prev[i]),sand:G.ready?sandyN/(sp.length-1):null});
+    legInfo.push({d,slope,e1:nearestElev(prev[i]),sand:G.ready?sandyN/(sp.length-1):null,rough:G.ready&&G.rough?roughN/(sp.length-1):null});
   }
   let back=0; for(let i=1;i<ret.length;i++) back+=dist(ret[i-1],ret[i]);
   const total=out+back, mins=total/(speed*1000/60);
@@ -667,14 +669,17 @@ function recompute(){
   else{
     pills.push(far<=radius?['ok','walk-back OK']:['bad','walk-back breach '+fmtM(far-radius)+' past limit']);
     const bad=legInfo.filter(l=>l.slope!=null&&Math.abs(l.slope)>slopeLim).length, unk=legInfo.filter(l=>l.slope==null).length;
-    pills.push(bad?['bad','slope breach on '+bad+' leg'+(bad>1?'s':'')]:unk===legInfo.length?['warn','slope unknown (no elevation here)']:['ok','slope OK where known']);
+    pills.push(bad?['bad','slope breach on '+bad+' leg'+(bad>1?'s':'')]:unk===legInfo.length?['warn','slope unknown (no elevation here)']:['ok',ARC?'calculated slope within limit where MOLA has a shot':'slope OK where known']);
+    if(ARC) pills.push(['warn','walk-scale slope not characterized (MOLA bins ~463 m)']);
     pills.push(startMin>=DAY_START&&endMin<=DAY_END?['ok','inside daylight window']:['bad','outside 07:00 to 17:00 LMST']);
     const sandy=legInfo.filter(l=>l.sand!=null&&l.sand>0.25).length;
     if(G.ready) pills.push(sandy?['warn',sandy+' leg'+(sandy>1?'s':'')+' over sandy ground (night IR proxy)']:['ok','no sandy legs (night IR proxy)']);
+    if(ARC&&G.rough){ const rl=legInfo.filter(l=>l.rough!=null&&l.rough>0.25).length; pills.push(rl?['warn',rl+' leg'+(rl>1?'s':'')+' over yardang-textured ground (HRSC proxy)']:['ok','no legs over strong HRSC texture']); }
+    if(ARC&&endMin>12*60) pills.push(['warn','runs into the afternoon: dust-devil alert (simulated)']);
     if(truthLen!=null) pills.push([Math.abs(out-truthLen)/truthLen<0.03?'ok':'warn','vs NASA '+fmtM(truthLen)+' ('+((out-truthLen)/truthLen*100).toFixed(1)+'%)']);
   }
   $('pills').innerHTML=pills.map(p=>'<span class="pill '+p[0]+'">'+p[1]+'</span>').join('');
-  $('legs').innerHTML=legInfo.map((l,i)=>'<div class="'+(l.slope==null?'unk':Math.abs(l.slope)>slopeLim?'bad':'')+'">leg '+(i+1)+'  '+String(Math.round(l.d)).padStart(5)+' m  '+(l.slope==null?'slope n/a':'max '+l.slope.toFixed(1)+'°')+(l.e1!=null?'  el '+Math.round(l.e1)+' m':'')+(l.sand!=null&&l.sand>0.25?'  sandy '+Math.round(l.sand*100)+'%':'')+'</div>').join('');
+  $('legs').innerHTML=legInfo.map((l,i)=>'<div class="'+(l.slope==null?'unk':Math.abs(l.slope)>slopeLim?'bad':'')+'">leg '+(i+1)+'  '+String(Math.round(l.d)).padStart(5)+' m  '+(l.slope==null?'slope n/a':'max '+l.slope.toFixed(1)+'°')+(l.e1!=null?'  el '+Math.round(l.e1)+' m':'')+(l.sand!=null&&l.sand>0.25?'  sandy '+Math.round(l.sand*100)+'%':'')+(l.rough!=null&&l.rough>0.25?'  rough '+Math.round(l.rough*100)+'%':'')+'</div>').join('');
   drawProfile(prof);
   simReset();
 }
@@ -705,14 +710,21 @@ function speak(t){
 // ---- Route warnings: slope legs over limit (observed), sandy legs (orbital proxy), leaving the walk-back circle (rule)
 function buildWarns(path){
   const slopeLim=+$('slope').value, radius=circle.getRadius(), h=hab.getLatLng(); const w=[]; let cum=0;
-  let sandOpen=null;
+  let sandOpen=null, roughOpen=null, ncOpen=null;
+  const closeNC=()=>{ if(ncOpen&&ncOpen.end-ncOpen.at>=500){ ncOpen.msg='Slope not characterized for '+Math.round(ncOpen.end-ncOpen.at)+' metres, no MOLA laser shot'; w.push(ncOpen); } ncOpen=null; };
   for(let i=1;i<path.length;i++){
     const sp=samples(path[i-1],path[i],CELL); let ePrev=nearestElev(sp[0]);
     for(let k=1;k<sp.length;k++){
       const a=sp[k-1], b=sp[k], d=dist(a,b);
       const e1=nearestElev(b);
-      if(ePrev!=null&&e1!=null&&d>1){ const s=Math.atan2(e1-ePrev,d)*180/Math.PI; if(Math.abs(s)>slopeLim) w.push({at:cum,end:cum+d,msg:'Steep ground, '+Math.abs(s).toFixed(0)+' degrees '+(s>0?'up':'down')+', over the '+slopeLim+' degree limit',sev:'hi',ev:'observed'}); }
+      if(ePrev!=null&&e1!=null&&d>1){ const s=Math.atan2(e1-ePrev,d)*180/Math.PI; if(Math.abs(s)>slopeLim) w.push({at:cum,end:cum+d,msg:'Steep ground, '+Math.abs(s).toFixed(0)+' degrees '+(s>0?'up':'down')+', over the '+slopeLim+' degree limit',sev:'hi',ev:ARC?'calculated':'observed'}); }
       ePrev=e1;
+      if(ARC){
+        if(e1==null){ if(!ncOpen) ncOpen={at:cum,end:cum+d,msg:'',sev:'',ev:'not characterized'}; else ncOpen.end=cum+d; } else closeNC();
+        const rg=roughAt(L.latLng((a.lat+b.lat)/2,(a.lng+b.lng)/2));
+        if(rg!=null&&rg>0.5){ if(!roughOpen){ roughOpen={at:cum,end:cum+d,max:rg,msg:'',sev:'',ev:'calculated'}; w.push(roughOpen); } else { roughOpen.end=cum+d; roughOpen.max=Math.max(roughOpen.max,rg); } }
+        else if(roughOpen){ roughOpen.msg='Yardang-textured ground for '+Math.round(roughOpen.end-roughOpen.at)+' metres, HRSC texture proxy, footing not characterized'; roughOpen=null; }
+      }
       const sd=sandAt(L.latLng((a.lat+b.lat)/2,(a.lng+b.lng)/2));
       if(sd!=null&&sd>0.5){ if(!sandOpen){ sandOpen={at:cum,end:cum+d,max:sd,msg:'',sev:'',ev:'orbital proxy'}; w.push(sandOpen); } else { sandOpen.end=cum+d; sandOpen.max=Math.max(sandOpen.max,sd); } }
       else if(sandOpen){ sandOpen.msg='Sandy ground for '+Math.round(sandOpen.end-sandOpen.at)+' metres, night IR proxy up to '+Math.round(sandOpen.max*100)+' percent'; sandOpen=null; }
@@ -721,11 +733,14 @@ function buildWarns(path){
     }
   }
   if(sandOpen) sandOpen.msg='Sandy ground for '+Math.round(sandOpen.end-sandOpen.at)+' metres, night IR proxy up to '+Math.round(sandOpen.max*100)+' percent';
+  if(roughOpen) roughOpen.msg='Yardang-textured ground for '+Math.round(roughOpen.end-roughOpen.at)+' metres, HRSC texture proxy, footing not characterized';
+  closeNC();
   return w.sort((x,y)=>x.at-y.at);
 }
+const EVCLS={observed:'obs',rule:'rule',calculated:'calc',simulated:'sim','not characterized':'draft'};
 function renderWarns(s){
   const el=$('warns'); if(!sim){ el.innerHTML='<span class="note">Start a walk to see route warnings.</span>'; return; }
-  el.innerHTML=sim.warns.length?sim.warns.map(w=>'<div class="'+(w.end<s?'passed':w.sev)+'">'+(w.end<s?'passed':w.at<=s?'now':Math.round(w.at-s)+' m')+'  '+w.msg+' <span class="ev '+(w.ev==='observed'?'obs':w.ev==='rule'?'rule':'orb')+'">'+w.ev+'</span></div>').join(''):'<span class="note">No flagged features on this route.</span>';
+  el.innerHTML=sim.warns.length?sim.warns.map(w=>'<div class="'+(w.end<s?'passed':w.sev)+'">'+(w.end<s?'passed':w.at<=s?'now':Math.round(w.at-s)+' m')+'  '+w.msg+' <span class="ev '+(EVCLS[w.ev]||'orb')+'">'+w.ev+'</span></div>').join(''):'<span class="note">No flagged features on this route.</span>';
 }
 
 // ---- Simulated crew walk along the route (labelled SIMULATED in the UI)
@@ -761,6 +776,11 @@ $('simStart').onclick=()=>{
     for(const w of sim.warns){ const k=w.msg+w.at; const ahead=w.at-s; if(ahead<150&&ahead>-5&&!sim.said.has(k)){ sim.said.add(k); speak((ahead>10?'In '+Math.round(ahead/10)*10+' metres: ':'Now: ')+w.msg+'.'); } }
     if(!sim.back&&!sim.farSaid&&sim.outLen!=null&&s>=sim.outLen){ sim.farSaid=true; speak('Farthest point reached. Heading back to base, '+Math.round(sim.total-s)+' metres.'); }
     if(!sim.back&&!sim.said.has('wbm')&&dh>radius-200&&dh<=radius&&s<(sim.outLen||Infinity)){ sim.said.add('wbm'); speak('Walk-back margin low, '+Math.round(radius-dh)+' metres to the limit.'); }
+    // Arcadia: simulated dust-devil alert once the walk reaches the afternoon. Not a forecast: no weather feed exists.
+    if(ARC&&!sim.ddSaid&&sh*60+sm+simMin>=12*60){ sim.ddSaid=true;
+      const dd={at:s,end:s+300,msg:'Dust-devil alert, simulated, not a forecast: afternoon is when dust devils form here; seen from orbit up to 45 m/s and 8 km tall, usually under 100 m wide. Route requires review',sev:'hi',ev:'simulated'};
+      sim.said.add(dd.msg+dd.at); sim.warns.push(dd); sim.warns.sort((x,y)=>x.at-y.at);
+      speak('Simulated alert, not a forecast. Afternoon dust devils form in this region. Requires review before continuing.'); }
     renderWarns(s);
     if(s<sim.total) simRaf=requestAnimationFrame(step);
     else { speak(sim.back?'Back at the habitat after track back. EVA complete.':'Back at the habitat. EVA complete.'); $('trackBack').disabled=true; }
@@ -793,7 +813,7 @@ const $=id=>document.getElementById(id), D=Math.PI/180, map=window.__map;
 // ev: obs = observed by a NASA mission at that spot, orb = inferred from orbit (regional evidence).
 const SITES=[
  {id:'jezero',n:'Jezero Crater',la:18.44,lo:77.42,z:12,ev:'obs',walk:1,t:'Study area · walking map',x:'Ancient river-lake delta. Perseverance landed here on 18 Feb 2021. This is the one site with a footstep-scale walking map: CTX stereo terrain, HiRISE 25 cm imagery, the rover track and terrain routing.'},
- {id:'arcadia',n:'Arcadia Planitia',la:47,lo:-160,z:6,ev:'orb',t:'Regional ice evidence',x:'Ice-consistent in the SWIM 2.0 maps both within the top metre and at 1 to 5 m (Planetary Science Institute). Regional evidence only: not a route, not a confirmed water supply.'},
+ {id:'arcadia',n:'Arcadia Planitia',la:41.36,lo:-148.05,z:12,ev:'orb',walk:1,t:'Walk map · regional ice evidence',x:'Northern lowland plain of mostly young (Amazonian) lava flows, north-west of Tharsis. The walk map sits in the Mars Express HRSC image of 10 Nov 2024 (orbit 26333), on the edge of a field of wind-carved yardangs. No rover has been here: slope is calculated from MOLA at about 463 m, so walk-scale ground is not characterized and every route is a candidate that requires review. Buried ice is consistent with SWIM 2.0 maps regionally (Planetary Science Institute), not measured along any route and not a confirmed water supply.'},
  {id:'utopia',n:'Utopia Planitia',la:46.7,lo:117.5,z:6,ev:'orb',t:'Regional ice evidence',x:'SHARAD radar found a buried deposit at 39 to 49°N holding about as much water as Lake Superior: 80 to 170 m thick, 50 to 85% ice, under 1 to 10 m of soil (NASA JPL, 2016). It shows in the SWIM 1 to 5 m map, not the top-metre map. Ice detected is not ice accessible.'},
  {id:'phoenix',n:'Phoenix site',la:68.22,lo:-125.75,z:8,ev:'obs',t:'Ice and weather case study',x:'Phoenix scraped soil and exposed shallow water ice in 2008, then ended as sunlight faded into winter. It lies beyond 60°N, outside the SWIM maps, in the band where Odyssey found hydrogen in the top metre. Its readings do not transfer to other sites.'},
  {id:'olympus',n:'Olympus Mons',la:18.65,lo:-133.8,z:5,ev:'obs',t:'Shield volcano',x:'About 22 km high and roughly 600 km wide. Context only: no walking data.'},
@@ -907,9 +927,10 @@ function select(i){
   $('gCard').innerHTML='<b>'+s.n+'</b> '+BADGE[s.ev]+'<div class="note" style="margin:2px 0 0">'+s.t+' · '+s.la.toFixed(2)+'°, '+s.lo.toFixed(2)+'°E</div><p>'+s.x+'</p>'+
     (()=>{ const v=iceAt(s.la,s.lo); if(!v) return s.la>=60||s.la<-60?'<p class="note" style="margin:-4px 0 8px">Ice layers: beyond 60°, outside the SWIM maps.</p>':'';
     const f=x=>x==null?'–':x.toFixed(2);
-    return `<p class="note" style="margin:-4px 0 8px">Ice here (0 to 1, approx.): top 1 m <b>${f(v.top1)}</b> · 1 to 5 m <b>${f(v.d1to5)}</b> · hydrogen <b>${f(v.abund)}</b> · collapse risk <b>${f(v.collapse)}</b> · resource value <b>${f(v.value)}</b></p>`; })()+
-    '<div class="row"><button type="button" id="gOpen">'+(s.walk?'Open walk map: '+s.n:'Zoom into '+s.n)+'</button><button type="button" class="quiet" id="gSpin">Resume spin</button></div>';
+    return `<p class="note" style="margin:-4px 0 8px">Regional ice evidence, SWIM 1° cell (0 to 1, approx.; not a local measurement): top 1 m <b>${f(v.top1)}</b> · 1 to 5 m <b>${f(v.d1to5)}</b> · hydrogen <b>${f(v.abund)}</b> · collapse risk <b>${f(v.collapse)}</b> · resource value <b>${f(v.value)}</b></p>`; })()+
+    '<div class="row"><button type="button" id="gOpen">'+(s.walk?'Open walk map: '+s.n:'Zoom into '+s.n)+'</button><button type="button" id="g3d">View in 3D</button><button type="button" class="quiet" id="gSpin">Resume spin</button></div>';
   $('gOpen').onclick=()=>openSite(i);
+  $('g3d').onclick=()=>{ location.href='3d.html?site='+s.id; };
   $('gSpin').onclick=()=>{ spin=true; tgt=null; };
 }
 
@@ -921,14 +942,19 @@ function openSite(i){
   zoomAnim={t0:performance.now(), from:camZ, s};
 }
 function enterMap(s){
+  // The planner holds one walk site per page load; switching walk sites reloads on that site's hash.
+  if(s.walk&&s.id!==window.__plannerSite){ try{ history.replaceState(null,'','#'+s.id); }catch(_){ location.hash=s.id; } location.reload(); return; }
   globeEl.classList.add('fade');
   setTimeout(()=>{ globeEl.hidden=true; }, 700);
   const away=!s.walk; window.__awayFromJezero=away;
   document.body.classList.toggle('away',away);
   $('siteCard').hidden=!away;
-  $('railTitle').textContent=away?s.n:'Jezero Marswalk Planner';
-  $('railEyebrow').textContent=away?'Site view · global NASA layers':'Crew tablet · Jezero crater · NASA Space Apps 2026';
+  const arc=s.id==='arcadia';
+  $('railTitle').textContent=away?s.n:arc?'Arcadia Marswalk Planner':'Jezero Marswalk Planner';
+  $('railEyebrow').textContent=away?'Site view · global NASA layers':arc?'Crew tablet · Arcadia Planitia · NASA Space Apps 2026':'Crew tablet · Jezero crater · NASA Space Apps 2026';
   if(away){ $('siteBadge').innerHTML=BADGE[s.ev]; $('siteText').textContent=s.t+'. '+s.x; }
+  $('site3d').onclick=()=>{ location.href='3d.html?site='+s.id; };
+  $('rail3d').href='3d.html?site='+s.id; $('rail3d').textContent=s.n+' in 3D →';
   map.invalidateSize();
   map.setView([s.la,s.lo],3,{animate:false});
   setTimeout(()=>map.flyTo([s.la,s.lo],s.z,{duration:2.4}),250);
@@ -1059,6 +1085,14 @@ const GLOSS=[
   ['ESP32',/\bESP32\b/,'A small, cheap computer chip that would run the suit tag.'],
   ['SpO2',/\bSpO2\b/,'Blood oxygen saturation: how much oxygen the blood is carrying. Healthy is about 95 to 100%.'],
   ['Regolith',/\bregolith\b/i,'The loose dust, soil and broken rock covering Mars.'],
+  ['Yardang',/\byardangs?\b/i,'A long ridge carved out of soft rock by wind blowing the same way for a very long time. Fields of them look like ploughed ground from orbit.'],
+  ['Rampart crater',/\brampart crater\b/i,'A crater whose ejecta flowed outward like mud and stopped in lobes with a raised edge. This suggests the ground held ice or water when the impact happened.'],
+  ['Ejecta',/\bejecta\b/i,'Rock and dust thrown out of a crater by the impact, lying around it as a blanket.'],
+  ['Fluidized ejecta',/\bfluidi[sz]ed\b/i,'Ejecta that flowed along the ground instead of flying and falling, a sign of ice or water in the target rock.'],
+  ['Dust devil',/\bdust[- ]devils?\b/i,'A spinning column of rising warm air that lifts dust, like a small tornado. On Mars they form on warm afternoons and can tower kilometres high.'],
+  ['Amazonian',/\bAmazonian\b/,'The most recent of Mars\'s three geological ages, roughly the last 3 billion years. Amazonian lava plains are young by Mars standards.'],
+  ['Tharsis',/\bTharsis\b/,'A huge volcanic plateau on Mars that carries Olympus Mons and three other giant volcanoes.'],
+  ['MOLA laser shot',/\blaser shots?\b/,'One pulse of the MOLA laser that reached the ground and came back, giving one height measurement. Between the tracks of shots, heights are only estimated.'],
 ];
 const SKIP='script,style,button,a,input,textarea,select,option,canvas,svg,.gl,#glTip,.ev,.sim,.leaflet-control-attribution,.glHint';
 const BLOCK='p,li,label,h1,h2,td,th,.stats>div,.leaflet-popup-content,section,div';

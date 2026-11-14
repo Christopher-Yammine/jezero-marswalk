@@ -3,16 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Jezero in 3D</title>
+<title>Marswalk 3D</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Full-screen terrain with one floating control panel; planner palette. */
-:root{--bg:#14110e;--panel:rgba(28,24,20,.92);--fg:#efe7dc;--mute:#a3978a;--line:#3a322a;--rust:#e0683a;--rust-soft:#3d2219;--ok:#6fcf97;--warn:#e5b64a;
+:root{--bg:#14110e;--panel:rgba(28,24,20,.92);--fg:#efe7dc;--mute:#a3978a;--line:#3a322a;--rust:#e0683a;--rust-soft:#3d2219;--ok:#6fcf97;--ok-soft:#1b3326;--warn:#e5b64a;--warn-soft:#3a2f14;--bad:#ef6b6b;--bad-soft:#3d1c1c;--orb:#7fb3e6;
   --display:"Archivo",system-ui,sans-serif;--body:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;color-scheme:dark}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 var(--body);overflow:hidden}
 #cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
-#panel{position:fixed;left:max(16px,env(safe-area-inset-left));top:max(16px,env(safe-area-inset-top));width:330px;max-width:calc(100% - 32px);max-height:calc(100% - 32px);overflow:auto;
+#cv.add{cursor:crosshair}
+#panel{position:fixed;left:max(16px,env(safe-area-inset-left));top:max(16px,env(safe-area-inset-top));width:360px;max-width:calc(100% - 32px);max-height:calc(100% - 32px);overflow:auto;
   background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;backdrop-filter:blur(6px);display:flex;flex-direction:column;gap:12px}
 .eyebrow{font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--rust);margin:0}
 h1{font:700 22px/1.1 var(--display);margin:2px 0 0}
@@ -20,127 +21,401 @@ h2{font:700 11px var(--display);letter-spacing:.06em;text-transform:uppercase;co
 p{margin:0}.note{font-size:12px;color:var(--mute)}
 a{color:var(--rust)}
 .seg{display:flex;flex-wrap:wrap;gap:6px}
-button{font:500 12px var(--body);background:transparent;color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:5px 9px;cursor:pointer}
-button[aria-pressed="true"]{background:var(--rust);border-color:var(--rust);color:#140c08}
-button:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
+button,.chip{font:500 12px var(--body);background:transparent;color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:5px 9px;cursor:pointer;text-decoration:none}
+button:disabled{opacity:.45;cursor:default}
+.chip{padding:3px 8px}
+button[aria-pressed="true"],.chip[aria-current="page"]{background:var(--rust);border-color:var(--rust);color:#140c08}
+button:focus-visible,.chip:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
 label.tg{display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer}
+label.rg{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--mute)}
+label.rg b{font:500 12px var(--mono);color:var(--fg)}
+input[type=range]{width:100%;accent-color:var(--rust)}
 #probe{font:12px/1.5 var(--mono);color:var(--fg);min-height:3em}
-#probe .w{color:var(--warn)}#probe .h{color:#ef6b6b}
-#load{position:fixed;inset:0;display:grid;place-items:center;font:13px var(--mono);color:var(--mute);pointer-events:none}
-@media (max-width:700px){#panel{top:auto;bottom:max(16px,env(safe-area-inset-bottom));max-height:46vh}}
+#probe .w{color:var(--warn)}#probe .h{color:var(--bad)}
+.ev{font:10px var(--mono);padding:1px 5px;border-radius:3px;white-space:nowrap}
+.ev.obs{background:var(--ok-soft);color:var(--ok)}.ev.orb{background:#172636;color:var(--orb)}.ev.calc{color:var(--orb);border:1px dashed var(--orb)}.ev.rule{background:var(--warn-soft);color:var(--warn)}.ev.draft{color:var(--mute);border:1px dashed var(--mute)}.ev.ph{color:var(--bad);border:1px dashed var(--bad)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:12.5px}
+.stats div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding:2px 0}
+.stats b{font:500 12px var(--mono);white-space:nowrap}.stats span{color:var(--mute)}
+.pills{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.pill{font:11px var(--mono);padding:2px 7px;border-radius:3px}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}.pill.warn{background:var(--warn-soft);color:var(--warn)}.pill.bad{background:var(--bad-soft);color:var(--bad)}
+ul.tg{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px}
+ul.tg li{display:grid;grid-template-columns:1fr auto;gap:2px 6px;align-items:center;padding:5px 7px;border:1px solid var(--line);border-radius:4px;font-size:12.5px}
+ul.tg li .a{display:flex;gap:4px}ul.tg li button{padding:2px 6px;font-size:11.5px}
+.tblwrap{overflow-x:auto}
+table.cmp{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
+table.cmp th{font:500 10px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--mute);text-align:right;padding:2px 4px;border-bottom:1px solid var(--line)}
+table.cmp th:first-child,table.cmp td:first-child{text-align:left}
+table.cmp td{font-family:var(--mono);text-align:right;padding:4px;border-bottom:1px dashed var(--line);white-space:nowrap}
+table.cmp tr[data-m]{cursor:pointer}table.cmp tr[data-m]:hover td{background:var(--rust-soft)}table.cmp tr.sel td{color:var(--rust)}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.ev.sim{color:var(--warn);border:1px dashed var(--warn)}
+input[type=time]{font:12px var(--mono);background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:2px 5px}
+#cMsg{font:12px var(--mono);color:var(--warn);min-height:16px}
+.warns{font:11.5px/1.4 var(--mono);display:flex;flex-direction:column;gap:3px;max-height:150px;overflow:auto}
+.warns .hi{color:var(--bad)}.warns .passed{color:var(--mute);text-decoration:line-through}
+#avLabel{position:fixed;z-index:5;pointer-events:none;transform:translate(-50%,-100%);font:500 11.5px var(--mono);background:rgba(20,17,14,.85);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:2px 7px;white-space:nowrap}
+#avLabel .h{color:var(--bad)}#avLabel .w{color:var(--warn)}#avLabel .m{color:var(--mute)}
+#load{position:fixed;inset:0;display:grid;place-items:center;font:13px var(--mono);color:var(--mute);pointer-events:none;padding:16px;text-align:center}
+[hidden]{display:none!important}
+@media (max-width:700px){#panel{top:auto;bottom:max(16px,env(safe-area-inset-bottom));max-height:52vh}}
 </style>
 </head>
 <body>
-<canvas id="cv" aria-label="3D terrain of Jezero crater"></canvas>
+<canvas id="cv" aria-label="3D terrain"></canvas>
 <div id="load">Loading terrain grid and imagery…</div>
+<div id="avLabel" hidden></div>
 <aside id="panel">
   <div>
-    <p class="eyebrow">Marswalk · <a href="./">map</a> · <a href="identify">identify</a></p>
-    <h1>Jezero in 3D</h1>
-    <p class="note" style="margin-top:4px">Drag to orbit, right-drag or two fingers to pan, scroll or pinch to zoom. Click the ground for its elevation, slope and mapped unit.</p>
+    <p class="eyebrow">Marswalk · <a href="./" id="mapLink">map</a> · <a href="identify">identify</a></p>
+    <h1 id="title">Mars in 3D</h1>
+    <p class="note" id="blurb" style="margin-top:4px"></p>
+    <p class="note" style="margin-top:4px">Drag to orbit, right-drag or two fingers to pan, scroll or pinch to zoom. Click the ground for its elevation and slope.</p>
   </div>
-  <div><h2>Vertical scale</h2><div class="seg" id="exag" role="group" aria-label="Vertical scale">
-    <button type="button" data-x="1" aria-pressed="true">1× true</button><button type="button" data-x="2" aria-pressed="false">2×</button><button type="button" data-x="4" aria-pressed="false">4×</button></div>
+  <div><h2>Site</h2><nav class="seg" id="sites" aria-label="Site"></nav></div>
+  <div><h2>Vertical scale</h2><div class="seg" id="exag" role="group" aria-label="Vertical scale"></div>
     <p class="note" style="margin-top:4px">Above 1× the relief is exaggerated so slopes are easier to see.</p></div>
-  <div><h2>Layers</h2>
-    <label class="tg"><input type="checkbox" id="lSand" checked> Sand ridges (USGS unit Aeb)</label>
-    <label class="tg"><input type="checkbox" id="lTrack" checked> Perseverance track, sols 14 to 2022</label>
-    <label class="tg"><input type="checkbox" id="lSteep"> Steep ground over 15°</label>
-  </div>
+  <div><h2>Layers</h2><div id="layers"></div></div>
+
+  <section id="routeBox" hidden style="display:flex;flex-direction:column;gap:10px">
+    <div>
+      <h2>Route</h2>
+      <div class="seg" id="clickMode" role="group" aria-label="What a click on the ground does">
+        <button type="button" data-m="probe" aria-pressed="true">Click: inspect</button><button type="button" data-m="add" aria-pressed="false">Click: add waypoint</button>
+      </div>
+      <label class="tg" style="margin-top:8px"><input type="checkbox" id="autoRoute" checked> Route clicks over terrain (recommended cost)</label>
+      <label class="rg" style="margin-top:6px">Slope limit <span class="ev draft">draft</span><b id="vSlope">15°</b></label>
+      <input type="range" id="slope" min="5" max="30" step="1" value="15" aria-label="Slope limit">
+      <div class="seg" style="margin-top:6px"><button type="button" id="undo">Remove last</button><button type="button" id="clear">Clear</button></div>
+      <p class="note" id="gridStatus" style="margin-top:6px">Terrain grid: loading THEMIS night IR…</p>
+    </div>
+    <div id="rstats"></div>
+    <div><h2>Targets</h2><ul class="tg" id="targets"></ul></div>
+    <div id="cmpWrap"></div>
+    <p class="note" id="routeNote"></p>
+  </section>
+
+  <section id="simBox" hidden style="display:flex;flex-direction:column;gap:8px">
+    <h2>Crew walk <span class="ev sim">simulated</span></h2>
+    <div class="seg">
+      <button type="button" id="simStart">Start simulated walk</button>
+      <button type="button" id="trackBack" disabled>Track back</button>
+      <button type="button" id="simStop">Stop</button>
+      <button type="button" id="voice" aria-pressed="false">Voice: off</button>
+    </div>
+    <div class="seg" id="simSpeed" role="group" aria-label="Simulation speed">
+      <button type="button" data-x="10" aria-pressed="false">10×</button><button type="button" data-x="60" aria-pressed="true">60×</button><button type="button" data-x="300" aria-pressed="false">300×</button>
+    </div>
+    <label class="tg"><input type="checkbox" id="follow" checked> Camera follows the astronaut</label>
+    <label class="rg">Walk start, local mean solar time <input type="time" id="start" value="09:00"></label>
+    <div id="cMsg"></div>
+    <div class="stats">
+      <div><span>Elapsed</span><b id="cElapsed">0 min</b></div>
+      <div><span>Dist. to base</span><b id="cDist">--</b></div>
+      <div><span>Walk-back</span><b id="cWb">--</b></div>
+      <div><span>Dose so far</span><b id="cDose">0 µGy</b></div>
+      <div><span>Slope underfoot</span><b id="cSlope">--</b></div>
+      <div><span>Elevation</span><b id="cElev">--</b></div>
+    </div>
+    <h2 style="margin-top:4px">Upcoming on route</h2>
+    <div class="warns" id="warns"><span class="note">Start a walk to see route warnings.</span></div>
+    <p class="note" id="simNote"></p>
+  </section>
+
   <div><h2>Point</h2><div id="probe">Click the terrain.</div></div>
-  <div class="seg"><button type="button" id="home">Reset view</button><button type="button" id="habView">Habitat close-up</button></div>
-  <p class="note">Terrain: USGS CTX stereo DTM (20 m), resampled to 30 m. Imagery: MRO CTX 6 m controlled mosaic via NASA Mars Trek. Sand: USGS SIM 3464 geologic map. Track: Mars 2020 traverse (NASA/JPL-Caltech).</p>
+  <div class="seg"><button type="button" id="home">Reset view</button><button type="button" id="close">Habitat close-up</button></div>
+  <p class="note" id="sources"></p>
 </aside>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="planner-core.js"></script>
 <script>
 (async function () {
 const $ = id => document.getElementById(id);
-// ---- georeference: same grid as the planner (HiRISE mosaic bounds, 30 m cells, Mars radius 3396190 m)
-const JEZ = [[18.3067994, 77.2229331], [18.669315, 77.583964]], R = 3396190, MPD = R * Math.PI / 180, CELL = 30;
-const lat0 = JEZ[1][0], lon0 = JEZ[0][1], mLat = MPD, mLon = MPD * Math.cos(((JEZ[0][0] + JEZ[1][0]) / 2) * Math.PI / 180);
-const HAB = { lat: 18.444627, lon: 77.450886 };
-// ---- imagery tiles: Trek EQ zoom 12 (10 m/px), covering the grid
-const Z = 12, TD = 180 / 2 ** Z, TX0 = 5853, TX1 = 5861, TY0 = 1623, TY1 = 1631;
-const TLON0 = TX0 * TD - 180, TLAT0 = 90 - TY0 * TD, TW = (TX1 - TX0 + 1) * 256, TH = (TY1 - TY0 + 1) * 256, TSPAN = (TX1 - TX0 + 1) * TD;
+const Core = window.MarswalkCore;
+const R = 3396190, MPD = R * Math.PI / 180;
+// Sites match the globe. Jezero and Arcadia are walk sites: same 30 m routing grid as the 2D planner (planner-core.js).
+// The rest use a MOLA window (data/build_site_terrain.py). mark: the point the cone marks; ex: starting vertical scale.
+const SITES = [
+  { id: 'jezero', n: 'Jezero Crater', mark: [18.444627, 77.450886], what: 'habitat', ex: 1, t: 'River-lake delta, Perseverance\'s crater. Footstep-scale terrain from CTX stereo, with the planner\'s routing.' },
+  { id: 'arcadia', n: 'Arcadia Planitia', mark: [41.36, -148.05], what: 'draft habitat', ex: 10, t: 'Walk area on the edge of a yardang field, in the Mars Express HRSC image of 10 Nov 2024. No rover has been here: slope comes from MOLA (about 463 m bins), so every route is a candidate that requires review. Relief is gentle: 10× by default.' },
+  { id: 'gale', n: 'Gale Crater', mark: [-4.59, 137.44], what: 'Curiosity landing site', ex: 2, t: 'About 154 km across, with Mount Sharp, a 5 km layered mound, in the middle. Curiosity has climbed its lower slopes since 2012.' },
+  { id: 'gusev', n: 'Gusev Crater', mark: [-14.57, 175.47], what: 'Spirit landing site', ex: 3, t: 'About 166 km across. Ma\'adim Vallis, a big dry valley, cuts the southern rim. Spirit explored the floor and the Columbia Hills.' },
+  { id: 'meridiani', n: 'Meridiani Planum', mark: [-1.95, -5.53], what: 'Opportunity landing site', ex: 10, t: 'Very flat plains of iron-rich sand over layered rock. Endeavour crater, 22 km, lies to the south-east.' },
+  { id: 'phoenix', n: 'Phoenix site', mark: [68.22, -125.75], what: 'Phoenix landing site', ex: 10, t: 'Flat polygon-patterned plains with ice just under the soil. Heimdal crater, 11 km, sits to the east.' },
+  { id: 'utopia', n: 'Utopia Planitia', mark: [46.7, 117.5], what: 'globe marker', ex: 10, t: 'Plains over a buried ice deposit found by radar. Gentle relief: use 10×.' },
+  { id: 'olympus', n: 'Olympus Mons', mark: [18.65, -133.8], what: 'summit caldera', ex: 1, t: 'The tallest volcano in the solar system: about 22 km high, ringed by cliffs up to 8 km tall.' },
+  { id: 'valles', n: 'Valles Marineris', mark: [-13.9, -59.2], what: 'globe marker', ex: 1, t: 'The central canyons (Ius, Melas, Candor, Coprates), up to about 7 km deep. The full system is 4,000 km long; this window shows the middle.' },
+  { id: 'hellas', n: 'Hellas Planitia', mark: [-42.4, 70.5], what: 'globe marker', ex: 4, t: 'Impact basin about 2,300 km across and 7 km deep. At this size the map is flattened: the planet\'s curve is not shown.' },
+];
+const params = new URLSearchParams(location.search), q = params.get('site'), view = params.get('view');
+const S = SITES.find(s => s.id === q) || SITES[0];
+const WALK = !!Core.SITES[S.id] && view !== 'region';         // walk sites route; ?view=region shows Arcadia's wide MOLA window
+document.title = S.n + ' in 3D · Marswalk';
+$('title').textContent = S.n + (WALK && S.id === 'arcadia' ? ' walk area in 3D' : view === 'region' ? ', regional 3D' : ' in 3D');
+$('blurb').innerHTML = S.id === 'arcadia'
+  ? (WALK ? S.t + ' <a href="?site=arcadia&view=region">Regional view with the candidate rampart crater →</a>'
+          : 'MOLA window over the HRSC orbit 26333 scene: the walk area near the south, the candidate rampart crater (about 20 km) near the north. <a href="?site=arcadia">Walk area with routing →</a>')
+  : S.t;
+$('sites').innerHTML = SITES.map(s => `<a class="chip" href="?site=${s.id}"${s === S ? ' aria-current="page"' : ''}>${s.n}</a>`).join('');
+if (WALK) $('mapLink').href = './#' + S.id;
+$('close').textContent = WALK ? 'Habitat close-up' : 'Close-up: ' + S.what;
 
-const [meta, buf, sand, trav] = await Promise.all([
-  fetch('data/jez_dtm_30m.json').then(r => r.json()),
-  fetch('data/jez_dtm_30m.i16').then(r => r.arrayBuffer()),
-  fetch('habitat/web/data/sim3464_walk.geojson').then(r => r.json()),
-  fetch('m20_traverse.json').then(r => r.json()),
-]);
-const NX = meta.nx, NY = meta.ny, D = new Int16Array(buf);
-const elevRaw = (ix, iy) => { ix = Math.max(0, Math.min(NX - 1, ix)); iy = Math.max(0, Math.min(NY - 1, iy)); const v = D[iy * NX + ix]; return v === -32768 ? NaN : v / 10; };
-let emin = Infinity, emax = -Infinity; for (const v of D) if (v !== -32768) { emin = Math.min(emin, v / 10); emax = Math.max(emax, v / 10); }
-const elev = (ix, iy) => { const v = elevRaw(ix, iy); return isNaN(v) ? emin : v; };
-const slopeAt = (ix, iy) => { const dx = (elev(ix + 1, iy) - elev(ix - 1, iy)) / (2 * CELL), dy = (elev(ix, iy + 1) - elev(ix, iy - 1)) / (2 * CELL); return Math.atan(Math.hypot(dx, dy)) * 180 / Math.PI; };
-// local metres: x east, z south, origin at the habitat
-const hx = (HAB.lon - lon0) * mLon, hz = (lat0 - HAB.lat) * mLat;
-const toXZ = (lat, lon) => [(lon - lon0) * mLon - hx, (lat0 - lat) * mLat - hz];
-const habElev = elev(Math.floor((hx) / CELL), Math.floor((hz) / CELL));
-
-// ---- scene
+// ---- shared scene
 const cv = $('cv'), renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
 renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
-const scene = new THREE.Scene(); scene.background = new THREE.Color(0x14110e); scene.fog = new THREE.Fog(0x14110e, 30000, 60000);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x14110e);
 const cam = new THREE.PerspectiveCamera(45, 1, 10, 200000);
 scene.add(new THREE.HemisphereLight(0xfff1e0, 0x2a1d14, 0.75));
 const sun = new THREE.DirectionalLight(0xffffff, 0.8); sun.position.set(-1, 1.2, -0.6); scene.add(sun);   // low sun from the north-west, like most orbital images
+const ctl = new THREE.OrbitControls(cam, cv); ctl.enableDamping = true; ctl.maxPolarAngle = Math.PI * 0.49;
+const frameHooks = [];                                                         // per-frame callbacks (the simulated walk)
+function meshFrom(pos, uv, gx, gy, texture) {
+  const idx = new Uint32Array((gx - 1) * (gy - 1) * 6); let t = 0;
+  for (let j = 0; j < gy - 1; j++) for (let i = 0; i < gx - 1; i++) { const a = j * gx + i, b = a + 1, c = a + gx, d = c + 1; idx.set([a, c, b, b, c, d], t); t += 6; }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); geo.setIndex(new THREE.BufferAttribute(idx, 1));
+  geo.computeVertexNormals();
+  return new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: texture }));
+}
+function exagButtons(list, onSet) {
+  $('exag').innerHTML = list.map(x => `<button type="button" data-x="${x}" aria-pressed="false">${x}×${x === 1 ? ' true' : ''}</button>`).join('');
+  document.querySelectorAll('#exag button').forEach(b => b.onclick = () => onSet(+b.dataset.x));
+}
+const pressExag = x => document.querySelectorAll('#exag button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.x === x));
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(); let down = null;
+function onGroundClick(mesh, fn) {
+  cv.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; });
+  cv.addEventListener('pointerup', e => {
+    if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;
+    const r = cv.getBoundingClientRect(); mouse.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+    ray.setFromCamera(mouse, cam); const hit = ray.intersectObject(mesh)[0]; if (hit) fn(hit.point);
+  });
+}
+const slopeCls = s => s > 15 ? 'h' : s > 10 ? 'w' : '';
+const fmtM = m => m >= 1000 ? (m / 1000).toFixed(2) + ' km' : Math.round(m) + ' m';
+const fmtT = min => min >= 60 ? Math.floor(min / 60) + ' h ' + String(Math.round(min % 60)).padStart(2, '0') + ' min' : Math.round(min) + ' min';
 
-// ---- terrain mesh (every second cell: about 122k vertices)
+if (WALK) await walkSite(); else await generic();
+
+function resize() { renderer.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); }
+addEventListener('resize', resize); resize();
+$('load').remove();
+(function loop(now) { requestAnimationFrame(loop); for (const f of frameHooks) f(now || performance.now()); ctl.update(); renderer.render(scene, cam); })();
+
+// =====================================================================================================
+// Walk sites (Jezero, Arcadia): the 2D planner's 30 m grid, its A* routing and route metrics, on the terrain.
+async function walkSite() {
+const site = Core.SITES[S.id], JZ = S.id === 'jezero', CELL = Core.CELL;
+const { lat0, lat1, lon0, lon1, mLon, mLat, nx: NX, ny: NY } = Core.geom(site.bounds);
+const HAB = { lat: site.hab[0], lng: site.hab[1] };
+const hx = (HAB.lng - lon0) * mLon, hz = (lat0 - HAB.lat) * mLat;              // local metres: x east, z south, origin at the habitat
+const toXZ = ll => [(ll.lng - lon0) * mLon - hx, (lat0 - ll.lat) * mLat - hz];
+const fromXZ = (x, z) => ({ lat: lat0 - (z + hz) / mLat, lng: lon0 + (x + hx) / mLon });
+const SPEED = 3.5, WALKBACK = 30, RADIUS = SPEED * 1000 * WALKBACK / 60;     // the planner's EVA rule: 1.75 km
+const LIM = () => +$('slope').value;
+const ORB = '<span class="ev orb">orbital</span>', OBS = '<span class="ev obs">observed</span>', CALC = '<span class="ev calc">calculated</span>', PH = '<span class="ev ph">placeholder</span>';
+scene.fog = new THREE.Fog(0x14110e, 30000, 60000);
+
+const buf = u => fetch(u).then(r => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.arrayBuffer(); });
+const json = u => fetch(u).then(r => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); });
+const [dtmBuf, fillBuf, roughBuf, sandMap, trav, arcMeta] = await Promise.all([
+  buf(site.dtm), site.fill ? buf(site.fill) : null, site.rough ? buf(site.rough).catch(() => null) : null,
+  JZ ? json('habitat/web/data/sim3464_walk.geojson') : null, JZ ? json(site.track) : null, JZ ? null : json('data/arcadia/arc_grid.json'),
+]);
+// display surface: Jezero's CTX DTM; Arcadia's full MOLA surface (routing reads only the shot cells, through the grid)
+const D = new Int16Array(fillBuf || dtmBuf); if (D.length !== NX * NY) throw new Error('elevation grid size does not match the planner grid');
+const OFF = site.dtmOffset || 0;                                              // decimetres are stored above this many metres
+let emin = Infinity; for (const v of D) if (v !== -32768) emin = Math.min(emin, v / 10 + OFF);
+const elevD = (ix, iy) => { ix = Math.max(0, Math.min(NX - 1, ix)); iy = Math.max(0, Math.min(NY - 1, iy)); const v = D[iy * NX + ix]; return v === -32768 ? emin : v / 10 + OFF; };
+const habElev = elevD(Math.floor(hx / CELL), Math.floor(hz / CELL));
+
+// imagery: Jezero CTX 6 m tiles (Trek zoom 12); Arcadia the HRSC orbit 26333 image cut to the grid bounds
+let IMG;
+if (JZ) {
+  const Z = 12, TD = 180 / 2 ** Z, TX0 = 5853, TX1 = 5861, TY0 = 1623, TY1 = 1631;
+  const TLON0 = TX0 * TD - 180, TLAT0 = 90 - TY0 * TD, TW = (TX1 - TX0 + 1) * 256, TH = (TY1 - TY0 + 1) * 256, TSPAN = (TX1 - TX0 + 1) * TD;
+  IMG = { TW, TH, fill: '#5b4a3d', pxPerM: TW / (TSPAN * mLon),
+    px: (lat, lon) => [(lon - TLON0) / TSPAN * TW, (TLAT0 - lat) / TSPAN * TH], uv: (lat, lon) => [(lon - TLON0) / TSPAN, 1 - (TLAT0 - lat) / TSPAN],
+    load(ctx, done) { let n = 0; for (let ty = TY0; ty <= TY1; ty++) for (let tx = TX0; tx <= TX1; tx++) {
+      const im = new Image(); im.crossOrigin = 'anonymous';
+      im.onload = () => { ctx.drawImage(im, (tx - TX0) * 256, (ty - TY0) * 256); if (++n % 9 === 0 || n === 81) done(); };
+      im.onerror = () => { if (++n === 81) done(); };
+      im.src = `https://trek.nasa.gov/tiles/Mars/EQ/JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0/1.0.0/default/default028mm/${Z}/${ty}/${tx}.png`; } } };
+} else {
+  const w = arcMeta.hrsc.walk_image, [[bS, bW], [bN, bE]] = w.bounds, K = Math.min(2, 2400 / Math.max(...w.px)), TW = Math.round(w.px[0] * K), TH = Math.round(w.px[1] * K);   // texture capped near Jezero's size
+  IMG = { TW, TH, fill: '#3a3632', pxPerM: TW / ((bE - bW) * mLon),
+    px: (lat, lon) => [(lon - bW) / (bE - bW) * TW, (bN - lat) / (bN - bS) * TH], uv: (lat, lon) => [(lon - bW) / (bE - bW), 1 - (bN - lat) / (bN - bS)],
+    load(ctx, done) { const im = new Image(); im.onload = () => { ctx.drawImage(im, 0, 0, TW, TH); done(); }; im.src = 'data/arcadia/' + w.file; } };
+}
+$('sources').innerHTML = JZ
+  ? 'Terrain: USGS CTX stereo DTM (20 m), resampled to 30 m. Imagery: MRO CTX 6 m controlled mosaic via NASA Mars Trek. Sand ridges: USGS SIM 3464 geologic map. Track: Mars 2020 traverse (NASA/JPL-Caltech). Routing: the planner\'s 30 m grid, THEMIS night IR sand proxy, rover track as proven ground.'
+  : 'Terrain: MGS MOLA MEGDR, 128 px per degree (about 463 m bins), interpolated to 30 m for display. About two thirds of cells have no laser shot in their bin: routing treats them as not characterized. Imagery: Mars Express HRSC orbit 26333, 10 Nov 2024, 12.5 m, credit ESA/DLR/FU Berlin, <a href="https://creativecommons.org/licenses/by-sa/3.0/igo/" target="_blank" rel="noopener">CC BY-SA 3.0 IGO</a>, cropped and reprojected. Sand proxy: THEMIS night IR (100 m) via Mars Trek. No ground truth exists here.';
+
+// terrain mesh (every second cell)
 const STEP = 2, gx = Math.ceil(NX / STEP), gy = Math.ceil(NY / STEP);
 const pos = new Float32Array(gx * gy * 3), uv = new Float32Array(gx * gy * 2), base = new Float32Array(gx * gy);
 for (let j = 0; j < gy; j++) for (let i = 0; i < gx; i++) {
   const ix = Math.min(NX - 1, i * STEP), iy = Math.min(NY - 1, j * STEP), k = j * gx + i;
-  const lon = lon0 + (ix + .5) * CELL / mLon, lat = lat0 - (iy + .5) * CELL / mLat;
-  pos[3 * k] = (ix + .5) * CELL - hx; pos[3 * k + 2] = (iy + .5) * CELL - hz; base[k] = elev(ix, iy) - habElev; pos[3 * k + 1] = base[k];
-  uv[2 * k] = (lon - TLON0) / TSPAN; uv[2 * k + 1] = 1 - (TLAT0 - lat) / TSPAN;
+  const lon = lon0 + (ix + .5) * CELL / mLon, lat = lat0 - (iy + .5) * CELL / mLat, [u, v] = IMG.uv(lat, lon);
+  pos[3 * k] = (ix + .5) * CELL - hx; pos[3 * k + 2] = (iy + .5) * CELL - hz; base[k] = elevD(ix, iy) - habElev; pos[3 * k + 1] = base[k];
+  uv[2 * k] = u; uv[2 * k + 1] = v;
 }
-const idx = new Uint32Array((gx - 1) * (gy - 1) * 6); let t = 0;
-for (let j = 0; j < gy - 1; j++) for (let i = 0; i < gx - 1; i++) { const a = j * gx + i, b = a + 1, c = a + gx, d = c + 1; idx.set([a, c, b, b, c, d], t); t += 6; }
-const geo = new THREE.BufferGeometry();
-geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); geo.setIndex(new THREE.BufferAttribute(idx, 1));
-geo.computeVertexNormals();
-const tex = document.createElement('canvas'); tex.width = TW; tex.height = TH;
-const tctx = tex.getContext('2d'), imgCv = document.createElement('canvas'); imgCv.width = TW; imgCv.height = TH;
-const ictx = imgCv.getContext('2d'); ictx.fillStyle = '#5b4a3d'; ictx.fillRect(0, 0, TW, TH);
+const mk = () => { const c = document.createElement('canvas'); c.width = IMG.TW; c.height = IMG.TH; return c; };
+const tex = mk(), tctx = tex.getContext('2d'), imgCv = mk(), ictx = imgCv.getContext('2d'), statCv = mk(), sctx = statCv.getContext('2d');
+ictx.fillStyle = IMG.fill; ictx.fillRect(0, 0, IMG.TW, IMG.TH);
 const texture = new THREE.CanvasTexture(tex); texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: texture })); scene.add(mesh);
+const mesh = meshFrom(pos, uv, gx, gy, texture), geo = mesh.geometry; scene.add(mesh);
 
-// ---- overlays drawn into the texture (they follow the ground exactly)
-const px = (lat, lon) => [(lon - TLON0) / TSPAN * TW, (TLAT0 - lat) / TSPAN * TH];
-function compose() {
-  tctx.drawImage(imgCv, 0, 0);
-  if ($('lSteep').checked) {                     // red where the 30 m grid is steeper than 15 degrees
-    tctx.fillStyle = 'rgba(239,107,107,.55)';
-    const [x0] = px(lat0, lon0), w = CELL / mLon / TSPAN * TW, h = CELL / mLat / TSPAN * TH;
-    for (let iy = 0; iy < NY; iy++) for (let ix = 0; ix < NX; ix++) if (slopeAt(ix, iy) > 15) {
-      const [x, y] = px(lat0 - iy * CELL / mLat, lon0 + ix * CELL / mLon); tctx.fillRect(x, y, w + .5, h + .5); }
+// ---- layers (drawn into the texture so they follow the ground exactly)
+const LAYERS = JZ
+  ? [['lSand', 'Sand ridges (USGS unit Aeb)', 1], ['lTrack', 'Perseverance track, sols 14 to 2022', 1], ['lSteep', 'Steep ground: red over the slope limit, amber within 5°', 0], ['lTgt', 'Targets, habitat, walk-back circle', 1]]
+  : [['lRough', 'Yardang roughness: HRSC image texture (calculated)', 1], ['lSandP', 'Loose-sand proxy: THEMIS night IR', 0], ['lNodata', 'No MOLA laser shot (not characterized)', 1], ['lSteep', 'Slope from MOLA where a shot exists: red over the limit, amber within 5°', 0], ['lTgt', 'Targets, habitat, walk-back circle', 1]];
+$('layers').innerHTML = LAYERS.map(([id, label, on]) => `<label class="tg"><input type="checkbox" id="${id}"${on ? ' checked' : ''}> ${label}</label>`).join('');
+const on = id => $(id) && $(id).checked;
+let G = null;
+// one pixel per grid cell, stretched over the grid's footprint in the texture
+function gridLayer(ctx, paint) {
+  const c = document.createElement('canvas'); c.width = G.nx; c.height = G.ny; const g = c.getContext('2d'), im = g.createImageData(G.nx, G.ny);
+  for (let i = 0; i < G.n; i++) { const p = paint(i); if (p) im.data.set(p, i * 4); }
+  g.putImageData(im, 0, 0);
+  const [x0, y0] = IMG.px(G.lat0, G.lon0), [x1, y1] = IMG.px(G.lat0 - G.ny * CELL / G.mLat, G.lon0 + G.nx * CELL / G.mLon);
+  ctx.imageSmoothingEnabled = false; ctx.drawImage(c, x0, y0, x1 - x0, y1 - y0); ctx.imageSmoothingEnabled = true;
+}
+// steepest 30 m step out of each cell: what the router sees (same rule as the 2D steep-ground layer)
+function steepPaint() {
+  const { nx, ny, elev } = G, lim = LIM(), out = new Uint8Array(nx * ny);
+  for (let y = 0; y < ny; y++) for (let x = 0; x < nx; x++) {
+    const i = y * nx + x, e0 = elev[i]; let mx = 0; if (isNaN(e0)) continue;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { if (!dx && !dy) continue; const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= nx || yy >= ny) continue;
+      const e1 = elev[yy * nx + xx]; if (isNaN(e1)) continue; const sl = Math.atan2(Math.abs(e1 - e0), Math.hypot(dx, dy) * CELL) * 180 / Math.PI; if (sl > mx) mx = sl; }
+    out[i] = mx > lim ? 2 : mx > lim - 5 ? 1 : 0;
   }
-  if ($('lSand').checked) {
-    tctx.fillStyle = 'rgba(229,182,74,.42)'; tctx.strokeStyle = 'rgba(229,182,74,.9)'; tctx.lineWidth = 1.5;
-    for (const f of sand.features) { if (f.properties.u !== 'Aeb') continue;
+  return i => out[i] === 2 ? [224, 60, 40, 170] : out[i] === 1 ? [240, 170, 40, 110] : null;
+}
+function drawStatic() {
+  sctx.clearRect(0, 0, IMG.TW, IMG.TH);
+  const P = (la, lo) => IMG.px(la, lo);
+  if (JZ && on('lSand')) {
+    sctx.fillStyle = 'rgba(229,182,74,.42)'; sctx.strokeStyle = 'rgba(229,182,74,.9)'; sctx.lineWidth = 1.5;
+    for (const f of sandMap.features) { if (f.properties.u !== 'Aeb') continue;
       const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
-      for (const poly of polys) { tctx.beginPath(); for (const ring of poly) ring.forEach(([lo, la], i) => { const [x, y] = px(la, lo); i ? tctx.lineTo(x, y) : tctx.moveTo(x, y); }); tctx.fill('evenodd'); tctx.stroke(); } }
+      for (const poly of polys) { sctx.beginPath(); for (const ring of poly) ring.forEach(([lo, la], i) => { const [x, y] = P(la, lo); i ? sctx.lineTo(x, y) : sctx.moveTo(x, y); }); sctx.fill('evenodd'); sctx.stroke(); } }
   }
-  if ($('lTrack').checked) {
-    const maxSol = trav.segments[trav.segments.length - 1].sol; tctx.lineWidth = 3;
-    for (const s of trav.segments) { tctx.strokeStyle = `hsl(${200 - 200 * s.sol / maxSol},80%,60%)`; tctx.beginPath();
-      s.pts.forEach((p, i) => { const [x, y] = px(p[1], p[0]); i ? tctx.lineTo(x, y) : tctx.moveTo(x, y); }); tctx.stroke(); }
+  if (JZ && on('lTrack')) {
+    const maxSol = trav.segments[trav.segments.length - 1].sol; sctx.lineWidth = 3;
+    for (const s of trav.segments) { sctx.strokeStyle = `hsl(${200 - 200 * s.sol / maxSol},80%,60%)`; sctx.beginPath();
+      s.pts.forEach((p, i) => { const [x, y] = P(p[1], p[0]); i ? sctx.lineTo(x, y) : sctx.moveTo(x, y); }); sctx.stroke(); }
   }
-  texture.needsUpdate = true;
+  if (!G) return;
+  if (!JZ && on('lRough') && G.rough) gridLayer(sctx, i => { const r = G.rough[i]; return r > 0.5 ? [240, 140, 60, Math.round(70 + (r - .5) * 260)] : null; });
+  if (!JZ && on('lSandP')) gridLayer(sctx, i => { const s = G.sand[i]; return s > 0.5 ? [229, 182, 74, Math.round(60 + (s - .5) * 260)] : null; });
+  if (!JZ && on('lNodata')) gridLayer(sctx, i => { if (!isNaN(G.elev[i])) return null; const x = i % G.nx, y = (i / G.nx) | 0; return (x + y) % 6 < 2 ? [110, 140, 255, 130] : [110, 140, 255, 30]; });
+  if (on('lSteep') && G.dtm) gridLayer(sctx, steepPaint());
 }
-let loaded = 0;
-for (let ty = TY0; ty <= TY1; ty++) for (let tx = TX0; tx <= TX1; tx++) {
-  const im = new Image(); im.crossOrigin = 'anonymous';
-  im.onload = () => { ictx.drawImage(im, (tx - TX0) * 256, (ty - TY0) * 256); if (++loaded % 9 === 0 || loaded === 81) compose(); };
-  im.onerror = () => { if (++loaded === 81) compose(); };
-  im.src = `https://trek.nasa.gov/tiles/Mars/EQ/JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0/1.0.0/default/default028mm/${Z}/${ty}/${tx}.png`;
+
+// ---- routing state, as in the 2D planner: anchors are the clicked points, waypoints the routed path between them
+let anchors = [], waypoints = [], backPath = [], cand = null, selected = null, clickMode = 'probe';
+const CAND = { short: { label: 'Shortest', color: '#a3978a', dash: [2, 5] }, terrain: { label: 'Terrain-aware', color: '#7fb3e6', dash: [6, 4] }, best: { label: 'Recommended', color: '#6fcf97', dash: [] } };
+function drawRoutes(ctx) {
+  const P = ll => IMG.px(ll.lat, ll.lng), lw = Math.max(2, 26 * IMG.pxPerM);
+  const line = (pts, color, w, dash) => { if (pts.length < 2) return; ctx.setLineDash((dash || []).map(v => v * w)); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.beginPath(); pts.forEach((p, i) => { const [x, y] = P(p); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke(); ctx.setLineDash([]); };
+  if (on('lTgt')) {
+    const ring = []; for (let a = 0; a <= 72; a++) { const t = a / 72 * 2 * Math.PI; ring.push({ lat: HAB.lat + RADIUS * Math.sin(t) / mLat, lng: HAB.lng + RADIUS * Math.cos(t) / mLon }); }
+    line(ring, 'rgba(111,207,151,.9)', lw * .6, [4, 3]);
+    for (const t of site.targets) { if (t.ph) continue; const [x, y] = P({ lat: t.ll[0], lng: t.ll[1] }), s = lw * 3.2;
+      ctx.globalAlpha = t.alt ? .6 : 1; ctx.fillStyle = '#e0683a'; ctx.strokeStyle = '#140c08'; ctx.lineWidth = lw * .5; ctx.fillRect(x - s / 2, y - s / 2, s, s); ctx.strokeRect(x - s / 2, y - s / 2, s, s); ctx.globalAlpha = 1; }
+  }
+  if (cand) for (const k in cand.routes) { const r = cand.routes[k]; if (r.path) line([HAB, ...r.path], CAND[k].color, k === selected ? lw * 1.3 : lw * .9, CAND[k].dash); }
+  line([HAB, ...waypoints], '#e0683a', lw * 1.2);
+  if (waypoints.length) line([waypoints[waypoints.length - 1], ...backPath], 'rgba(224,104,58,.85)', lw * .7, [3, 4]);
+  for (const a of anchors) { const [x, y] = P(a); ctx.beginPath(); ctx.arc(x, y, lw * .9, 0, 2 * Math.PI); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = lw * .4; ctx.strokeStyle = '#e0683a'; ctx.stroke(); }
 }
-compose();
-['lSand', 'lTrack', 'lSteep'].forEach(id => $(id).onchange = compose);
+function compose() { tctx.drawImage(imgCv, 0, 0); tctx.drawImage(statCv, 0, 0); drawRoutes(tctx); texture.needsUpdate = true; }
+IMG.load(ictx, compose); drawStatic(); compose();
+LAYERS.forEach(([id]) => $(id).onchange = () => { drawStatic(); compose(); });
+
+function rebuild() {
+  if (sim) simReset();                                                          // a route edit ends the simulated walk, as in the 2D planner
+  waypoints = []; const auto = $('autoRoute').checked && G, lim = LIM(); let from = HAB, soft = 0, off = 0;
+  for (const a of anchors) {
+    let via = [a];
+    if (auto && Core.dist(from, a) > CELL * 2) { const r = Core.routeTo(G, from, a, lim); if (r) { via = r.path; if (r.soft) soft++; } else off++; }
+    waypoints.push(...via); from = a;
+  }
+  backPath = [];
+  if (anchors.length) { backPath = [HAB]; if (auto && Core.dist(from, HAB) > CELL * 2) { const r = Core.routeTo(G, from, HAB, lim); if (r) { backPath = r.path; if (r.soft) soft++; } else off++; } }
+  renderStats(soft, off); compose();
+}
+function renderStats(soft, off) {
+  if (!anchors.length) { $('rstats').innerHTML = '<p class="note">No route yet. Choose "Click: add waypoint" and click the ground, or press Route on a target.</p>'; return; }
+  const opt = { slopeLim: LIM(), radius: Infinity, hab: HAB }, last = anchors[anchors.length - 1];
+  const mo = Core.routeMetrics(G, waypoints, HAB, opt), mb = Core.routeMetrics(G, backPath, last, opt);
+  const total = mo.len + mb.len, mins = total / (SPEED * 1000 / 60), share = k => (mo[k] * mo.len + mb[k] * mb.len) / Math.max(1, total);
+  const steps = mo.breaks + mb.breaks, pct = v => Math.round(v * 100) + '%';
+  const pills = [mo.far <= RADIUS ? ['ok', 'walk-back OK'] : ['bad', 'walk-back breach ' + fmtM(mo.far - RADIUS) + ' past limit'],
+    steps ? ['bad', steps + ' step' + (steps > 1 ? 's' : '') + ' over the ' + LIM() + '° limit'] : share('known') ? ['ok', JZ ? 'slope OK where known' : 'calculated slope within limit where MOLA has a shot'] : ['warn', 'slope unknown on this route']];
+  if (!JZ) pills.push(['warn', 'walk-scale slope not characterized (MOLA bins ~463 m)']);
+  if (share('sandy') > 0.1) pills.push(['warn', pct(share('sandy')) + ' over sandy ground (night IR proxy)']);
+  if (!JZ && share('rough') > 0.1) pills.push(['warn', pct(share('rough')) + ' over yardang-textured ground (HRSC proxy)']);
+  if (soft) pills.push(['bad', 'no path under the limit to ' + soft + ' point' + (soft > 1 ? 's' : '') + ': least steep shown']);
+  if (off) pills.push(['warn', off + ' point' + (off > 1 ? 's' : '') + ' outside the grid: straight line']);
+  $('rstats').innerHTML = '<div class="stats"><div><span>Out</span><b>' + fmtM(mo.len) + '</b></div><div><span>Return leg</span><b>' + fmtM(mb.len) + '</b></div>' +
+    '<div><span>Round trip</span><b>' + fmtT(mins) + '</b></div><div><span>Farthest from base</span><b>' + fmtM(mo.far) + '</b></div>' +
+    '<div><span>Slope known</span><b>' + pct(share('known')) + '</b></div><div><span>' + (JZ ? 'Proven ground' : 'Rough') + '</span><b>' + pct(share(JZ ? 'drv' : 'rough')) + '</b></div></div>' +
+    '<div class="pills">' + pills.map(p => '<span class="pill ' + p[0] + '">' + p[1] + '</span>').join('') + '</div>' +
+    '<p class="note" style="margin-top:6px">Round trip is distance over ' + SPEED + ' km/h. Walk-back circle ' + fmtM(RADIUS) + ' (' + SPEED + ' km/h × ' + WALKBACK + ' min, NASA JSC 2026) <span class="ev rule">rule</span>.' + (JZ ? '' : ' Every route here is a candidate that requires review.') + '</p>';
+}
+function compareRoutes(t) {
+  if (!G) return;
+  const to = { lat: t.ll[0], lng: t.ll[1] }, lim = LIM(), routes = { short: { path: [to] } }, t0 = performance.now();
+  routes.terrain = { path: Core.astar(G, HAB, to, 'terrain', lim) }; routes.best = { path: Core.astar(G, HAB, to, 'best', lim) };
+  const ms = Math.round(performance.now() - t0);
+  for (const k in routes) if (routes[k].path) routes[k].metrics = Core.routeMetrics(G, routes[k].path, HAB, { slopeLim: lim, radius: RADIUS, hab: HAB });
+  cand = { t, routes, ms }; selected = null; renderCand(); compose(); lookAt(to, HAB);
+}
+function renderCand() {
+  if (!cand) { $('cmpWrap').innerHTML = ''; return; }
+  const pct = v => Math.round(v * 100) + '%', col3 = JZ ? 'Proven' : 'Rough', v3 = m => pct(JZ ? m.drv : m.rough);
+  $('cmpWrap').innerHTML = '<h2>Route comparison</h2><p class="note">' + (JZ ? 'To ' : 'Candidate routes to ') + '<b>' + cand.t.n + '</b> from the habitat. Computed in ' + cand.ms + ' ms. Click a row to adopt it.</p>' +
+    '<div class="tblwrap"><table class="cmp"><tr><th>Route</th><th>Length</th><th>Sandy</th><th>' + col3 + '</th><th>Slope known</th><th>Breaks</th></tr>' +
+    Object.keys(CAND).map(k => { const r = cand.routes[k], sw = '<span class="sw" style="background:' + CAND[k].color + '"></span>' + CAND[k].label;
+      if (!r.path) return '<tr><td>' + sw + '</td><td colspan="5">no path within grid</td></tr>';
+      const m = r.metrics; return '<tr data-m="' + k + '" class="' + (k === selected ? 'sel' : '') + '"><td>' + sw + '</td><td>' + fmtM(m.len) + '</td><td>' + pct(m.sandy) + '</td><td>' + v3(m) + '</td><td>' + pct(m.known) + '</td><td>' + m.breaks + '</td></tr>'; }).join('') + '</table></div>';
+  $('cmpWrap').querySelectorAll('tr[data-m]').forEach(tr => tr.onclick = () => { const r = cand.routes[tr.dataset.m]; anchors = r.path.slice(); selected = tr.dataset.m; rebuild(); renderCand(); });
+}
+$('routeNote').innerHTML = 'Sandy: share over cells darker than the 65th percentile midpoint in THEMIS night IR ' + ORB + '. ' +
+  (JZ ? 'Proven: share within 60 m of Perseverance\'s track ' + OBS + '. ' : 'Rough: share over the top half of the HRSC texture scale, a yardang proxy ' + CALC + '. Slope known: share where MOLA has a laser shot ' + CALC + '; elsewhere slope is not characterized. ') +
+  'Breaks: 30 m steps over the slope limit where elevation is known, plus one if the route leaves the walk-back circle. Unknown ground is unchecked and requires review.' +
+  (JZ ? '' : ' No ground truth exists here: Recommended means lower-risk under these stated assumptions only.') + ' Same grid and router as the 2D map.';
+function renderTargets() {
+  $('targets').innerHTML = site.targets.map((t, i) => {
+    if (t.ph) return '<li><span>' + t.n + ' ' + PH + '</span><span></span></li>';
+    const inGrid = G && G.toCell(t.ll[0], t.ll[1]) >= 0, badge = t.sol != null ? '<span class="ev obs">sol ' + t.sol + '</span>' : (t.alt ? '<span class="ev draft">fallback</span>' : '');
+    return '<li title="' + t.d.replace(/"/g, '&quot;') + '"><span>' + t.n + ' ' + badge + '</span><span class="a"><button type="button" data-go="' + i + '">Go</button><button type="button" data-add="' + i + '"' + (inGrid ? '' : ' disabled') + '>Add</button><button type="button" data-route="' + i + '"' + (inGrid ? '' : ' disabled') + '>' + (G && !inGrid ? 'Out of grid' : 'Route') + '</button></span></li>';
+  }).join('');
+  $('targets').querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const t = site.targets[+b.dataset.go]; lookAt({ lat: t.ll[0], lng: t.ll[1] }); probeAt({ lat: t.ll[0], lng: t.ll[1] }, t.n); });
+  $('targets').querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const t = site.targets[+b.dataset.add]; anchors.push({ lat: t.ll[0], lng: t.ll[1] }); rebuild(); });
+  $('targets').querySelectorAll('[data-route]').forEach(b => b.onclick = () => compareRoutes(site.targets[+b.dataset.route]));
+}
+$('routeBox').hidden = false; renderTargets(); renderStats(0, 0);
+document.querySelectorAll('#clickMode button').forEach(b => b.onclick = () => { clickMode = b.dataset.m; document.querySelectorAll('#clickMode button').forEach(x => x.setAttribute('aria-pressed', x === b)); cv.classList.toggle('add', clickMode === 'add'); });
+$('undo').onclick = () => { anchors.pop(); rebuild(); };
+$('clear').onclick = () => { anchors = []; cand = null; selected = null; renderCand(); rebuild(); };
+$('autoRoute').onchange = rebuild;
+$('slope').oninput = () => { $('vSlope').textContent = LIM() + '°'; };
+$('slope').onchange = () => { drawStatic(); if (cand) compareRoutes(cand.t); rebuild(); };
+
+// ---- the routing grid: THEMIS night IR + elevation (+ rover track on Jezero, HRSC texture on Arcadia), built by the core
+const pts = []; if (JZ) for (const s of trav.segments) for (const p of s.pts) pts.push([p[1], p[0], p[2]]);
+Core.loadThemis(site.bounds).then(nir => {
+  G = Core.buildGrid({ site, nirCanvas: nir, dtmBuf, roughBuf, pts });
+  $('gridStatus').innerHTML = 'Routing grid ready: ' + G.nx + ' × ' + G.ny + ' cells of 30 m. ' + (JZ ? G.drv + ' cells near the rover track count as proven ground.' : Math.round(G.shotN / G.n * 100) + '% of cells have a MOLA laser shot; the rest are not characterized.');
+  drawStatic(); renderTargets(); rebuild();
+}).catch(e => { $('gridStatus').textContent = 'Routing grid unavailable: THEMIS tiles did not load (' + e + '). Waypoints are joined by straight lines.'; });
 
 // ---- habitat marker
 const hab = new THREE.Mesh(new THREE.ConeGeometry(60, 180, 4), new THREE.MeshBasicMaterial({ color: 0x6fcf97 }));
@@ -150,39 +425,328 @@ hab.position.set(0, 90, 0); scene.add(hab);
 let EX = 1;
 function setExag(x) {
   EX = x; const p = geo.attributes.position.array;
-  for (let k = 0; k < base.length; k++) p[3 * k + 1] = base[k] * EX;
+  for (let k = 0; k < base.length; k++) p[3 * k + 1] = base[k] * x;
   geo.attributes.position.needsUpdate = true; geo.computeVertexNormals(); geo.computeBoundingSphere();
-  hab.position.y = 90;
-  document.querySelectorAll('#exag button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.x === x));
+  pressExag(x);
 }
-document.querySelectorAll('#exag button').forEach(b => b.onclick = () => setExag(+b.dataset.x));
+exagButtons(JZ ? [1, 2, 4] : [1, 2, 4, 10], setExag); setExag(S.ex);
 
 // ---- camera
-const ctl = new THREE.OrbitControls(cam, cv); ctl.enableDamping = true; ctl.maxPolarAngle = Math.PI * 0.49; ctl.minDistance = 200; ctl.maxDistance = 60000;
-function home() { cam.position.set(-4000, 9000, 14000); ctl.target.set(-2500, 0, 0); ctl.update(); }
+ctl.minDistance = 200; ctl.maxDistance = 60000;
+const gH = (ll) => { const [x, z] = toXZ(ll); return (elevD(Math.floor((x + hx) / CELL), Math.floor((z + hz) / CELL)) - habElev) * EX; };
+function lookAt(a, b) {   // frame one point, or the segment between two
+  const [ax, az] = toXZ(a), [bx, bz] = b ? toXZ(b) : [ax, az], cx = (ax + bx) / 2, cz = (az + bz) / 2, span = Math.max(1200, Math.hypot(ax - bx, az - bz)), y = gH(a);
+  ctl.target.set(cx, y, cz); cam.position.set(cx - span * .35, y + span * .9, cz + span * 1.1); ctl.update();
+}
+function home() { if (JZ) { cam.position.set(-4000, 9000, 14000); ctl.target.set(-2500, 0, 0); } else { const cx = NX * CELL / 2 - hx, cz = NY * CELL / 2 - hz; cam.position.set(cx - 3000, 9500, cz + 14000); ctl.target.set(cx, 0, cz); } ctl.update(); }
 function habView() { cam.position.set(-900, 700, 1400); ctl.target.set(0, 0, 0); ctl.update(); }
-$('home').onclick = home; $('habView').onclick = habView; home();
+$('home').onclick = home; $('close').onclick = habView; home();
 
-// ---- click: elevation, slope, mapped unit
-const units = sand.units || {};
+// ---- click: inspect, or add a waypoint
 const inRing = (ring, la, lo) => { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const [xi, yi] = ring[i], [xj, yj] = ring[j]; if (((yi > la) !== (yj > la)) && lo < (xj - xi) * (la - yi) / (yj - yi) + xi) c = !c; } return c; };
-function unitAt(la, lo) { for (const f of sand.features) { const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates; for (const poly of polys) if (inRing(poly[0], la, lo)) return f.properties.u; } return null; }
-const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(); let down = null;
-cv.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; });
-cv.addEventListener('pointerup', e => {
-  if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;
-  const r = cv.getBoundingClientRect(); mouse.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
-  ray.setFromCamera(mouse, cam); const hit = ray.intersectObject(mesh)[0]; if (!hit) return;
-  const X = hit.point.x + hx, Zs = hit.point.z + hz, ix = Math.floor(X / CELL), iy = Math.floor(Zs / CELL);
-  const lon = lon0 + X / mLon, lat = lat0 - Zs / mLat, s = slopeAt(ix, iy), u = unitAt(lat, lon), dHab = Math.hypot(hit.point.x, hit.point.z);
-  $('probe').innerHTML = `${lat.toFixed(5)}°N ${lon.toFixed(5)}°E<br>elevation ${elev(ix, iy).toFixed(0)} m (MOLA datum)<br>slope <span class="${s > 15 ? 'h' : s > 10 ? 'w' : ''}">${s.toFixed(1)}°</span> · ${(dHab / 1000).toFixed(2)} km from habitat<br>${u === 'Aeb' ? '<span class="w">sand ridges (USGS Aeb)</span>' : u === 'su' ? '<span class="w">smooth unit, possibly loose</span>' : 'no mapped sand unit'}`;
-});
+function unitAt(la, lo) { for (const f of sandMap.features) { const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates; for (const poly of polys) if (inRing(poly[0], la, lo)) return f.properties.u; } return null; }
+function slopeAtCell(i) {   // steepest step to a neighbour, routing grid; null where not characterized
+  if (!G || i < 0 || isNaN(G.elev[i])) return null; const x = i % G.nx, y = (i / G.nx) | 0; let mx = null;
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { if (!dx && !dy) continue; const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= G.nx || yy >= G.ny) continue;
+    const e = G.elev[yy * G.nx + xx]; if (isNaN(e)) continue; const s = Math.atan2(Math.abs(e - G.elev[i]), Math.hypot(dx, dy) * CELL) * 180 / Math.PI; if (mx == null || s > mx) mx = s; }
+  return mx;
+}
+function probeAt(ll, name) {
+  const [x, z] = toXZ(ll), ix = Math.floor((x + hx) / CELL), iy = Math.floor((z + hz) / CELL), i = G ? G.toCell(ll.lat, ll.lng) : -1;
+  const s = slopeAtCell(i), dHab = Core.dist(ll, HAB), sd = Core.sandAt(G, ll), rg = Core.roughAt(G, ll);
+  const head = (name ? '<b>' + name + '</b><br>' : '') + Math.abs(ll.lat).toFixed(5) + '°' + (ll.lat >= 0 ? 'N' : 'S') + ' ' + Math.abs(ll.lng).toFixed(5) + '°' + (ll.lng >= 0 ? 'E' : 'W');
+  const slopeTxt = s == null ? '<span class="w">slope not characterized</span>' : 'steepest step <span class="' + slopeCls(s) + '">' + s.toFixed(1) + '°</span>' + (JZ ? '' : ' (calculated, MOLA)');
+  if (JZ) { const u = unitAt(ll.lat, ll.lng);
+    $('probe').innerHTML = head + '<br>elevation ' + elevD(ix, iy).toFixed(0) + ' m (MOLA datum)<br>' + slopeTxt + ' · ' + (dHab / 1000).toFixed(2) + ' km from habitat<br>' + (u === 'Aeb' ? '<span class="w">sand ridges (USGS Aeb)</span>' : u === 'su' ? '<span class="w">smooth unit, possibly loose</span>' : 'no mapped sand unit') + (sd != null ? ' · night IR sand proxy ' + Math.round(sd * 100) + '%' : '');
+  } else {
+    const shot = G && i >= 0 && !isNaN(G.elev[i]);
+    $('probe').innerHTML = head + '<br>elevation ' + elevD(ix, iy).toFixed(0) + ' m, MOLA ' + (shot ? 'bin with a laser shot' : '<span class="w">archive interpolation, no shot</span>') + '<br>' + slopeTxt + ' · ' + (dHab / 1000).toFixed(2) + ' km from habitat<br>' +
+      (rg != null ? 'HRSC texture ' + Math.round(rg * 100) + '%' : 'no HRSC texture') + (sd != null ? ' · night IR sand proxy ' + Math.round(sd * 100) + '%' : '');
+  }
+}
+onGroundClick(mesh, p => { const ll = fromXZ(p.x, p.z); if (clickMode === 'add') { anchors.push(ll); rebuild(); } probeAt(ll); });
 
-function resize() { renderer.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); }
-addEventListener('resize', resize); resize();
-$('load').remove();
-(function loop() { requestAnimationFrame(loop); ctl.update(); renderer.render(scene, cam); })();
+// =====================================================================================================
+// Simulated crew walk: an astronaut avatar walks the planned route on the terrain (labelled SIMULATED).
+// Same timing as the 2D planner: 3.5 km/h, 60x by default (1 real second = 1 simulated minute).
+const DOSE_PER_MIN = 0.21 / 1440 * 1000;                                       // µGy per minute, Curiosity RAD surface average (Gale)
+const MPM = SPEED * 1000 / 60;                                                 // metres per simulated minute
+$('simBox').hidden = false;
+$('simNote').innerHTML = 'Position, timing and alerts here are a simulation that walks the planned route; no suit tag is connected. The astronaut leans into the slope under its feet and shortens its stride on steep ground. Away from the camera it is drawn larger than life so it stays visible; the factor is shown on its label. ' +
+  (JZ ? 'Slope underfoot comes from the CTX stereo DTM (20 m) ' + OBS + '.' : 'Slope underfoot is calculated from MOLA where a laser shot exists ' + CALC + '; elsewhere it is not characterized, and the ground you see is the archive\'s interpolation. When the walk reaches 12:00 LMST a dust-devil alert is raised: <span class="ev sim">simulated</span>, not a forecast.') +
+  ' Vertical scale exaggerates how steep the ground looks, not the slope figures.';
+
+// ---- the avatar: an original figure built from simple shapes, about 1.9 m tall, facing +z
+function buildAvatar() {
+  const suit = new THREE.MeshLambertMaterial({ color: 0xf1ede6 }), grey = new THREE.MeshLambertMaterial({ color: 0x8f8a82 }), rust = new THREE.MeshLambertMaterial({ color: 0xe0683a });
+  const visor = new THREE.MeshPhongMaterial({ color: 0x3a2610, specular: 0xffd27a, shininess: 90 });
+  const root = new THREE.Group(), tilt = new THREE.Group(); root.add(tilt);
+  const add = (geo, mat, x, y, z, parent = tilt) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); parent.add(m); return m; };
+  add(new THREE.CylinderGeometry(.22, .2, .62, 14), suit, 0, 1.26, 0);                       // torso
+  add(new THREE.CylinderGeometry(.208, .208, .07, 14), rust, 0, 1.0, 0);                     // waist ring
+  add(new THREE.BoxGeometry(.2, .13, .07), grey, 0, 1.34, .2);                               // chest display
+  add(new THREE.BoxGeometry(.4, .52, .22), suit, 0, 1.3, -.29);                              // life-support pack
+  add(new THREE.BoxGeometry(.4, .06, .23), rust, 0, 1.5, -.29);                              // pack stripe
+  add(new THREE.SphereGeometry(.17, 18, 14), suit, 0, 1.72, 0);                              // helmet
+  add(new THREE.SphereGeometry(.176, 18, 10, Math.PI / 2 - .95, 1.9, 1.05, 1.0), visor, 0, 1.72, 0);   // gold visor, front band
+  const limb = (x, y, len, r, boot) => {
+    const p = new THREE.Group(); p.position.set(x, y, 0); tilt.add(p);
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * .88, len, 10), suit); m.position.y = -len / 2; p.add(m);
+    if (boot) { const b = new THREE.Mesh(new THREE.BoxGeometry(r * 2.3, .11, r * 3.4), grey); b.position.set(0, -len - .02, r * .7); p.add(b); }
+    else { const g = new THREE.Mesh(new THREE.SphereGeometry(r * 1.15, 10, 8), grey); g.position.y = -len; p.add(g); }
+    return p;
+  };
+  return { root, tilt, legL: limb(-.1, .95, .9, .085, true), legR: limb(.1, .95, .9, .085, true), armL: limb(-.28, 1.5, .62, .065), armR: limb(.28, 1.5, .62, .065) };
+}
+const AV = buildAvatar(); AV.root.visible = false; scene.add(AV.root);
+
+// ground under a point, matching the rendered mesh (bilinear on its vertices), in true metres above the habitat
+function groundBase(x, z) {
+  const fi = ((x + hx) / CELL - .5) / STEP, fj = ((z + hz) / CELL - .5) / STEP;
+  const i0 = Math.max(0, Math.min(gx - 2, Math.floor(fi))), j0 = Math.max(0, Math.min(gy - 2, Math.floor(fj))), ti = Math.min(1, Math.max(0, fi - i0)), tj = Math.min(1, Math.max(0, fj - j0)), b = (i, j) => base[j * gx + i];
+  return b(i0, j0) * (1 - ti) * (1 - tj) + b(i0 + 1, j0) * ti * (1 - tj) + b(i0, j0 + 1) * (1 - ti) * tj + b(i0 + 1, j0 + 1) * ti * tj;
+}
+
+// ---- route warnings, as in the 2D planner
+const EVCLS = { observed: 'obs', rule: 'rule', calculated: 'calc', simulated: 'sim', 'orbital proxy': 'orb', 'not characterized': 'draft' };
+function buildWarns(path) {
+  const lim = LIM(), w = []; let cum = 0, sandOpen = null, roughOpen = null, ncOpen = null;
+  const closeNC = () => { if (ncOpen && ncOpen.end - ncOpen.at >= 500) { ncOpen.msg = 'Slope not characterized for ' + Math.round(ncOpen.end - ncOpen.at) + ' metres, no MOLA laser shot'; w.push(ncOpen); } ncOpen = null; };
+  const sandMsg = o => 'Sandy ground for ' + Math.round(o.end - o.at) + ' metres, night IR proxy up to ' + Math.round(o.max * 100) + ' percent';
+  const roughMsg = o => 'Yardang-textured ground for ' + Math.round(o.end - o.at) + ' metres, HRSC texture proxy, footing not characterized';
+  for (let i = 1; i < path.length; i++) {
+    const sp = Core.samples(path[i - 1], path[i], CELL); let ePrev = Core.elevAt(G, sp[0]);
+    for (let k = 1; k < sp.length; k++) {
+      const a = sp[k - 1], b = sp[k], d = Core.dist(a, b), e1 = Core.elevAt(G, b), mid = { lat: (a.lat + b.lat) / 2, lng: (a.lng + b.lng) / 2 };
+      if (ePrev != null && e1 != null && d > 1) { const s = Math.atan2(e1 - ePrev, d) * 180 / Math.PI; if (Math.abs(s) > lim) w.push({ at: cum, end: cum + d, msg: 'Steep ground, ' + Math.abs(s).toFixed(0) + ' degrees ' + (s > 0 ? 'up' : 'down') + ', over the ' + lim + ' degree limit', sev: 'hi', ev: JZ ? 'observed' : 'calculated' }); }
+      ePrev = e1;
+      if (!JZ) { if (e1 == null) { if (!ncOpen) ncOpen = { at: cum, end: cum + d, msg: '', sev: '', ev: 'not characterized' }; else ncOpen.end = cum + d; } else closeNC();
+        const rg = Core.roughAt(G, mid);
+        if (rg != null && rg > 0.5) { if (!roughOpen) { roughOpen = { at: cum, end: cum + d, msg: '', sev: '', ev: 'calculated' }; w.push(roughOpen); } else roughOpen.end = cum + d; }
+        else if (roughOpen) { roughOpen.msg = roughMsg(roughOpen); roughOpen = null; } }
+      const sd = Core.sandAt(G, mid);
+      if (sd != null && sd > 0.5) { if (!sandOpen) { sandOpen = { at: cum, end: cum + d, max: sd, msg: '', sev: '', ev: 'orbital proxy' }; w.push(sandOpen); } else { sandOpen.end = cum + d; sandOpen.max = Math.max(sandOpen.max, sd); } }
+      else if (sandOpen) { sandOpen.msg = sandMsg(sandOpen); sandOpen = null; }
+      const da = Core.dist(HAB, a), db = Core.dist(HAB, b);
+      if (da <= RADIUS && db > RADIUS) { const f = (RADIUS - da) / Math.max(1, db - da); w.push({ at: cum + f * d, end: cum + f * d, msg: 'Leaving the walk-back circle', sev: 'hi', ev: 'rule' }); }
+      cum += d;
+    }
+  }
+  if (sandOpen) sandOpen.msg = sandMsg(sandOpen); if (roughOpen) roughOpen.msg = roughMsg(roughOpen); closeNC();
+  return w.sort((x, y) => x.at - y.at);
+}
+function renderWarns() {
+  const el = $('warns'); if (!sim) { el.innerHTML = '<span class="note">Start a walk to see route warnings.</span>'; return; }
+  const s = sim.s; el.innerHTML = sim.warns.length ? sim.warns.map(w => '<div class="' + (w.end < s ? 'passed' : w.sev) + '">' + (w.end < s ? 'passed' : w.at <= s ? 'now' : Math.round(w.at - s) + ' m') + '  ' + w.msg + ' <span class="ev ' + (EVCLS[w.ev] || 'orb') + '">' + w.ev + '</span></div>').join('') : '<span class="note">No flagged features on this route.</span>';
+}
+
+// ---- speech (browser voice, off by default)
+let voiceOn = false;
+$('voice').onclick = () => { voiceOn = !voiceOn; $('voice').textContent = 'Voice: ' + (voiceOn ? 'on' : 'off'); $('voice').setAttribute('aria-pressed', String(voiceOn)); if (voiceOn) speak('Voice on.'); };
+function speak(t) { $('cMsg').textContent = t; if (voiceOn && 'speechSynthesis' in window) { try { speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance(t)); } catch (e) {} } }
+
+// ---- simulation state
+let sim = null, factor = 60, lastFrame = 0, lastTrail = 0;
+const lmst = min => String(Math.floor(min / 60) % 24).padStart(2, '0') + ':' + String(Math.round(min % 60)).padStart(2, '0');
+const startMin = () => { const [h, m] = $('start').value.split(':').map(Number); return h * 60 + m; };
+function setPath(path) {
+  const cum = [0]; for (let i = 1; i < path.length; i++) cum.push(cum[i - 1] + Core.dist(path[i - 1], path[i]));
+  Object.assign(sim, { path, cum, total: cum[cum.length - 1], warns: buildWarns(path), said: new Set(), s0: 0, s: 0, t0: performance.now(), m0: sim.min || 0 });
+}
+function posAt(s) {
+  const { path, cum } = sim; s = Math.max(0, Math.min(sim.total, s)); let i = 1; while (i < cum.length - 1 && cum[i] < s) i++;
+  const f = (s - cum[i - 1]) / Math.max(1e-6, cum[i] - cum[i - 1]), a = path[i - 1], b = path[i];
+  return { lat: a.lat + (b.lat - a.lat) * f, lng: a.lng + (b.lng - a.lng) * f };
+}
+function simReset() {
+  sim = null; AV.root.visible = false; $('avLabel').hidden = true; $('trackBack').disabled = true;
+  $('cElapsed').textContent = '0 min'; $('cDist').textContent = '--'; $('cWb').textContent = '--'; $('cDose').textContent = '0 µGy'; $('cSlope').textContent = '--'; $('cElev').textContent = '--';
+  renderWarns(); compose();
+}
+$('simStart').onclick = () => {
+  if (!waypoints.length) { speak('Plan a route first: add waypoints or adopt a route to a target.'); return; }
+  simReset(); sim = { min: 0, back: false, phase: 0, trail: [] };
+  setPath([HAB, ...waypoints, ...(backPath.length ? backPath : [HAB])]);
+  sim.outLen = sim.cum[waypoints.length];
+  AV.root.visible = true; $('avLabel').hidden = false; $('trackBack').disabled = false;
+  speak('Simulated walk started. ' + Math.round(sim.total) + ' metres round trip, back at base about ' + lmst(startMin() + sim.total / MPM) + '.');
+  if ($('follow').checked) { const [x, z] = toXZ(HAB); ctl.target.set(x, 0, z); cam.position.set(x - 120, 160, z + 220); }
+};
+$('simStop').onclick = () => { simReset(); $('cMsg').textContent = ''; };
+$('trackBack').onclick = () => {
+  if (!sim) return;
+  const here = posAt(sim.s), r = G ? Core.routeTo(G, here, HAB, LIM()) : null;
+  sim.back = true; sim.outLen = null; sim.trackBack = [here, ...(r ? r.path : [HAB])];
+  setPath(sim.trackBack); compose();
+  speak('Tracking back to the habitat' + (r ? ' on the recommended cost' + (r.soft ? ', least steep path, a step exceeds the limit' : '') : ' in a straight line, terrain grid unavailable') + '. ' + Math.round(sim.total) + ' metres.');
+  $('trackBack').disabled = true;
+};
+document.querySelectorAll('#simSpeed button').forEach(b => b.onclick = () => {
+  if (sim) { const now = performance.now(); sim.m0 = sim.min; sim.s0 = sim.s; sim.t0 = now; }
+  factor = +b.dataset.x; document.querySelectorAll('#simSpeed button').forEach(x => x.setAttribute('aria-pressed', x === b));
+});
+// walked part and the track-back path, drawn into the terrain texture (throttled: the texture is large)
+const drawRoutesBase = drawRoutes;
+drawRoutes = function (ctx) {
+  drawRoutesBase(ctx);
+  if (!sim) return;
+  const P = ll => IMG.px(ll.lat, ll.lng), lw = Math.max(2, 26 * IMG.pxPerM);
+  const line = (pts, color, w, dash) => { if (pts.length < 2) return; ctx.setLineDash((dash || []).map(v => v * w)); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.beginPath(); pts.forEach((p, i) => { const [x, y] = P(p); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke(); ctx.setLineDash([]); };
+  if (sim.trackBack) line(sim.trackBack, '#e5b64a', lw, [3, 3]);
+  line(sim.trail, '#e5b64a', lw * .8);
+};
+
+// ---- per frame: move, pose and label the avatar; speak warnings; follow with the camera
+const tmpV = new THREE.Vector3();
+frameHooks.push(now => {
+  const dt = Math.min(.1, (now - (lastFrame || now)) / 1000); lastFrame = now;
+  if (!sim) return;
+  const running = sim.s < sim.total;
+  if (running) { sim.min = sim.m0 + (now - sim.t0) / 1000 * factor / 60; sim.s = Math.min(sim.total, sim.s0 + (sim.min - sim.m0) * MPM); }
+  const ll = posAt(sim.s), [x, z] = toXZ(ll), y = groundBase(x, z) * EX;
+  // heading and slope along the path, from the rendered ground 8 m behind and ahead
+  const a = posAt(sim.s - 8), b = posAt(sim.s + 8), [ax, az] = toXZ(a), [bx, bz] = toXZ(b), run = Math.hypot(bx - ax, bz - az);
+  const rise = groundBase(bx, bz) - groundBase(ax, az), slopeTrue = run > 1 ? Math.atan2(rise, run) * 180 / Math.PI : 0, slopeScene = Math.atan(Math.tan(slopeTrue * Math.PI / 180) * EX);
+  if (run > 1) AV.root.rotation.y = Math.atan2(bx - ax, bz - az);
+  // posture: lean into the slope (forward uphill, back downhill), shorter and slower strides when steep
+  const steep = Math.min(1, Math.abs(slopeTrue) / 25), cadence = running ? 1.7 * (1 - .35 * steep) : 0;
+  sim.phase += dt * 2 * Math.PI * cadence; const sw = Math.sin(sim.phase), stride = .55 * (1 - .45 * steep);
+  AV.tilt.rotation.x = Math.max(-.45, Math.min(.45, .45 * slopeScene + (running ? .06 : 0)));
+  AV.legL.rotation.x = running ? sw * stride : 0; AV.legR.rotation.x = running ? -sw * stride : 0;
+  AV.armL.rotation.x = running ? -sw * stride * .8 : 0; AV.armR.rotation.x = running ? sw * stride * .8 : 0;
+  AV.tilt.position.y = running ? .04 * Math.abs(Math.cos(sim.phase)) : 0;
+  const scl = Math.max(1, Math.min(80, cam.position.distanceTo(tmpV.set(x, y, z)) / 28));
+  AV.root.scale.setScalar(scl); AV.root.position.set(x, y, z);
+  // camera follow: keep the same view offset, glide with the walker
+  if ($('follow').checked) { const k = 1 - Math.exp(-dt * 8), tx = ctl.target.x + (x - ctl.target.x) * k, ty = ctl.target.y + (y - ctl.target.y) * k, tz = ctl.target.z + (z - ctl.target.z) * k;   // time-based glide, same at any frame rate
+    cam.position.x += tx - ctl.target.x; cam.position.y += ty - ctl.target.y; cam.position.z += tz - ctl.target.z; ctl.target.set(tx, ty, tz); }
+  // label above the helmet: slope underfoot with its evidence
+  const known = JZ || Core.elevAt(G, ll) != null, dirTxt = Math.abs(slopeTrue) < 1 ? 'level' : slopeTrue > 0 ? 'uphill' : 'downhill', arrow = Math.abs(slopeTrue) < 1 ? '→' : slopeTrue > 0 ? '↗' : '↘';
+  const cls = Math.abs(slopeTrue) > LIM() ? 'h' : Math.abs(slopeTrue) > LIM() - 5 ? 'w' : '';
+  const slopeHtml = known ? '<span class="' + cls + '">' + arrow + ' ' + Math.abs(slopeTrue).toFixed(1) + '° ' + dirTxt + '</span> <span class="m">' + (JZ ? 'CTX DTM' : 'calculated, MOLA') + '</span>' : '<span class="w">slope not characterized</span>';
+  tmpV.set(x, y + 2.1 * scl, z).project(cam);
+  const lab = $('avLabel'); lab.hidden = tmpV.z > 1; lab.style.left = ((tmpV.x + 1) / 2 * innerWidth) + 'px'; lab.style.top = ((1 - tmpV.y) / 2 * innerHeight - 6) + 'px';
+  lab.innerHTML = 'Crew (simulated) · ' + slopeHtml + (scl > 1.5 ? ' <span class="m">×' + Math.round(scl) + ' size</span>' : '');
+  // panel numbers
+  const dh = Core.dist(ll, HAB);
+  $('cElapsed').textContent = fmtT(sim.min); $('cDist').textContent = fmtM(dh);
+  $('cWb').innerHTML = dh <= RADIUS ? '<span class="pill ok">inside</span>' : '<span class="pill bad">outside</span>';
+  $('cDose').textContent = Math.round(sim.min * DOSE_PER_MIN) + ' µGy';
+  $('cSlope').innerHTML = known ? '<span class="' + cls + '">' + Math.abs(slopeTrue).toFixed(1) + '° ' + dirTxt + '</span>' : 'not characterized';
+  $('cElev').textContent = (groundBase(x, z) + habElev).toFixed(0) + ' m';
+  if (!running) return;
+  // spoken warnings within 150 m ahead, the farthest point, low walk-back margin, the simulated dust-devil alert (Arcadia)
+  for (const w of sim.warns) { const k = w.msg + w.at, ahead = w.at - sim.s; if (ahead < 150 && ahead > -5 && !sim.said.has(k)) { sim.said.add(k); speak((ahead > 10 ? 'In ' + Math.round(ahead / 10) * 10 + ' metres: ' : 'Now: ') + w.msg + '.'); } }
+  if (!sim.back && sim.outLen != null && !sim.said.has('far') && sim.s >= sim.outLen) { sim.said.add('far'); speak('Farthest point reached. Heading back to base, ' + Math.round(sim.total - sim.s) + ' metres.'); }
+  if (!sim.back && !sim.said.has('wbm') && dh > RADIUS - 200 && dh <= RADIUS && sim.s < (sim.outLen || Infinity)) { sim.said.add('wbm'); speak('Walk-back margin low, ' + Math.round(RADIUS - dh) + ' metres to the limit.'); }
+  if (!JZ && !sim.dd && startMin() + sim.min >= 12 * 60) { sim.dd = true;
+    const w = { at: sim.s, end: sim.s + 300, msg: 'Dust-devil alert, simulated, not a forecast: afternoon is when dust devils form here; seen from orbit up to 45 m/s and 8 km tall, usually under 100 m wide. Route requires review', sev: 'hi', ev: 'simulated' };
+    sim.said.add(w.msg + w.at); sim.warns.push(w); sim.warns.sort((p, q) => p.at - q.at); speak('Simulated alert, not a forecast. Afternoon dust devils form in this region. Requires review before continuing.'); }
+  if (now - lastTrail > 1500) { lastTrail = now; sim.trail = sim.path.slice(0, sim.cum.findIndex(c => c >= sim.s) + 1).concat([ll]); renderWarns(); compose(); }
+  if (sim.s >= sim.total) { speak(sim.back ? 'Back at the habitat after track back. EVA complete.' : 'Back at the habitat. EVA complete.'); $('trackBack').disabled = true; sim.trail = sim.path.slice(); renderWarns(); compose(); }
+});
+window.__three = { cam, ctl, setExag, state: () => ({ G: !!G, anchors: anchors.length, waypoints: waypoints.length, back: backPath.length, cand: cand && Object.keys(cand.routes) }), fromXZ, toXZ };
+}
+
+// =====================================================================================================
+// Every other site: a MOLA elevation window with the Viking colour mosaic draped over it.
+async function generic() {
+const [meta, buf] = await Promise.all([
+  fetch(`data/terrain/${S.id}.json`).then(r => { if (!r.ok) throw new Error('no terrain file for ' + S.id); return r.json(); }),
+  fetch(`data/terrain/${S.id}.i16`).then(r => r.arrayBuffer()),
+]);
+$('layers').innerHTML = '<label class="tg"><input type="checkbox" id="lTint"> Elevation colours (blue low, white high)</label><label class="tg"><input type="checkbox" id="lMark" checked> Site marker</label>' +
+  (Core.SITES[S.id] ? '' : '<p class="note" style="margin-top:4px">No routing here: route planning needs a walk-scale terrain grid, which exists for Jezero and Arcadia only.</p>');
+const NX = meta.nx, NY = meta.ny, D = new Int16Array(buf), N = meta.north, So = meta.south, W = meta.west, E = meta.east;
+const dLat = (N - So) / NY, dLon = (E - W) / NX, latC = (N + So) / 2, lonC = (W + E) / 2, rad = Math.PI / 180;
+$('sources').textContent = `Terrain: MGS MOLA laser altimetry, ${(meta.ppd).toFixed(0)} px per degree (about ${(meta.cell_m / 1000).toFixed(1)} km per cell), metres above the Mars datum. Imagery: Viking MDIM 2.1 colour mosaic (NASA/USGS) via Mars Trek. Small features such as rovers' tracks and boulders are far below this resolution.`;
+const elev = (ix, iy) => D[Math.max(0, Math.min(NY - 1, iy)) * NX + Math.max(0, Math.min(NX - 1, ix))];
+const emid = (meta.min + meta.max) / 2;
+// sinusoidal projection about the window centre: x east, z south, metres; keeps areas right on wide windows
+const toXZ = (lat, lon) => [(lon - lonC) * MPD * Math.cos(lat * rad), (latC - lat) * MPD];
+const spanX = (E - W) * MPD * Math.cos(latC * rad), spanZ = (N - So) * MPD, SPAN = Math.max(spanX, spanZ);
+const cellX = lat => dLon * MPD * Math.cos(lat * rad), cellZ = dLat * MPD;
+const slopeAt = (ix, iy) => { const lat = N - (iy + .5) * dLat;
+  const dx = (elev(ix + 1, iy) - elev(ix - 1, iy)) / (2 * cellX(lat)), dz = (elev(ix, iy + 1) - elev(ix, iy - 1)) / (2 * cellZ);
+  return Math.atan(Math.hypot(dx, dz)) / rad; };
+
+// imagery: Viking tiles at the zoom that gives about 2048 px across the window (Trek serves up to zoom 7)
+const Z = Math.max(1, Math.min(7, Math.floor(Math.log2(2048 * 180 / (256 * Math.max(E - W, N - So)))))), TD = 180 / 2 ** Z;
+const TX0 = Math.floor((W + 180) / TD), TX1 = Math.floor((E + 180) / TD), TY0 = Math.floor((90 - N) / TD), TY1 = Math.floor((90 - So) / TD);
+const TLON0 = TX0 * TD - 180, TLAT0 = 90 - TY0 * TD, TW = (TX1 - TX0 + 1) * 256, TH = (TY1 - TY0 + 1) * 256;
+const SPX = (TX1 - TX0 + 1) * TD, SPY = (TY1 - TY0 + 1) * TD;
+
+// terrain mesh, thinned to about 200k vertices
+const STEP = Math.max(1, Math.ceil(Math.sqrt(NX * NY / 200000))), gx = Math.ceil(NX / STEP), gy = Math.ceil(NY / STEP);
+const pos = new Float32Array(gx * gy * 3), uv = new Float32Array(gx * gy * 2), base = new Float32Array(gx * gy);
+for (let j = 0; j < gy; j++) for (let i = 0; i < gx; i++) {
+  const ix = Math.min(NX - 1, i * STEP), iy = Math.min(NY - 1, j * STEP), k = j * gx + i;
+  const lat = N - (iy + .5) * dLat, lon = W + (ix + .5) * dLon, [x, z] = toXZ(lat, lon);
+  pos[3 * k] = x; pos[3 * k + 2] = z; base[k] = elev(ix, iy) - emid; pos[3 * k + 1] = base[k];
+  uv[2 * k] = (lon - TLON0) / SPX; uv[2 * k + 1] = 1 - (TLAT0 - lat) / SPY;
+}
+const tex = document.createElement('canvas'); tex.width = TW; tex.height = TH;
+const tctx = tex.getContext('2d'), imgCv = document.createElement('canvas'); imgCv.width = TW; imgCv.height = TH;
+const ictx = imgCv.getContext('2d'); ictx.fillStyle = '#8a4b2c'; ictx.fillRect(0, 0, TW, TH);
+const texture = new THREE.CanvasTexture(tex); texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+const mesh = meshFrom(pos, uv, gx, gy, texture), geo = mesh.geometry; scene.add(mesh);
+
+// elevation colours: one pixel per grid cell, stretched over the window
+const tint = document.createElement('canvas'); tint.width = NX; tint.height = NY;
+{ const c = tint.getContext('2d'), im = c.createImageData(NX, NY), stops = [[0, [40, 70, 160]], [.35, [70, 160, 170]], [.6, [200, 170, 110]], [.85, [170, 110, 80]], [1, [250, 245, 240]]];
+  for (let k = 0; k < NX * NY; k++) { const f = (D[k] - meta.min) / Math.max(1, meta.max - meta.min); let a = 0; while (a < stops.length - 2 && f > stops[a + 1][0]) a++;
+    const [f0, c0] = stops[a], [f1, c1] = stops[a + 1], u = Math.min(1, Math.max(0, (f - f0) / (f1 - f0)));
+    for (let ch = 0; ch < 3; ch++) im.data[4 * k + ch] = c0[ch] + (c1[ch] - c0[ch]) * u; im.data[4 * k + 3] = 255; }
+  c.putImageData(im, 0, 0); }
+const px = (lat, lon) => [(lon - TLON0) / SPX * TW, (TLAT0 - lat) / SPY * TH];
+function compose() {
+  tctx.drawImage(imgCv, 0, 0);
+  if ($('lTint').checked) { const [x0, y0] = px(N, W), [x1, y1] = px(So, E); tctx.globalAlpha = .55; tctx.drawImage(tint, x0, y0, x1 - x0, y1 - y0); tctx.globalAlpha = 1; }
+  texture.needsUpdate = true;
+}
+const nT = (TX1 - TX0 + 1) * (TY1 - TY0 + 1); let loaded = 0;
+for (let ty = TY0; ty <= TY1; ty++) for (let tx = TX0; tx <= TX1; tx++) {
+  const im = new Image(); im.crossOrigin = 'anonymous';
+  im.onload = () => { ictx.drawImage(im, (tx - TX0) * 256, (ty - TY0) * 256); if (++loaded % 6 === 0 || loaded === nT) compose(); };
+  im.onerror = () => { if (++loaded === nT) compose(); };
+  im.src = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/default/default028mm/${Z}/${ty}/${tx}.jpg`;
+}
+compose();
+$('lTint').onchange = compose;
+
+// site marker: a cone standing on the ground at the marked point
+const [mx, mz] = toXZ(S.mark[0], S.mark[1]);
+const mIx = Math.floor((S.mark[1] - W) / dLon), mIy = Math.floor((N - S.mark[0]) / dLat), mElev = elev(mIx, mIy) - emid;
+const cone = new THREE.Mesh(new THREE.ConeGeometry(SPAN / 220, SPAN / 60, 4), new THREE.MeshBasicMaterial({ color: 0x6fcf97 }));
+cone.rotation.x = Math.PI; scene.add(cone);   // point down onto the spot
+$('lMark').onchange = () => cone.visible = $('lMark').checked;
+
+let EX = 1;
+function setExag(x) {
+  EX = x; const p = geo.attributes.position.array;
+  for (let k = 0; k < base.length; k++) p[3 * k + 1] = base[k] * x;
+  geo.attributes.position.needsUpdate = true; geo.computeVertexNormals(); geo.computeBoundingSphere();
+  cone.position.set(mx, mElev * x + SPAN / 120, mz);
+  pressExag(x);
+}
+exagButtons([1, 2, 4, 10], setExag); setExag(S.ex);
+
+// camera scaled to the window
+cam.near = SPAN / 5000; cam.far = SPAN * 12; cam.updateProjectionMatrix();
+scene.fog = new THREE.Fog(0x14110e, SPAN * 2, SPAN * 5);
+ctl.minDistance = SPAN / 200; ctl.maxDistance = SPAN * 3;
+function home() { cam.position.set(-0.15 * SPAN, 0.55 * SPAN, 0.8 * SPAN); ctl.target.set(0, 0, 0); ctl.update(); }
+function closeUp() { const y = mElev * EX; cam.position.set(mx - SPAN * .06, y + SPAN * .08, mz + SPAN * .12); ctl.target.set(mx, y, mz); ctl.update(); }
+$('home').onclick = home; $('close').onclick = closeUp; home();
+
+// click: position, elevation, slope at grid scale, distance to the marker
+onGroundClick(mesh, p => {
+  const lat = latC - p.z / MPD, lon = lonC + p.x / (MPD * Math.cos(lat * rad));
+  const ix = Math.floor((lon - W) / dLon), iy = Math.floor((N - lat) / dLat), s = slopeAt(ix, iy), d = Math.hypot(p.x - mx, p.z - mz);
+  $('probe').innerHTML = `${Math.abs(lat).toFixed(3)}°${lat >= 0 ? 'N' : 'S'} ${Math.abs(lon).toFixed(3)}°${lon >= 0 ? 'E' : 'W'}<br>elevation ${elev(ix, iy).toLocaleString()} m (MOLA datum)<br>slope <span class="${slopeCls(s)}">${s.toFixed(1)}°</span> averaged over ${(meta.cell_m / 1000).toFixed(1)} km cells: local slopes can be much steeper<br>${(d / 1000).toFixed(d < 10000 ? 1 : 0)} km from the ${S.what}`;
+});
 window.__three = { cam, ctl, setExag };
+}
 })().catch(e => { document.getElementById('load').textContent = 'The 3D view could not load: ' + e.message; });
 </script>
 </body>

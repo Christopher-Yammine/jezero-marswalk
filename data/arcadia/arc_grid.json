@@ -1,0 +1,90 @@
+{
+ "bounds": [
+  [
+   41.22,
+   -148.22
+  ],
+  [
+   41.52,
+   -147.88
+  ]
+ ],
+ "nx": 505,
+ "ny": 593,
+ "cell": 30,
+ "dtm": {
+  "file": "arc_dtm_30m.i16",
+  "units": "decimetres above offset_m",
+  "offset_m": -3000,
+  "nodata": -32768,
+  "source": "MGS MOLA MEGDR 128 px/deg median topography (about 463 m bins), metres above the areoid, mapping phase 1999-2001, PDS Geosciences Node",
+  "method": "bilinear between MOLA bin centres at 30 m cell centres; a cell is no-data when its nearest bin holds no laser shot (the archive fills those bins by interpolation)",
+  "cells_without_shot": 0.6589,
+  "bins_with_shot": 0.3721,
+  "min_m": -3883.0,
+  "max_m": -3638.1
+ },
+ "fill": {
+  "file": "arc_elev_fill_30m.i16",
+  "units": "decimetres above offset_m",
+  "offset_m": -3000,
+  "use": "3D display surface only, includes interpolated MOLA bins; routing uses arc_dtm_30m.i16"
+ },
+ "rough": {
+  "file": "arc_rough_30m.u8",
+  "nodata": 255,
+  "p5": 2.77,
+  "p95": 15.85,
+  "method": "HRSC nadir brightness: subtract 9 x 9 px (110 m) mean, RMS over 5 x 5 px (60 m), sampled at cell centres, scaled 5th..95th percentile to 0..254"
+ },
+ "hrsc": {
+  "product": "HQ333_0000_ND4",
+  "dataset": "MEX-M-HRSC-4-REFDR-MAPPROJECT-EXT9-V4.0",
+  "orbit": 26333,
+  "date": "2024-11-10",
+  "map_scale_m": 12.5,
+  "best_gsd_m": 16.5,
+  "projection": "sinusoidal, centre 212 E, sphere 3396 km",
+  "walk_image": {
+   "file": "hrsc_walk.jpg",
+   "bounds": [
+    [
+     41.22,
+     -148.22
+    ],
+    [
+     41.52,
+     -147.88
+    ]
+   ],
+   "px": [
+    1210,
+    1423
+   ],
+   "stretch": [
+    80.9,
+    137.6
+   ]
+  },
+  "context_image": {
+   "file": "hrsc_context.png",
+   "bounds": [
+    [
+     40.5,
+     -149.61
+    ],
+    [
+     44.2,
+     -147.4
+    ]
+   ],
+   "px": [
+    968,
+    2193
+   ],
+   "source": "PDS browse, 100 m/px"
+  },
+  "credit": "ESA/DLR/FU Berlin",
+  "license": "CC BY-SA 3.0 IGO"
+ }
+}

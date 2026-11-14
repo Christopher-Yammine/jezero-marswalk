@@ -1,0 +1,14 @@
+{
+ "nx": 256,
+ "ny": 281,
+ "north": 44.6,
+ "south": 40.199999999999996,
+ "west": -150.0,
+ "east": -146.0,
+ "units": "metres",
+ "ppd": 64.0,
+ "cell_m": 926,
+ "min": -4190,
+ "max": -3012,
+ "source": "MGS MOLA MEGDR 128 px/deg median topography, averaged 2x2, metres above the areoid (PDS Geosciences Node)"
+}

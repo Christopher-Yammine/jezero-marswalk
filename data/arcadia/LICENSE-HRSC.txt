@@ -1,0 +1,30 @@
+HRSC-derived files in this folder
+=================================
+
+Files:  hrsc_walk.jpg, hrsc_context.png, arc_rough_30m.u8
+
+Source: Mars Express High Resolution Stereo Camera (HRSC), orbit 26333, 10 November 2024.
+        Product HQ333_0000_ND4 (nadir, level 4, 12.5 m/pixel) and its browse image,
+        dataset MEX-M-HRSC-4-REFDR-MAPPROJECT-EXT9-V4.0, retrieved from the NASA PDS
+        Geosciences Node mirror of the ESA Planetary Science Archive.
+
+Credit: ESA/DLR/FU Berlin
+
+Licence: Creative Commons Attribution-ShareAlike 3.0 IGO (CC BY-SA 3.0 IGO)
+         https://creativecommons.org/licenses/by-sa/3.0/igo/
+
+Changes made by the Marswalk project:
+  - hrsc_walk.jpg: cropped to 41.22-41.52 N, 211.78-212.12 E; reprojected from sinusoidal
+    (centre 212 E) to an equirectangular grid at 12.5 m with bilinear resampling; contrast
+    stretched between the 0.5th and 99.5th brightness percentiles; JPEG compressed.
+  - hrsc_context.png: browse image (8x reduced, 100 m/pixel) reprojected to an equirectangular
+    grid over 40.5-44.2 N, 210.39-212.6 E; pixels outside the image strip made transparent.
+  - arc_rough_30m.u8: a texture grid calculated from the nadir image (brightness minus its
+    110 m local mean, RMS over 60 m, sampled at 30 m cells, scaled 0-254; 255 = no image).
+
+These three files are adaptations and are shared under the same licence, CC BY-SA 3.0 IGO.
+The licence covers these data files only. The Marswalk application code that displays them is a
+separate work and is not relicensed by including them.
+
+The script that produced them is build_arcadia.py in this folder. The MOLA elevation grid
+(arc_dtm_30m.i16) is NASA data and is not HRSC-derived.

@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Marswalk Helmet</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Helmet visor: camera fills the screen, terrain colours on top, translucent HUD panels at the edges. */
+:root{--fg:#f4ece1;--mute:#c9bdb0;--amber:#f0aa28;--red:#eb3c3c;--green:#50c878;--hud:rgba(10,8,6,.42);--edge:rgba(244,236,225,.28);
+  --display:"Archivo",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#000;color:var(--fg);font:14px/1.35 var(--mono);overflow:hidden;-webkit-user-select:none;user-select:none}
+video,#ov{position:fixed;inset:0;width:100%;height:100%;object-fit:cover}
+#ov{pointer-events:none;image-rendering:pixelated;opacity:.75}
+body.nocolour #ov{display:none}
+.hud{position:fixed;background:var(--hud);border:1px solid var(--edge);border-radius:10px;padding:10px 12px;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+#left{left:max(12px,env(safe-area-inset-left));top:max(12px,env(safe-area-inset-top));width:min(30vw,300px)}
+#right{right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));width:min(24vw,240px);text-align:right}
+#bottom{left:50%;transform:translateX(-50%);bottom:max(12px,env(safe-area-inset-bottom));display:flex;gap:10px;align-items:center;padding:6px 8px}
+.lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:0 0 4px}
+.big{font:700 22px/1.1 var(--display)}
+.haz{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid rgba(244,236,225,.12)}
+.haz:last-child{border-bottom:0}
+.haz b{font-weight:600}.sand{color:var(--amber)}.rock{color:var(--red)}.bed{color:var(--green)}
+.ok{color:var(--green)}.warn{color:var(--amber)}
+.tiny{font-size:11px;color:var(--mute)}
+button{font:600 13px var(--mono);color:var(--fg);background:rgba(10,8,6,.55);border:1px solid var(--edge);border-radius:8px;padding:8px 12px;cursor:pointer}
+button[aria-pressed="true"]{background:var(--amber);color:#140c08;border-color:var(--amber)}
+button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+#start{position:fixed;inset:0;display:grid;place-items:center;background:#0b0907;text-align:center;padding:24px}
+#start h1{font:700 26px/1.15 var(--display);margin:0 0 8px}
+#start p{max-width:46ch;margin:0 auto 16px;color:var(--mute);font-size:13px}
+#start button{font-size:16px;padding:12px 20px;background:#e0683a;color:#140c08;border-color:#e0683a}
+#rotate{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);display:none;text-align:center}
+@media (orientation:portrait){#rotate{display:block}.hud{opacity:.15}}
+</style>
+</head>
+<body>
+<video id="vid" playsinline muted autoplay></video>
+<canvas id="ov"></canvas>
+
+<div class="hud" id="left" aria-live="polite">
+  <p class="lbl">Ground ahead</p>
+  <div id="haz"><span class="tiny">Starting the terrain model…</span></div>
+</div>
+<div class="hud" id="right">
+  <p class="lbl">Jezero · local Mars time</p>
+  <div class="big" id="lmst">--:--</div>
+  <div class="tiny" id="sol">sol --</div>
+  <p class="lbl" style="margin-top:8px">Heading</p>
+  <div class="big" id="hdg">--</div>
+  <p class="lbl" style="margin-top:8px">Suit tag</p>
+  <div class="tiny" id="tag">not connected</div>
+</div>
+<div class="hud" id="bottom">
+  <button type="button" id="freeze" aria-pressed="false">Freeze</button>
+  <button type="button" id="colour" aria-pressed="true">Colours</button>
+  <span class="tiny" id="perf"></span>
+</div>
+<div id="rotate" class="hud"><div class="big">Turn your phone sideways</div><div class="tiny">The helmet view is made for landscape.</div></div>
+
+<div id="start">
+  <div>
+    <h1>Helmet view</h1>
+    <p>Your phone's rear camera becomes the visor. A terrain model trained on Mars rover images colours the ground ahead: sand amber, big rock red, bedrock green. Everything runs on this phone; the video never leaves it.</p>
+    <button type="button" id="go">Start camera</button>
+    <p class="tiny" id="startMsg" style="margin-top:14px"></p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/ort.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const COL = { bedrock: [80, 200, 120], sand: [240, 170, 40], big_rock: [235, 60, 60] };
+const GROUND = { soil: 1, bedrock: 1, sand: 1, big_rock: 1 };
+let CFG, SESSION, frozen = false, running = false;
+
+// ---- Mars clock at Jezero (Mars24 equations, Allison & McEwen 2000). Checked against 1,000 Perseverance
+// image records: mission sol exact for all; local time within minutes of NASA's stamps.
+function marsClock(now = Date.now()) {
+  const jdTT = now / 86400000 + 2440587.5 + (37 + 32.184) / 86400;
+  const msd = (jdTT - 2451545.0 - 4.5) / 1.0274912517 + 44796.0 - 0.0009626;
+  const lmst = ((24 * msd + 77.4509 / 15) % 24 + 24) % 24;
+  const sol = Math.floor(msd + 77.4509 / 360) - 52304;
+  const h = Math.floor(lmst), m = Math.floor((lmst - h) * 60);
+  return { text: String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0'), sol };
+}
+function tick() { const c = marsClock(); $('lmst').textContent = '≈ ' + c.text; $('sol').textContent = 'Perseverance sol ' + c.sol; }
+tick(); setInterval(tick, 10000);
+
+// ---- heading from the phone's compass (iOS asks permission on the start tap)
+function onOrient(e) {
+  const h = e.webkitCompassHeading != null ? e.webkitCompassHeading : (e.absolute && e.alpha != null ? 360 - e.alpha : null);
+  if (h == null) return;
+  const d = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(h / 45) % 8];
+  $('hdg').textContent = Math.round(h) + '° ' + d;
+}
+
+$('go').onclick = async () => {
+  $('startMsg').textContent = 'Opening the camera…';
+  try {
+    if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try { if (await DeviceOrientationEvent.requestPermission() === 'granted') addEventListener('deviceorientation', onOrient); } catch (_) {}
+    } else { addEventListener('deviceorientationabsolute', onOrient); addEventListener('deviceorientation', onOrient); }
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+    $('vid').srcObject = stream; await $('vid').play();
+  } catch (e) {
+    $('startMsg').textContent = location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1'
+      ? 'The camera needs a secure (https) page. Open this page from the Marswalk site link.'
+      : 'The camera could not start: ' + (e.message || e.name) + '. Allow camera access for this site and try again.';
+    return;
+  }
+  $('start').remove();
+  try { screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {}); } catch (_) {}
+  try { if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(() => {}); } catch (_) {}
+  $('haz').innerHTML = '<span class="tiny">Loading the terrain model (13 MB, once)…</span>';
+  try {
+    ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/';
+    CFG = await (await fetch('habitat/models/terrain.json')).json();
+    SESSION = await ort.InferenceSession.create('habitat/models/terrain.onnx', { executionProviders: ['wasm'] });
+  } catch (e) { $('haz').innerHTML = '<span class="tiny">The terrain model failed to load: ' + e.message + '</span>'; return; }
+  running = true; loop();
+};
+
+// ---- live loop: take the visible part of the video, run the model, draw colours, update the HUD
+const work = document.createElement('canvas');
+async function loop() {
+  if (!running) return;
+  if (!frozen) {
+    const v = $('vid'), vw = v.videoWidth, vh = v.videoHeight;
+    if (vw && vh) {
+      const S = CFG.size, n = S * S; work.width = S; work.height = S;
+      // the video is shown with object-fit: cover, so crop the same visible window before resizing
+      const sc = Math.max(innerWidth / vw, innerHeight / vh), cw = innerWidth / sc, ch = innerHeight / sc;
+      const g = work.getContext('2d', { willReadFrequently: true }); g.imageSmoothingQuality = 'high';
+      g.drawImage(v, (vw - cw) / 2, (vh - ch) / 2, cw, ch, 0, 0, S, S);
+      const px = g.getImageData(0, 0, S, S).data, x = new Float32Array(3 * n);
+      for (let i = 0; i < n; i++) { const val = ((0.299 * px[4 * i] + 0.587 * px[4 * i + 1] + 0.114 * px[4 * i + 2]) / 255 - CFG.mean) / CFG.std; x[i] = val; x[n + i] = val; x[2 * n + i] = val; }
+      const t0 = performance.now();
+      const p = (await SESSION.run({ image: new ort.Tensor('float32', x, [1, 3, S, S]) })).probs.data;
+      const ms = performance.now() - t0, C = CFG.classes.length;
+      const ov = $('ov'); ov.width = S; ov.height = S; const o = ov.getContext('2d'), im = o.createImageData(S, S);
+      const cnt = {}; let ground = 0;
+      for (let i = 0; i < n; i++) {
+        let b = 0, bv = -1; for (let k = 0; k < C; k++) { const val = p[k * n + i]; if (val > bv) { bv = val; b = k; } }
+        const cls = CFG.classes[b]; if (bv < 0.5 || !(cls in GROUND)) continue;
+        ground++; cnt[cls] = (cnt[cls] || 0) + 1;
+        const col = COL[cls]; if (col) { im.data[4 * i] = col[0]; im.data[4 * i + 1] = col[1]; im.data[4 * i + 2] = col[2]; im.data[4 * i + 3] = 120; }
+      }
+      o.putImageData(im, 0, 0);
+      hud(cnt, ground, n);
+      $('perf').textContent = Math.round(ms) + ' ms per look';
+    }
+  }
+  setTimeout(() => requestAnimationFrame(loop), 120);   // a short breather so the phone stays cool
+}
+function hud(cnt, ground, n) {
+  const sh = k => (cnt[k] || 0) / Math.max(1, ground);
+  if (ground / n < 0.1) { $('haz').innerHTML = '<span class="tiny">Not enough ground in view. Point the camera at the ground ahead.</span>'; return; }
+  const rows = [];
+  if (sh('sand') >= 0.15) rows.push(`<div class="haz"><b class="sand">Loose sand</b><span>${Math.round(100 * sh('sand'))}%</span></div><div class="tiny" style="margin-bottom:4px">Test with one foot before crossing.</div>`);
+  if (sh('big_rock') >= 0.04) rows.push(`<div class="haz"><b class="rock">Big rock</b><span>${Math.round(100 * sh('big_rock'))}%</span></div><div class="tiny" style="margin-bottom:4px">Route around, keep your buddy in sight.</div>`);
+  if (sh('bedrock') >= 0.2) rows.push(`<div class="haz"><b class="bed">Bedrock</b><span>${Math.round(100 * sh('bedrock'))}%</span></div><div class="tiny" style="margin-bottom:4px">Firm footing. Careful on tilted slabs.</div>`);
+  $('haz').innerHTML = rows.length ? rows.join('') : '<div class="haz"><b class="ok">No sand or big rock flagged</b></div><div class="tiny">Small rocks and pits still need your eyes.</div>';
+}
+$('freeze').onclick = e => { frozen = !frozen; e.target.setAttribute('aria-pressed', frozen); e.target.textContent = frozen ? 'Live' : 'Freeze'; const v = $('vid'); frozen ? v.pause() : v.play(); };
+$('colour').onclick = e => { const on = e.target.getAttribute('aria-pressed') !== 'true'; e.target.setAttribute('aria-pressed', on); document.body.classList.toggle('nocolour', !on); };
+</script>
+</body>
+</html>

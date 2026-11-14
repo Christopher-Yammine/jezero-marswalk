@@ -1,0 +1,6 @@
+habitat/.venv
+habitat/logs
+.env.local
+.env*
+__pycache__
+*.pyc

@@ -3,41 +3,89 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#1a1512">
 <title>Marswalk Helmet</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
-/* Helmet visor: camera fills the screen, terrain colours on top, translucent HUD panels at the edges. */
-:root{--fg:#f4ece1;--mute:#c9bdb0;--amber:#f0aa28;--red:#eb3c3c;--green:#50c878;--hud:rgba(10,8,6,.42);--edge:rgba(244,236,225,.28);
-  --display:"Archivo",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;color-scheme:dark}
+/* Helmet visor: camera fills the screen, terrain colours on top, translucent HUD panels at the edges.
+   Type and base colours come from shell.js (Jost, Martian Mono, warm near-black). */
+:root{--h-fg:oklch(0.95 0.015 70);--h-mute:oklch(0.84 0.025 65);--h-ink:oklch(0.18 0.02 50);
+  --amber:oklch(0.80 0.15 75);--red:oklch(0.66 0.21 25);--green:oklch(0.76 0.15 150);--rust-btn:oklch(0.70 0.16 45);
+  --hud:oklch(0.16 0.012 50 / .64);--edge:oklch(0.93 0.015 70 / .22);--rule:oklch(0.93 0.015 70 / .14);
+  --sans:"Jost",system-ui,sans-serif;--mono:"Martian Mono",ui-monospace,monospace;color-scheme:dark}
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:#000;color:var(--fg);font:14px/1.35 var(--mono);overflow:hidden;-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;background:#000;color:var(--h-fg);font:15px/1.4 var(--sans);overflow:hidden;-webkit-user-select:none;user-select:none}
 video,#ov{position:fixed;inset:0;width:100%;height:100%;object-fit:cover}
 #ov{pointer-events:none;image-rendering:pixelated;opacity:.75}
 body.nocolour #ov{display:none}
-.hud{position:fixed;background:var(--hud);border:1px solid var(--edge);border-radius:10px;padding:10px 12px;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
-#left{left:max(12px,env(safe-area-inset-left));top:max(12px,env(safe-area-inset-top));width:min(30vw,300px)}
-#right{right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));width:min(24vw,240px);text-align:right}
-#bottom{left:50%;transform:translateX(-50%);bottom:max(12px,env(safe-area-inset-bottom));display:flex;gap:10px;align-items:center;padding:6px 8px}
-.lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:0 0 4px}
-.big{font:700 22px/1.1 var(--display)}
-.haz{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid rgba(244,236,225,.12)}
-.haz:last-child{border-bottom:0}
-.haz b{font-weight:600}.sand{color:var(--amber)}.rock{color:var(--red)}.bed{color:var(--green)}
+body.prestart .hud{visibility:hidden}   /* nothing behind the start screen is reachable by keyboard */
+
+/* ---- live HUD */
+.hud{position:fixed;background:var(--hud);border:1px solid var(--edge);border-radius:10px;padding:12px 14px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#left{left:max(12px,env(safe-area-inset-left));top:max(12px,env(safe-area-inset-top));width:clamp(220px,32vw,320px)}
+#right{right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));width:clamp(170px,24vw,240px)}
+#bottom{left:50%;transform:translateX(-50%);bottom:max(12px,env(safe-area-inset-bottom));display:flex;gap:8px;align-items:center;padding:6px}
+.lbl{font:500 10px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--h-mute);margin:0 0 5px}
+.grp + .grp{margin-top:9px;padding-top:9px;border-top:1px solid var(--rule)}
+.big{font:500 24px/1.1 var(--sans);letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.big.off{font-size:14px;font-weight:400;color:var(--h-mute);letter-spacing:0}
+.haz{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:17px;line-height:1.2;margin-top:8px}
+.haz:first-child{margin-top:0}
+.haz b{font-weight:600;display:flex;align-items:center;gap:8px}
+.haz b::before{content:"";width:10px;height:10px;border-radius:2px;background:currentColor;flex:none}
+.haz span{font-variant-numeric:tabular-nums;font-weight:500}
+.sand{color:var(--amber)}.rock{color:var(--red)}.bed{color:var(--green)}
 .ok{color:var(--green)}.warn{color:var(--amber)}
-.tiny{font-size:11px;color:var(--mute)}
-button{font:600 13px var(--mono);color:var(--fg);background:rgba(10,8,6,.55);border:1px solid var(--edge);border-radius:8px;padding:8px 12px;cursor:pointer}
-button[aria-pressed="true"]{background:var(--amber);color:#140c08;border-color:var(--amber)}
-button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
-#start{position:fixed;inset:0;display:grid;place-items:center;background:#0b0907;text-align:center;padding:24px}
-#start h1{font:700 26px/1.15 var(--display);margin:0 0 8px}
-#start p{max-width:46ch;margin:0 auto 16px;color:var(--mute);font-size:13px}
-#start button{font-size:16px;padding:12px 20px;background:#e0683a;color:#140c08;border-color:#e0683a}
-#rotate{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);display:none;text-align:center}
-@media (orientation:portrait){#rotate{display:block}.hud{opacity:.15}}
+.tiny{font-size:13px;line-height:1.35;color:var(--h-mute)}
+#perf{font:400 10px var(--mono);letter-spacing:.04em;padding:0 8px 0 4px;white-space:nowrap}
+#perf:empty{display:none}
+button{font:500 14px var(--sans);letter-spacing:.06em;color:var(--h-fg);background:oklch(0.16 0.012 50 / .5);border:1px solid var(--edge);border-radius:8px;min-height:44px;padding:8px 16px;cursor:pointer}
+#bottom button{min-width:96px}
+#bottom button[aria-pressed="true"]{background:var(--h-fg);color:var(--h-ink);border-color:var(--h-fg)}
+button:focus-visible,a:focus-visible{outline:2px solid oklch(0.95 0.012 230);outline-offset:3px}
+
+/* ---- portrait hint */
+#rotate{left:50%;top:50%;transform:translate(-50%,-50%);display:none;text-align:center;width:min(86vw,340px);padding:22px 20px;background:oklch(0.16 0.012 50 / .86)}
+#rotate svg{display:block;margin:0 auto 12px;color:var(--h-fg)}
+#rotate .big{font:400 20px/1.25 var(--sans);letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
+@media (orientation:portrait){#rotate{display:block}#left,#right,#bottom{opacity:.15}}
+
+/* ---- start screen */
+#start{position:fixed;inset:0;z-index:10;overflow-y:auto;background:var(--bg,oklch(0.16 0.012 50));display:grid;align-items:center;
+  padding:calc(var(--mwbar,48px) + 20px) max(24px,env(safe-area-inset-right)) 24px max(24px,env(safe-area-inset-left))}
+#start .wrap{width:100%;max-width:960px;margin:0 auto;display:grid;gap:clamp(24px,5vw,72px);align-items:center}
+#start .eyebrow{font:500 10.5px/1.3 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--h-mute);margin:0 0 14px}
+#start h1{font:400 clamp(26px,3.6vw,44px)/1.15 var(--sans);letter-spacing:.14em;text-transform:uppercase;margin:0 0 16px;text-wrap:balance}
+#start p{margin:0 0 12px;max-width:52ch;color:var(--h-mute);font-size:16px;line-height:1.5}
+#start p.lead{color:var(--h-fg)}
+#start .keys{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 14px;padding:0;list-style:none;font-size:14px;color:var(--h-fg)}
+#start .keys li{display:flex;align-items:center;gap:7px}
+#start .keys i{width:11px;height:11px;border-radius:2px;background:currentColor}
+#start .acts{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;margin-top:20px}
+#start .primary{font-size:16px;font-weight:600;min-height:48px;padding:10px 26px;background:var(--rust-btn);color:var(--h-ink);border-color:var(--rust-btn)}
+#start .primary:hover{background:oklch(0.75 0.16 48)}
+#start .quiet{background:transparent;border-color:oklch(0.93 0.015 70 / .3);color:var(--h-mute)}
+#start .quiet:hover{color:var(--h-fg);border-color:oklch(0.93 0.015 70 / .55)}
+#start .hint{font-size:14px;margin:12px 0 0}
+#startMsg{margin:14px 0 0;font-size:15px;color:var(--amber);min-height:1.5em}
+#start .scan{text-align:center;justify-self:center}
+#qr{background:#fff;padding:14px;border-radius:10px;display:inline-block;line-height:0;min-width:212px;min-height:212px}
+#qr img,#qr canvas{display:block}
+#qrFail{max-width:26ch;margin:0 auto}
+#start .url{font:400 11.5px/1.5 var(--mono);color:var(--h-fg);word-break:break-all;margin:12px 0 0;max-width:none;-webkit-user-select:all;user-select:all}
+#start .scan .cap{font:500 10px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--h-mute);margin:0 0 12px}
+html.desk #start .wrap{grid-template-columns:minmax(0,1fr) auto}
+html.desk .on-phone,html.phone .on-desk{display:none !important}
+@media (max-width:760px){html.desk #start .wrap{grid-template-columns:1fr}html.desk #start .scan{justify-self:start;text-align:left}}
+@media (max-height:460px){#start{padding-top:calc(var(--mwbar,48px) + 12px);padding-bottom:12px}#start .eyebrow{margin-bottom:6px}#start h1{font-size:24px;margin-bottom:8px}
+  #start p{font-size:14px;margin-bottom:8px;max-width:78ch}#start .keys{margin-bottom:6px}#start .acts{margin-top:10px}#start .hint,#startMsg{margin-top:8px}}
 </style>
+<script src="shell.js"></script>
+<script>
+// A laptop (fine pointer, no touch) is pointed at the phone first; a phone starts the camera straight away.
+document.documentElement.classList.add(matchMedia('(pointer: fine)').matches && !navigator.maxTouchPoints ? 'desk' : 'phone');
+</script>
 </head>
-<body>
+<body class="prestart">
 <video id="vid" playsinline muted autoplay></video>
 <canvas id="ov"></canvas>
 
@@ -46,30 +94,80 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
   <div id="haz"><span class="tiny">Starting the terrain model…</span></div>
 </div>
 <div class="hud" id="right">
-  <p class="lbl">Jezero · local Mars time</p>
-  <div class="big" id="lmst">--:--</div>
-  <div class="tiny" id="sol">sol --</div>
-  <p class="lbl" style="margin-top:8px">Heading</p>
-  <div class="big" id="hdg">--</div>
-  <p class="lbl" style="margin-top:8px">Suit tag</p>
-  <div class="tiny" id="tag">not connected</div>
+  <div class="grp">
+    <p class="lbl">Mars time at Jezero</p>
+    <div class="big" id="lmst">--:--</div>
+    <div class="tiny" id="sol">sol --</div>
+  </div>
+  <div class="grp">
+    <p class="lbl">Heading</p>
+    <div class="big off" id="hdg">no compass reading</div>
+  </div>
+  <div class="grp">
+    <p class="lbl">Suit tag</p>
+    <div class="tiny" id="tag">not connected</div>
+  </div>
 </div>
 <div class="hud" id="bottom">
   <button type="button" id="freeze" aria-pressed="false">Freeze</button>
   <button type="button" id="colour" aria-pressed="true">Colours</button>
   <span class="tiny" id="perf"></span>
 </div>
-<div id="rotate" class="hud"><div class="big">Turn your phone sideways</div><div class="tiny">The helmet view is made for landscape.</div></div>
-
-<div id="start">
-  <div>
-    <h1>Helmet view</h1>
-    <p>Your phone's rear camera becomes the visor. A terrain model trained on Mars rover images colours the ground ahead: sand amber, big rock red, bedrock green. Everything runs on this phone; the video never leaves it.</p>
-    <button type="button" id="go">Start camera</button>
-    <p class="tiny" id="startMsg" style="margin-top:14px"></p>
-  </div>
+<div id="rotate" class="hud" role="status">
+  <svg width="56" height="56" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="8" y="6" width="18" height="32" rx="3" opacity=".45"/><rect x="18" y="32" width="32" height="18" rx="3"/><path d="M33 9c8 1 13 6 14 14"/><path d="M43 19l4 4 4-4"/>
+  </svg>
+  <div class="big">Turn your phone sideways</div><div class="tiny">The helmet view is made for a phone held wide, like a visor.</div>
 </div>
 
+<main id="start">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow">Helmet view</p>
+      <h1 class="on-desk">Open this on your phone</h1>
+      <h1 class="on-phone">See the ground like a visor</h1>
+      <p class="lead on-desk">Scan the code with your phone camera, then turn the phone sideways. Its rear camera becomes the visor.</p>
+      <p>A terrain model trained on Mars rover images colours the ground ahead.</p>
+      <ul class="keys" aria-label="What the colours mean">
+        <li class="sand"><i></i>Loose sand</li><li class="rock"><i></i>Big rock</li><li class="bed"><i></i>Bedrock</li>
+      </ul>
+      <p class="on-desk">Everything runs on the phone. The video never leaves it.</p>
+      <p class="on-phone">Everything runs on this phone. The video never leaves it.</p>
+      <div class="acts">
+        <button type="button" class="primary on-desk" id="copy">Copy phone link</button>
+        <button type="button" id="go">Start camera</button>
+      </div>
+      <p class="hint on-phone">Turn your phone sideways once the camera is on.</p>
+      <p id="startMsg" role="status" aria-live="polite"></p>
+    </div>
+    <div class="scan on-desk">
+      <p class="cap">Scan with your phone</p>
+      <div id="qr" role="img" aria-label="QR code that opens the helmet view on a phone"></div>
+      <p class="url" id="qrUrl"></p>
+    </div>
+  </div>
+</main>
+
+<script>
+// ---- start screen: on a laptop, lead with the QR code for a phone (same address rule as helmet-qr.js:
+// the public https site, because a phone cannot reach a laptop's localhost and cameras need a secure page)
+(function () {
+  const desk = document.documentElement.classList.contains('desk'), go = document.getElementById('go');
+  go.className = desk ? 'quiet' : 'primary';
+  if (!desk) return;
+  go.textContent = 'Start camera here anyway';
+  const PUBLIC = 'https://jezero-marswalk-ashy.vercel.app';
+  const url = (location.protocol === 'https:' && !/^(localhost|127\.)/.test(location.hostname) ? location.origin : PUBLIC) + '/helmet';
+  document.getElementById('qrUrl').textContent = url;
+  const fail = () => { document.getElementById('qr').outerHTML = '<p id="qrFail">The QR code could not load. Type or copy the link below on your phone.</p>'; };
+  const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  s.onload = () => { try { new QRCode(document.getElementById('qr'), { text: url, width: 184, height: 184, correctLevel: QRCode.CorrectLevel.M }); } catch (_) { fail(); } };
+  s.onerror = fail; document.head.appendChild(s);
+  document.getElementById('copy').onclick = async e => {
+    try { await navigator.clipboard.writeText(url); e.target.textContent = 'Link copied'; } catch (_) { e.target.textContent = 'Select the link under the code'; }
+  };
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/ort.min.js"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -100,7 +198,7 @@ function onOrient(e) {
   const h = e.webkitCompassHeading != null ? e.webkitCompassHeading : (e.absolute && e.alpha != null ? 360 - e.alpha : null);
   if (h == null) return;
   const d = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(h / 45) % 8];
-  $('hdg').textContent = Math.round(h) + '° ' + d;
+  $('hdg').classList.remove('off'); $('hdg').textContent = Math.round(h) + '° ' + d;
 }
 
 $('go').onclick = async () => {
@@ -112,12 +210,20 @@ $('go').onclick = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
     $('vid').srcObject = stream; await $('vid').play();
   } catch (e) {
-    $('startMsg').textContent = location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1'
-      ? 'The camera needs a secure (https) page. Open this page from the Marswalk site link.'
-      : 'The camera could not start: ' + (e.message || e.name) + '. Allow camera access for this site and try again.';
+    const insecure = location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
+    const n = e && e.name;
+    $('startMsg').textContent = insecure || !navigator.mediaDevices
+      ? 'The camera only works on a secure (https) page. Open the helmet view from the Marswalk site link instead.'
+      : n === 'NotAllowedError' || n === 'SecurityError'
+        ? 'Camera access is blocked for this site. Allow the camera in your browser\'s site settings, then press the start button again.'
+      : n === 'NotFoundError' || n === 'OverconstrainedError'
+        ? 'No camera was found on this device. Open the helmet view on a phone instead.'
+      : n === 'NotReadableError' || n === 'AbortError'
+        ? 'The camera is busy in another app or tab. Close it, then press the start button again.'
+      : 'The camera could not start (' + ((e && (e.message || e.name)) || 'unknown error') + '). Check that this browser is allowed to use the camera, then reload the page and try again.';
     return;
   }
-  $('start').remove();
+  $('start').remove(); document.body.classList.remove('prestart');
   try { screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {}); } catch (_) {}
   try { if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(() => {}); } catch (_) {}
   $('haz').innerHTML = '<span class="tiny">Loading the terrain model (13 MB, once)…</span>';
@@ -125,7 +231,7 @@ $('go').onclick = async () => {
     ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/';
     CFG = await (await fetch('habitat/models/terrain.json')).json();
     SESSION = await ort.InferenceSession.create('habitat/models/terrain.onnx', { executionProviders: ['wasm'] });
-  } catch (e) { $('haz').innerHTML = '<span class="tiny">The terrain model failed to load: ' + e.message + '</span>'; return; }
+  } catch (e) { $('haz').innerHTML = '<span class="tiny">The terrain model could not load (' + e.message + '). Check your connection and reload the page.</span>'; return; }
   running = true; loop();
 };
 
@@ -172,9 +278,9 @@ function hud(cnt, ground, n) {
   const sh = k => (cnt[k] || 0) / Math.max(1, ground);
   if (ground / n < 0.1) { $('haz').innerHTML = '<span class="tiny">Not enough ground in view. Point the camera at the ground ahead.</span>'; return; }
   const rows = [];
-  if (sh('sand') >= 0.15) rows.push(`<div class="haz"><b class="sand">Loose sand</b><span>${Math.round(100 * sh('sand'))}%</span></div><div class="tiny" style="margin-bottom:4px">Test with one foot before crossing.</div>`);
-  if (sh('big_rock') >= 0.04) rows.push(`<div class="haz"><b class="rock">Big rock</b><span>${Math.round(100 * sh('big_rock'))}%</span></div><div class="tiny" style="margin-bottom:4px">Route around, keep your buddy in sight.</div>`);
-  if (sh('bedrock') >= 0.2) rows.push(`<div class="haz"><b class="bed">Bedrock</b><span>${Math.round(100 * sh('bedrock'))}%</span></div><div class="tiny" style="margin-bottom:4px">Firm footing. Careful on tilted slabs.</div>`);
+  if (sh('sand') >= 0.15) rows.push(`<div class="haz"><b class="sand">Loose sand</b><span>${Math.round(100 * sh('sand'))}%</span></div><div class="tiny">Test with one foot before crossing.</div>`);
+  if (sh('big_rock') >= 0.04) rows.push(`<div class="haz"><b class="rock">Big rock</b><span>${Math.round(100 * sh('big_rock'))}%</span></div><div class="tiny">Route around, keep your buddy in sight.</div>`);
+  if (sh('bedrock') >= 0.2) rows.push(`<div class="haz"><b class="bed">Bedrock</b><span>${Math.round(100 * sh('bedrock'))}%</span></div><div class="tiny">Firm footing. Careful on tilted slabs.</div>`);
   $('haz').innerHTML = rows.length ? rows.join('') : '<div class="haz"><b class="ok">No sand or big rock flagged</b></div><div class="tiny">Small rocks and pits still need your eyes.</div>';
 }
 $('freeze').onclick = e => { frozen = !frozen; e.target.setAttribute('aria-pressed', frozen); e.target.textContent = frozen ? 'Live' : 'Freeze'; const v = $('vid'); frozen ? v.pause() : v.play(); };

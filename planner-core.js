@@ -1,5 +1,5 @@
 // Marswalk planner core: walk sites, terrain grid, A* routing and route metrics.
-// Shared by the 2D planner (index.html) and the 3D view (3d.html) so both compute the same routes.
+// Shared by the 2D planner (plan.html) and the 3D view (3d.html) so both compute the same routes.
 // Plain {lat,lng} objects throughout; no Leaflet or three.js here.
 (function (root) {
 const R = 3396190;                    // Mars mean radius, m (same as NASA MMGIS and the Leaflet CRS)

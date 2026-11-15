@@ -5,15 +5,17 @@
   const PUBLIC = 'https://jezero-marswalk-ashy.vercel.app';
   const url = (location.protocol === 'https:' && !/^(localhost|127\.)/.test(location.hostname) ? location.origin : PUBLIC) + '/helmet';
   const css = document.createElement('style');
-  css.textContent = `#hqr{position:fixed;inset:0;z-index:7000;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:16px}
+  css.textContent = `#hqr{position:fixed;inset:0;z-index:7000;background:oklch(0.12 0.01 50 / .72);display:grid;place-items:center;padding:16px}
   #hqr[hidden]{display:none}
-  #hqr .box{background:#1f1b16;color:#efe7dc;border:1px solid #3a322a;border-radius:10px;padding:18px;max-width:340px;width:100%;text-align:center;font-family:"IBM Plex Sans",system-ui,sans-serif}
-  #hqr h2{font:700 18px "Archivo",system-ui,sans-serif;margin:0 0 6px}
-  #hqr p{font-size:13px;color:#a3978a;margin:0 0 12px}
+  #hqr .box{background:oklch(0.19 0.014 50);color:oklch(0.93 0.015 70);border:1px solid oklch(0.33 0.02 55);border-radius:12px;padding:26px 24px 22px;max-width:420px;width:100%;text-align:center;font-family:"Jost",system-ui,sans-serif}
+  #hqr h2{font:400 19px/1.25 "Jost",system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;margin:0 0 10px}
+  #hqr p{font-size:15px;line-height:1.45;color:oklch(0.78 0.03 62);margin:0 0 16px}
   #hqr .code{background:#fff;padding:12px;border-radius:8px;display:inline-block;line-height:0}
-  #hqr .url{font:12px "IBM Plex Mono",monospace;color:#efe7dc;word-break:break-all;margin:10px 0 12px;user-select:all}
-  #hqr button{font:600 13px "IBM Plex Sans",system-ui,sans-serif;background:transparent;color:#efe7dc;border:1px solid #3a322a;border-radius:6px;padding:7px 12px;cursor:pointer;margin:0 4px}
-  #hqr button:focus-visible{outline:2px solid #e5b64a;outline-offset:2px}`;
+  #hqr .url{font:10.5px/1.5 "Martian Mono",ui-monospace,monospace;color:oklch(0.93 0.015 70);word-break:break-all;margin:12px 0 16px;-webkit-user-select:all;user-select:all}
+  #hqr button{font:500 14px "Jost",system-ui,sans-serif;letter-spacing:.06em;background:transparent;color:oklch(0.93 0.015 70);border:1px solid oklch(0.93 0.015 70 / .3);border-radius:8px;min-height:40px;padding:8px 16px;cursor:pointer;margin:0 4px}
+  #hqr #hqrCopy{background:oklch(0.70 0.16 45);border-color:oklch(0.70 0.16 45);color:oklch(0.18 0.02 50);font-weight:600}
+  #hqr button:hover{border-color:oklch(0.93 0.015 70 / .6)}
+  #hqr button:focus-visible{outline:2px solid oklch(0.95 0.012 230);outline-offset:3px}`;
   document.head.appendChild(css);
   const wrap = document.createElement('div'); wrap.id = 'hqr'; wrap.hidden = true;
   wrap.setAttribute('role', 'dialog'); wrap.setAttribute('aria-modal', 'true'); wrap.setAttribute('aria-label', 'Helmet view on your phone');

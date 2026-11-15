@@ -1,0 +1,69 @@
+{
+ "bounds": [
+  [
+   -2.160511037901313,
+   -5.536853532114151
+  ],
+  [
+   -1.9329432743181303,
+   -5.42152476377214
+  ]
+ ],
+ "nx": 228,
+ "ny": 450,
+ "cell": 30,
+ "dtm": {
+  "file": "mer_dtm_30m.i16",
+  "units": "decimetres above offset_m",
+  "offset_m": -1400,
+  "nodata": -32768,
+  "dtms": [
+   {
+    "dtm": "DTEEC_021747_1780_022380_1780_U01",
+    "ortho": "ESP_021747_1780_RED_C_01_ORTHO",
+    "cells": 75643,
+    "median_offset_vs_mosaic_m": null
+   }
+  ],
+  "method": "mean of 1 m HiRISE posts per 30 m cell; cells with under half coverage are no-data",
+  "valid_share": 0.7373,
+  "min_m": -1442.7,
+  "max_m": -1366.1
+ },
+ "fine_slope": {
+  "file": "mer_fslope_30m.u8",
+  "units": "quarter degrees",
+  "nodata": 255
+ },
+ "fill": {
+  "file": "mer_elev_fill_30m.i16",
+  "offset_m": -1400,
+  "use": "3D display only; MOLA megt00n270hb.img shifted by -0.7 m outside the DTM"
+ },
+ "ortho": {
+  "file": "mer_ortho.webp",
+  "bounds": [
+   [
+    -2.160511037901313,
+    -5.536853532114151
+   ],
+   [
+    -1.9329432743181303,
+    -5.42152476377214
+   ]
+  ],
+  "px": [
+   1708,
+   3372
+  ],
+  "scale_m": 4,
+  "credit": "NASA/JPL/University of Arizona"
+ },
+ "traverse": {
+  "file": "mer_traverse.json",
+  "drives": 1433,
+  "last_sol": 5081,
+  "points_in_grid": 8830,
+  "frame": "local metres from the lander (x east, y north), placed at the landing point fitted to Victoria crater in this DTM (shift 107 m east, 86 m south of the published landing point; rim fit 25 m rms)"
+ }
+}

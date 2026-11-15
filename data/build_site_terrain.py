@@ -18,7 +18,7 @@ SITES = {
     'meridiani': (-2.0, -5.4, 1.0, 1.2),
     'phoenix':   (68.22, -125.0, 1.2, 3.2),
     'arcadia':   (42.4, -148.0, 2.2, 2.0),   # HRSC orbit 26333 scene: walk grid at 41.4 N and the candidate rampart crater at 43.7 N
-    'utopia':    (46.7, 117.5, 3.0, 4.4),
+    'utopia':    (44.3, 83.0, 4.5, 10.0),   # SHARAD buried-ice deposit, western Utopia; walk site at 42.2 N 86.3 E
     'olympus':   (18.4, -133.8, 6.5, 7.2),
     'valles':    (-10.0, -66.0, 6.0, 14.0),
     'hellas':    (-42.0, 68.0, 22.0, 30.0),

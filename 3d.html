@@ -48,6 +48,10 @@ table.cmp{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
 table.cmp th{font:500 10px var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--mute);text-align:right;padding:2px 4px;border-bottom:1px solid var(--line)}
 table.cmp th:first-child,table.cmp td:first-child{text-align:left}
 table.cmp td{font-family:var(--mono);text-align:right;padding:4px;border-bottom:1px dashed var(--line);white-space:nowrap}
+table.cmp td.why{font-family:var(--body);text-align:left;white-space:normal;color:var(--mute);font-size:11.5px;padding:0 4px 6px 19px}
+.conf{display:grid;grid-template-columns:auto auto 1fr;gap:3px 8px;font-size:12px;align-items:baseline}
+.conf .c{font:11px var(--mono);padding:1px 6px;border-radius:3px;white-space:nowrap}
+.conf .c.High{background:var(--ok-soft);color:var(--ok)}.conf .c.Medium{background:var(--warn-soft);color:var(--warn)}.conf .c.Low{background:var(--bad-soft);color:var(--bad)}.conf .c.nc{border:1px dashed var(--mute);color:var(--mute)}
 table.cmp tr[data-m]{cursor:pointer}table.cmp tr[data-m]:hover td{background:var(--rust-soft)}table.cmp tr.sel td{color:var(--rust)}
 .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle}
 .ev.sim{color:var(--warn);border:1px dashed var(--warn)}
@@ -91,6 +95,9 @@ input[type=time]{font:12px var(--mono);background:var(--bg);color:var(--fg);bord
       <p class="note" id="gridStatus" style="margin-top:6px">Terrain grid: loading THEMIS night IR…</p>
     </div>
     <div id="rstats"></div>
+    <div class="conf" id="conf"></div>
+    <div><button type="button" id="retBtn" disabled>Return options from the farthest point</button></div>
+    <div id="retWrap"></div>
     <div><h2>Targets</h2><ul class="tg" id="targets"></ul></div>
     <div id="cmpWrap"></div>
     <p class="note" id="routeNote"></p>
@@ -140,26 +147,44 @@ const R = 3396190, MPD = R * Math.PI / 180;
 // The rest use a MOLA window (data/build_site_terrain.py). mark: the point the cone marks; ex: starting vertical scale.
 const SITES = [
   { id: 'jezero', n: 'Jezero Crater', mark: [18.444627, 77.450886], what: 'habitat', ex: 1, t: 'River-lake delta, Perseverance\'s crater. Footstep-scale terrain from CTX stereo, with the planner\'s routing.' },
+  { id: 'utopia', n: 'Utopia Planitia', mark: window.MarswalkCore.SITES.utopia.hab, what: 'draft habitat', ex: 2, t: 'Walk area on a 1 m HiRISE stereo terrain model inside the buried ice deposit SHARAD mapped in western Utopia. Mantle with scalloped, terraced margins and rimmed depressions, read as ice loss. No rover has been here: every route is a candidate that requires review.' },
   { id: 'arcadia', n: 'Arcadia Planitia', mark: [41.36, -148.05], what: 'draft habitat', ex: 10, t: 'Walk area on the edge of a yardang field, in the Mars Express HRSC image of 10 Nov 2024. No rover has been here: slope comes from MOLA (about 463 m bins), so every route is a candidate that requires review. Relief is gentle: 10× by default.' },
-  { id: 'gale', n: 'Gale Crater', mark: [-4.59, 137.44], what: 'Curiosity landing site', ex: 2, t: 'About 154 km across, with Mount Sharp, a 5 km layered mound, in the middle. Curiosity has climbed its lower slopes since 2012.' },
-  { id: 'gusev', n: 'Gusev Crater', mark: [-14.57, 175.47], what: 'Spirit landing site', ex: 3, t: 'About 166 km across. Ma\'adim Vallis, a big dry valley, cuts the southern rim. Spirit explored the floor and the Columbia Hills.' },
-  { id: 'meridiani', n: 'Meridiani Planum', mark: [-1.95, -5.53], what: 'Opportunity landing site', ex: 10, t: 'Very flat plains of iron-rich sand over layered rock. Endeavour crater, 22 km, lies to the south-east.' },
-  { id: 'phoenix', n: 'Phoenix site', mark: [68.22, -125.75], what: 'Phoenix landing site', ex: 10, t: 'Flat polygon-patterned plains with ice just under the soil. Heimdal crater, 11 km, sits to the east.' },
-  { id: 'utopia', n: 'Utopia Planitia', mark: [46.7, 117.5], what: 'globe marker', ex: 10, t: 'Plains over a buried ice deposit found by radar. Gentle relief: use 10×.' },
-  { id: 'olympus', n: 'Olympus Mons', mark: [18.65, -133.8], what: 'summit caldera', ex: 1, t: 'The tallest volcano in the solar system: about 22 km high, ringed by cliffs up to 8 km tall.' },
-  { id: 'valles', n: 'Valles Marineris', mark: [-13.9, -59.2], what: 'globe marker', ex: 1, t: 'The central canyons (Ius, Melas, Candor, Coprates), up to about 7 km deep. The full system is 4,000 km long; this window shows the middle.' },
-  { id: 'hellas', n: 'Hellas Planitia', mark: [-42.4, 70.5], what: 'globe marker', ex: 4, t: 'Impact basin about 2,300 km across and 7 km deep. At this size the map is flattened: the planet\'s curve is not shown.' },
+  { id: 'gale', n: 'Gale Crater', mark: window.MarswalkCore.SITES.gale.hab, what: 'draft habitat', ex: 2, t: 'Walk area along Curiosity\'s route, from Bradbury Landing up the lower slopes of Mount Sharp, on three 1 m HiRISE stereo terrain models. Curiosity\'s real drives are drawn and count as proven ground; its measurements are listed on the 2D map.' },
+  { id: 'gusev', n: 'Gusev Crater', mark: window.MarswalkCore.SITES.gusev.hab, what: 'draft habitat', ex: 4, t: 'Walk area along Spirit\'s route, from the 2004 landing site to the Columbia Hills and Home Plate, on a 1 m HiRISE stereo terrain model. Spirit\'s real drives are drawn and count as proven ground. Gentle relief: 4× by default.', reg: 'About 166 km across. Ma\'adim Vallis, a big dry valley, cuts the southern rim. Spirit explored the floor and the Columbia Hills.' },
+  { id: 'meridiani', n: 'Meridiani Planum', mark: window.MarswalkCore.SITES.meridiani.hab, what: 'draft habitat', ex: 10, t: 'Walk area along Opportunity\'s route from Eagle crater to Victoria crater, on a 1 m HiRISE stereo terrain model. Opportunity\'s real drives are drawn and count as proven ground. Very flat: 10× by default.', reg: 'Very flat plains of iron-rich sand over layered rock. Endeavour crater, 22 km, lies to the south-east.' },
+  { id: 'phoenix', n: 'Phoenix site', mark: window.MarswalkCore.SITES.phoenix.hab, what: 'draft habitat', ex: 4, t: 'Walk area on a 1 m HiRISE stereo terrain model of the Phoenix landing site, with the lander, backshell and heat shield marked where HiRISE sees them. Phoenix dug up water ice 5 to 18 cm down here in 2008 and measured perchlorate in the soil: one spot, one season. Very flat: 4× by default.' },
+  { id: 'olympus', n: 'Olympus Mons', mark: window.MarswalkCore.SITES.olympus.hab, what: 'draft habitat', ex: 1, t: 'Walk area on one tile of the basal scarp, the escarpment that rings the volcano, on a 1 m HiRISE stereo terrain model at about 5 to 7 km above the Mars datum. Green ground is where the crew can still walk back to the habitat within the limit. Terrain is the hazard that can be mapped; no eruption has ever been observed. Nothing has been measured on the surface.', reg: 'The tallest volcano in the solar system, about 22 km high, ringed by an escarpment several kilometres tall. Its summit is a nested caldera of six collapse pits, about 65 by 80 km (USGS SIM 3470). Dated from orbit: caldera floors about 100 to 200 million years old, small areas perhaps 2 million (crater counts; Neukum et al. 2004). Measured on the surface: nothing. No eruption has ever been observed, so no volcanic hazard is drawn; the mappable hazard is terrain, shown in red and amber.' },
+  { id: 'valles', n: 'Valles Marineris', mark: window.MarswalkCore.SITES.valles.hab, what: 'draft habitat', ex: 1, t: 'One small study tile, about 5 by 7.5 km, on a 1 m HiRISE stereo terrain model at the foot of a landslide scarp in east Melas Chasma; the slope rises about 2 km to the south. Green ground is where the crew can still walk back to the habitat within the limit; red is too steep. No rover or lander has ever worked in the canyon: every route is a candidate that requires review.' },
+  { id: 'hellas', n: 'Hellas Planitia', mark: window.MarswalkCore.SITES.hellas.hab, what: 'draft habitat', ex: 4, t: 'One study tile, about 8 by 21 km, on a 1 m HiRISE stereo terrain model of banded terrain on the north-west floor of the Hellas basin, about 7 km below the Mars datum: some of the lowest ground on Mars, so the air overhead is thicker than at most sites (calculated, never measured here). Green ground is where the crew can still walk back to the habitat within the limit. No rover or lander has ever worked in Hellas: every route is a candidate that requires review. Gentle relief: 4× by default.' },
 ];
 const params = new URLSearchParams(location.search), q = params.get('site'), view = params.get('view');
 const S = SITES.find(s => s.id === q) || SITES[0];
 const WALK = !!Core.SITES[S.id] && view !== 'region';         // walk sites route; ?view=region shows Arcadia's wide MOLA window
 document.title = S.n + ' in 3D · Marswalk';
-$('title').textContent = S.n + (WALK && S.id === 'arcadia' ? ' walk area in 3D' : view === 'region' ? ', regional 3D' : ' in 3D');
-$('blurb').innerHTML = S.id === 'arcadia'
+$('title').textContent = S.n + (WALK && S.id !== 'jezero' ? ' walk area in 3D' : view === 'region' ? ', regional 3D' : ' in 3D');
+$('blurb').innerHTML = S.reg && !WALK
+  ? S.reg + ' <a href="?site=' + S.id + '">Walk area with routing →</a>'
+  : S.reg && WALK
+  ? S.t + ' <a href="?site=' + S.id + '&view=region">Regional view →</a>'
+  : S.id === 'phoenix' && !WALK
+  ? 'MOLA window around the Phoenix landing site. <a href="?site=phoenix">Walk area with routing →</a>'
+  : S.id === 'utopia'
+  ? (WALK ? S.t + ' <a href="?site=utopia&view=region">Regional view of the buried ice deposit →</a>'
+          : 'MOLA window over the buried ice deposit SHARAD mapped in western Utopia (about 40 to 48°N, 73 to 93°E). The walk site is the green cone. <a href="?site=utopia">Walk area with routing →</a>')
+  : S.id === 'gale'
+  ? (WALK ? S.t + ' <a href="?site=gale&view=region">Regional view of the whole crater →</a>'
+          : 'About 154 km across, with Mount Sharp, a 5 km layered mound, in the middle. Curiosity has climbed its lower slopes since 2012; the walk area is the green cone. <a href="?site=gale">Walk area with routing →</a>')
+  : S.id === 'hellas'
+  ? (WALK ? S.t + ' <a href="?site=hellas&view=region">Regional view of the whole basin →</a>'
+          : 'Impact basin about 2,300 km across and 7 km deep. At this size the map is flattened: the planet\'s curve is not shown. The walk tile is the green cone on the north-west floor. <a href="?site=hellas">Walk tile with routing →</a>')
+  : S.id === 'valles'
+  ? (WALK ? S.t + ' <a href="?site=valles&view=region">Regional view of the central canyons →</a>'
+          : 'MOLA window over the central canyons (Ius, Melas, Candor, Coprates), up to about 7 km deep. The full system is about 4,000 km long; this window shows the middle. The walk tile is the green cone in east Melas Chasma. <a href="?site=valles">Walk tile with routing →</a>')
+  : S.id === 'arcadia'
   ? (WALK ? S.t + ' <a href="?site=arcadia&view=region">Regional view with the candidate rampart crater →</a>'
           : 'MOLA window over the HRSC orbit 26333 scene: the walk area near the south, the candidate rampart crater (about 20 km) near the north. <a href="?site=arcadia">Walk area with routing →</a>')
   : S.t;
-$('sites').innerHTML = SITES.map(s => `<a class="chip" href="?site=${s.id}"${s === S ? ' aria-current="page"' : ''}>${s.n}</a>`).join('');
+$('sites').innerHTML = SITES.map(s => `<a class="chip" href="?site=${s.id}"${s === S ? ' aria-current="page"' : ''}${Core.SITES[s.id] ? ' title="Walking map with routing"' : ''}>${Core.SITES[s.id] ? '★ ' : ''}${s.n}</a>`).join('');   // ★ = walking map, as on the globe
 if (WALK) $('mapLink').href = './#' + S.id;
 $('close').textContent = WALK ? 'Habitat close-up' : 'Close-up: ' + S.what;
 
@@ -208,7 +233,8 @@ $('load').remove();
 // =====================================================================================================
 // Walk sites (Jezero, Arcadia): the 2D planner's 30 m grid, its A* routing and route metrics, on the terrain.
 async function walkSite() {
-const site = Core.SITES[S.id], JZ = S.id === 'jezero', CELL = Core.CELL;
+const site = Core.SITES[S.id], JZ = S.id === 'jezero', ARC = S.id === 'arcadia', UTP = S.id === 'utopia', PHX = S.id === 'phoenix', VM = S.id === 'valles', HL = S.id === 'hellas', OL = S.id === 'olympus', GL = S.id === 'gale', GS = S.id === 'gusev', MR = S.id === 'meridiani', RVX = GL || GS || MR, ROV = JZ || RVX, CF = VM || HL || OL, HRS = UTP || PHX || CF || RVX, CELL = Core.CELL;
+const ROVER = GL ? 'Curiosity' : GS ? 'Spirit' : MR ? 'Opportunity' : 'Perseverance';
 const { lat0, lat1, lon0, lon1, mLon, mLat, nx: NX, ny: NY } = Core.geom(site.bounds);
 const HAB = { lat: site.hab[0], lng: site.hab[1] };
 const hx = (HAB.lng - lon0) * mLon, hz = (lat0 - HAB.lat) * mLat;              // local metres: x east, z south, origin at the habitat
@@ -221,9 +247,11 @@ scene.fog = new THREE.Fog(0x14110e, 30000, 60000);
 
 const buf = u => fetch(u).then(r => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.arrayBuffer(); });
 const json = u => fetch(u).then(r => { if (!r.ok) throw new Error(u + ' ' + r.status); return r.json(); });
-const [dtmBuf, fillBuf, roughBuf, sandMap, trav, arcMeta] = await Promise.all([
+const [dtmBuf, fillBuf, roughBuf, sandMap, trav, siteMeta, fineBuf, landforms] = await Promise.all([
   buf(site.dtm), site.fill ? buf(site.fill) : null, site.rough ? buf(site.rough).catch(() => null) : null,
-  JZ ? json('habitat/web/data/sim3464_walk.geojson') : null, JZ ? json(site.track) : null, JZ ? null : json('data/arcadia/arc_grid.json'),
+  JZ ? json('habitat/web/data/sim3464_walk.geojson') : null, ROV ? json(site.track) : null,
+  ARC ? json('data/arcadia/arc_grid.json') : UTP ? json('data/utopia/utp_grid.json') : VM ? json('data/valles/vm_grid.json') : HL ? json('data/hellas/hl_grid.json') : site.meta ? json(site.meta) : PHX ? json('data/phoenix/phx_grid.json') : null,
+  site.fine ? buf(site.fine).catch(() => null) : null, site.landforms ? json(site.landforms).catch(() => null) : null,
 ]);
 // display surface: Jezero's CTX DTM; Arcadia's full MOLA surface (routing reads only the shot cells, through the grid)
 const D = new Int16Array(fillBuf || dtmBuf); if (D.length !== NX * NY) throw new Error('elevation grid size does not match the planner grid');
@@ -245,17 +273,27 @@ if (JZ) {
       im.onerror = () => { if (++n === 81) done(); };
       im.src = `https://trek.nasa.gov/tiles/Mars/EQ/JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0/1.0.0/default/default028mm/${Z}/${ty}/${tx}.png`; } } };
 } else {
-  const w = arcMeta.hrsc.walk_image, [[bS, bW], [bN, bE]] = w.bounds, K = Math.min(2, 2400 / Math.max(...w.px)), TW = Math.round(w.px[0] * K), TH = Math.round(w.px[1] * K);   // texture capped near Jezero's size
+  const w = ARC ? siteMeta.hrsc.walk_image : siteMeta.ortho, dir = 'data/' + S.id + '/', [[bS, bW], [bN, bE]] = w.bounds, K = Math.min(2, 2400 / Math.max(...w.px)), TW = Math.round(w.px[0] * K), TH = Math.round(w.px[1] * K);   // texture capped near Jezero's size
   IMG = { TW, TH, fill: '#3a3632', pxPerM: TW / ((bE - bW) * mLon),
     px: (lat, lon) => [(lon - bW) / (bE - bW) * TW, (bN - lat) / (bN - bS) * TH], uv: (lat, lon) => [(lon - bW) / (bE - bW), 1 - (bN - lat) / (bN - bS)],
-    load(ctx, done) { const im = new Image(); im.onload = () => { ctx.drawImage(im, 0, 0, TW, TH); done(); }; im.src = 'data/arcadia/' + w.file; } };
+    load(ctx, done) { const im = new Image(); im.onload = () => { ctx.drawImage(im, 0, 0, TW, TH); done(); }; im.src = dir + w.file; } };
 }
-$('sources').innerHTML = JZ
+$('sources').innerHTML = RVX || OL
+  ? 'Terrain: ' + site.dtmLabel + ' (1 m posts averaged to 30 m; NASA/JPL/UArizona). Outside it the surface shown is MOLA, for display only: routing treats it as not characterized. Imagery: ' + site.imgLabel + '.' + (RVX ? ' Track: ' + site.trackLabel + '. Routing: the planner\'s 30 m grid, THEMIS night IR sand proxy, ' + ROVER + '\'s track as proven ground.' : ' Return feasibility and line of sight are calculated on the 30 m grid: geometry from orbital terrain, not measurements. Nothing has been measured on the surface here.')
+  : HL
+  ? 'Terrain: HiRISE stereo DTM DTEEC_006133_1410_007056_1410 (1 m posts, averaged to 30 m; images of 17 Nov 2007 and 28 Jan 2008; NASA/JPL/UArizona). Outside its strip the surface shown is MOLA, for display only: routing treats it as not characterized. Imagery: HiRISE orthoimage PSP_006133_1410 (17 Nov 2007). Return feasibility and line of sight are calculated on the 30 m grid: geometry from orbital terrain, not measurements. Nothing has been measured on the surface of Hellas.'
+  : VM
+  ? 'Terrain: HiRISE stereo DTM DTEEC_036307_1665_035951_1665 (1 m posts, averaged to 30 m; NASA/JPL/UArizona). Outside its strip the surface shown is MOLA, for display only: routing treats it as not characterized. Imagery: HiRISE orthoimage ESP_036307_1665 (25 Apr 2014). Return feasibility and line of sight are calculated on the 30 m grid: geometry from orbital terrain, not measurements. Nothing has been measured on the surface of Valles Marineris.'
+  : PHX
+  ? 'Terrain: HiRISE stereo DTM DTEPC_008591_2485_008644_2485 (1 m posts, averaged to 30 m; NASA/JPL/UArizona), reprojected from polar stereographic. Outside its strip the surface shown is MOLA, for display only: routing treats it as not characterized. Imagery: HiRISE orthoimage PSP_008591_2485, taken after landing. Hardware located by eye in that image; the published lander position falls about 70 m away in this frame. Lander measurements (2008, one spot) are listed on the 2D map. No traverse exists to check slope against.'
+  : UTP
+  ? 'Terrain: HiRISE stereo DTM DTEEC_009467_2225_007384_2225 (1 m posts, averaged to 30 m; NASA/JPL/UArizona). Outside its strip the surface shown is MOLA, for display only: routing treats it as not characterized. Imagery: HiRISE orthoimage PSP_009467_2225 (3 Aug 2008), shown at about 7 m. Ice-related landforms marked by eye from that image. The SHARAD buried-ice deposit is regional (Stuurman et al. 2016) and covers this whole view; it is not drawn as a hazard. No ground truth exists here.'
+  : JZ
   ? 'Terrain: USGS CTX stereo DTM (20 m), resampled to 30 m. Imagery: MRO CTX 6 m controlled mosaic via NASA Mars Trek. Sand ridges: USGS SIM 3464 geologic map. Track: Mars 2020 traverse (NASA/JPL-Caltech). Routing: the planner\'s 30 m grid, THEMIS night IR sand proxy, rover track as proven ground.'
   : 'Terrain: MGS MOLA MEGDR, 128 px per degree (about 463 m bins), interpolated to 30 m for display. About two thirds of cells have no laser shot in their bin: routing treats them as not characterized. Imagery: Mars Express HRSC orbit 26333, 10 Nov 2024, 12.5 m, credit ESA/DLR/FU Berlin, <a href="https://creativecommons.org/licenses/by-sa/3.0/igo/" target="_blank" rel="noopener">CC BY-SA 3.0 IGO</a>, cropped and reprojected. Sand proxy: THEMIS night IR (100 m) via Mars Trek. No ground truth exists here.';
 
 // terrain mesh (every second cell)
-const STEP = 2, gx = Math.ceil(NX / STEP), gy = Math.ceil(NY / STEP);
+const STEP = HRS ? 1 : 2, gx = Math.ceil(NX / STEP), gy = Math.ceil(NY / STEP);
 const pos = new Float32Array(gx * gy * 3), uv = new Float32Array(gx * gy * 2), base = new Float32Array(gx * gy);
 for (let j = 0; j < gy; j++) for (let i = 0; i < gx; i++) {
   const ix = Math.min(NX - 1, i * STEP), iy = Math.min(NY - 1, j * STEP), k = j * gx + i;
@@ -270,8 +308,13 @@ const texture = new THREE.CanvasTexture(tex); texture.anisotropy = renderer.capa
 const mesh = meshFrom(pos, uv, gx, gy, texture), geo = mesh.geometry; scene.add(mesh);
 
 // ---- layers (drawn into the texture so they follow the ground exactly)
-const LAYERS = JZ
+const LAYERS = RVX
+  ? [['lTrack', ROVER + ' track, coloured by sol', 1], ['lFine', 'Steep 3 m slopes inside a cell (HiRISE DTM): red over the limit', 0], ['lNodata', 'Outside the HiRISE DTM (not characterized)', 1], ['lSteep', 'Slope at 30 m: red over the limit, amber within 5°', 0], ['lTgt', 'Targets at ' + ROVER + ' positions, habitat, walk-back circle', 1]]
+  : JZ
   ? [['lSand', 'Sand ridges (USGS unit Aeb)', 1], ['lTrack', 'Perseverance track, sols 14 to 2022', 1], ['lSteep', 'Steep ground: red over the slope limit, amber within 5°', 0], ['lTgt', 'Targets, habitat, walk-back circle', 1]]
+  : CF ? [['lReach', 'Return feasibility: green back within the limit, amber longer, red steep cell, purple cut off', 1], ['lLos', 'Line of sight to a 3 m habitat mast: dark where terrain blocks it', 0], ['lFine', 'Steep 3 m slopes inside a cell (HiRISE DTM): red over the limit', 0], ['lNodata', 'Outside the HiRISE DTM (not characterized)', 1], ['lSteep', 'Slope at 30 m: red over the limit, amber within 5°', 0], ['lTgt', 'Targets, habitat, walk-back circle', 1]]
+  : PHX ? [['lFine', 'Steep 3 m slopes inside a cell (HiRISE DTM): red over the limit', 1], ['lNodata', 'Outside the HiRISE DTM (not characterized)', 1], ['lSteep', 'Slope at 30 m: red over the limit, amber within 5°', 0], ['lTgt', 'Hardware, habitat, walk-back circle', 1]]
+  : UTP ? [['lIce', 'Ice-related landforms, marked by eye in HiRISE', 1], ['lFine', 'Steep 3 m slopes inside a cell (HiRISE DTM): red over the limit', 1], ['lNodata', 'Outside the HiRISE DTM (not characterized)', 1], ['lSandP', 'Loose-sand proxy: THEMIS night IR', 0], ['lSteep', 'Slope at 30 m: red over the limit, amber within 5°', 0], ['lTgt', 'Targets, habitat, walk-back circle', 1]]
   : [['lRough', 'Yardang roughness: HRSC image texture (calculated)', 1], ['lSandP', 'Loose-sand proxy: THEMIS night IR', 0], ['lNodata', 'No MOLA laser shot (not characterized)', 1], ['lSteep', 'Slope from MOLA where a shot exists: red over the limit, amber within 5°', 0], ['lTgt', 'Targets, habitat, walk-back circle', 1]];
 $('layers').innerHTML = LAYERS.map(([id, label, on]) => `<label class="tg"><input type="checkbox" id="${id}"${on ? ' checked' : ''}> ${label}</label>`).join('');
 const on = id => $(id) && $(id).checked;
@@ -304,17 +347,29 @@ function drawStatic() {
       const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
       for (const poly of polys) { sctx.beginPath(); for (const ring of poly) ring.forEach(([lo, la], i) => { const [x, y] = P(la, lo); i ? sctx.lineTo(x, y) : sctx.moveTo(x, y); }); sctx.fill('evenodd'); sctx.stroke(); } }
   }
-  if (JZ && on('lTrack')) {
+  if (ROV && on('lTrack')) {
     const maxSol = trav.segments[trav.segments.length - 1].sol; sctx.lineWidth = 3;
     for (const s of trav.segments) { sctx.strokeStyle = `hsl(${200 - 200 * s.sol / maxSol},80%,60%)`; sctx.beginPath();
       s.pts.forEach((p, i) => { const [x, y] = P(p[1], p[0]); i ? sctx.lineTo(x, y) : sctx.moveTo(x, y); }); sctx.stroke(); }
   }
   if (!G) return;
+  if (HRS && on('lFine') && G.fine) gridLayer(sctx, i => { const f = G.fine[i], l = LIM(); return f > l ? [224, 60, 40, 150] : f > l - 5 ? [240, 170, 40, 80] : null; });
+  if (UTP && on('lIce') && landforms) {
+    sctx.fillStyle = 'rgba(201,160,255,.22)'; sctx.strokeStyle = 'rgba(201,160,255,.95)'; sctx.lineWidth = Math.max(1.5, 8 * IMG.pxPerM);
+    for (const f of landforms.features) { const g = f.geometry;
+      if (g.type === 'Point') { const [x, y] = P(g.coordinates[1], g.coordinates[0]); sctx.beginPath(); sctx.arc(x, y, 40 * IMG.pxPerM, 0, 2 * Math.PI); sctx.stroke(); continue; }
+      for (const poly of g.type === 'Polygon' ? [g.coordinates] : g.coordinates) { sctx.beginPath(); for (const ring of poly) ring.forEach(([lo, la], i) => { const [x, y] = P(la, lo); i ? sctx.lineTo(x, y) : sctx.moveTo(x, y); }); sctx.fill('evenodd'); sctx.stroke(); } }
+  }
   if (!JZ && on('lRough') && G.rough) gridLayer(sctx, i => { const r = G.rough[i]; return r > 0.5 ? [240, 140, 60, Math.round(70 + (r - .5) * 260)] : null; });
   if (!JZ && on('lSandP')) gridLayer(sctx, i => { const s = G.sand[i]; return s > 0.5 ? [229, 182, 74, Math.round(60 + (s - .5) * 260)] : null; });
   if (!JZ && on('lNodata')) gridLayer(sctx, i => { if (!isNaN(G.elev[i])) return null; const x = i % G.nx, y = (i / G.nx) | 0; return (x + y) % 6 < 2 ? [110, 140, 255, 130] : [110, 140, 255, 30]; });
   if (on('lSteep') && G.dtm) gridLayer(sctx, steepPaint());
+  if (CF && on('lReach') && vmF.rf) gridLayer(sctx, i => { const c = vmF.rf.cls[i]; return c === 1 ? [111, 207, 151, 100] : c === 2 ? [229, 182, 74, 110] : c === 3 ? [224, 60, 40, 80] : c === 5 ? [200, 90, 200, 130] : null; });
+  if (CF && on('lLos') && vmF.vs) gridLayer(sctx, i => vmF.vs.vis[i] === 2 ? [10, 8, 30, 150] : vmF.vs.vis[i] === 1 ? [127, 179, 230, 60] : null);
 }
+// Valles: return feasibility and line of sight from the habitat, recomputed when the slope limit changes (planner-core.js)
+const vmF = { rf: null, vs: null };
+function vmFields() { if (!CF || !G) return; vmF.rf = Core.returnField(G, HAB, LIM(), RADIUS); vmF.vs = vmF.vs || Core.viewshed(G, HAB, 3, 2, null, 4000); }
 
 // ---- routing state, as in the 2D planner: anchors are the clicked points, waypoints the routed path between them
 let anchors = [], waypoints = [], backPath = [], cand = null, selected = null, clickMode = 'probe';
@@ -334,40 +389,58 @@ function drawRoutes(ctx) {
   if (waypoints.length) line([waypoints[waypoints.length - 1], ...backPath], 'rgba(224,104,58,.85)', lw * .7, [3, 4]);
   for (const a of anchors) { const [x, y] = P(a); ctx.beginPath(); ctx.arc(x, y, lw * .9, 0, 2 * Math.PI); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = lw * .4; ctx.strokeStyle = '#e0683a'; ctx.stroke(); }
 }
-function compose() { tctx.drawImage(imgCv, 0, 0); tctx.drawImage(statCv, 0, 0); drawRoutes(tctx); texture.needsUpdate = true; }
+let rets = null;    // return options from the farthest point: {far, primary, alternate, emergency}
+const RET = { primary: ['Primary', '#6fcf97', [], 'recommended cost, slope limit enforced'], alternate: ['Alternate', '#c9a0ff', [5, 3], 'recommended cost, keeps off the primary corridor'], emergency: ['Emergency', '#ef6b6b', [2, 3], 'shortest path that still respects the slope limit'] };
+function drawReturns(ctx) {
+  if (!rets) return; const lw = Math.max(2, 26 * IMG.pxPerM), P = ll => IMG.px(ll.lat, ll.lng);
+  for (const k in RET) { const r = rets[k]; if (!r) continue; const pts = [rets.far, ...r.path];
+    ctx.setLineDash(RET[k][2].map(v => v * lw)); ctx.strokeStyle = RET[k][1]; ctx.lineWidth = lw; ctx.beginPath(); pts.forEach((p, i) => { const [x, y] = P(p); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke(); ctx.setLineDash([]); }
+  const [x, y] = P(rets.far); ctx.beginPath(); ctx.arc(x, y, lw * 2, 0, 2 * Math.PI); ctx.lineWidth = lw * .6; ctx.strokeStyle = '#e5b64a'; ctx.stroke();
+}
+function compose() { tctx.drawImage(imgCv, 0, 0); tctx.drawImage(statCv, 0, 0); drawRoutes(tctx); drawReturns(tctx); texture.needsUpdate = true; }
 IMG.load(ictx, compose); drawStatic(); compose();
 LAYERS.forEach(([id]) => $(id).onchange = () => { drawStatic(); compose(); });
 
 function rebuild() {
+  rets = null; $('retWrap').innerHTML = '';
   if (sim) simReset();                                                          // a route edit ends the simulated walk, as in the 2D planner
   waypoints = []; const auto = $('autoRoute').checked && G, lim = LIM(); let from = HAB, soft = 0, off = 0;
   for (const a of anchors) {
     let via = [a];
-    if (auto && Core.dist(from, a) > CELL * 2) { const r = Core.routeTo(G, from, a, lim); if (r) { via = r.path; if (r.soft) soft++; } else off++; }
+    if (auto && Core.dist(from, a) > CELL * 2) { const r = Core.routeTo(G, from, a, lim); if (r && r.path) { via = r.path; if (r.soft) soft++; } else if (r && r.nofeas) soft++; else off++; }
     waypoints.push(...via); from = a;
   }
   backPath = [];
-  if (anchors.length) { backPath = [HAB]; if (auto && Core.dist(from, HAB) > CELL * 2) { const r = Core.routeTo(G, from, HAB, lim); if (r) { backPath = r.path; if (r.soft) soft++; } else off++; } }
+  if (anchors.length) { backPath = [HAB]; if (auto && Core.dist(from, HAB) > CELL * 2) { const r = Core.routeTo(G, from, HAB, lim); if (r && r.path) { backPath = r.path; if (r.soft) soft++; } else if (r && r.nofeas) soft++; else off++; } }
   renderStats(soft, off); compose();
 }
 function renderStats(soft, off) {
-  if (!anchors.length) { $('rstats').innerHTML = '<p class="note">No route yet. Choose "Click: add waypoint" and click the ground, or press Route on a target.</p>'; return; }
+  if (!anchors.length) { renderConf(null); $('retBtn').disabled = true; $('rstats').innerHTML = '<p class="note">No route yet. Choose "Click: add waypoint" and click the ground, or press Route on a target.</p>'; return; }
   const opt = { slopeLim: LIM(), radius: Infinity, hab: HAB }, last = anchors[anchors.length - 1];
   const mo = Core.routeMetrics(G, waypoints, HAB, opt), mb = Core.routeMetrics(G, backPath, last, opt);
   const total = mo.len + mb.len, mins = total / (SPEED * 1000 / 60), share = k => (mo[k] * mo.len + mb[k] * mb.len) / Math.max(1, total);
   const steps = mo.breaks + mb.breaks, pct = v => Math.round(v * 100) + '%';
   const pills = [mo.far <= RADIUS ? ['ok', 'walk-back OK'] : ['bad', 'walk-back breach ' + fmtM(mo.far - RADIUS) + ' past limit'],
-    steps ? ['bad', steps + ' step' + (steps > 1 ? 's' : '') + ' over the ' + LIM() + '° limit'] : share('known') ? ['ok', JZ ? 'slope OK where known' : 'calculated slope within limit where MOLA has a shot'] : ['warn', 'slope unknown on this route']];
-  if (!JZ) pills.push(['warn', 'walk-scale slope not characterized (MOLA bins ~463 m)']);
-  if (share('sandy') > 0.1) pills.push(['warn', pct(share('sandy')) + ' over sandy ground (night IR proxy)']);
-  if (!JZ && share('rough') > 0.1) pills.push(['warn', pct(share('rough')) + ' over yardang-textured ground (HRSC proxy)']);
+    steps ? ['bad', steps + ' step' + (steps > 1 ? 's' : '') + ' over the ' + LIM() + '° limit'] : share('known') ? ['ok', JZ ? 'slope OK where known' : HRS ? 'calculated slope within limit on the HiRISE DTM' : 'calculated slope within limit where MOLA has a shot'] : ['warn', 'slope unknown on this route']];
+  if (ARC) pills.push(['warn', 'walk-scale slope not characterized (MOLA bins ~463 m)']);
+  if (HRS && share('known') < 0.95) pills.push(['warn', pct(1 - share('known')) + ' outside the HiRISE DTM (not characterized)']);
+  if (HRS && share('fineSteep') * total >= 30) pills.push(['warn', fmtM(share('fineSteep') * total) + ' over 3 m slopes above the limit']);
+  if (UTP && share('ice') * total >= 30) pills.push(['warn', fmtM(share('ice') * total) + ' in or near ice-related landforms (ground strength unverified)']);
+  if (G && G.sandNone) pills.push(['warn', 'sand proxy not characterized (no THEMIS night IR here)']);
+  else if (share('sandy') > 0.1) pills.push(['warn', pct(share('sandy')) + ' over sandy ground (night IR proxy)']);
+  if (ARC && share('rough') > 0.1) pills.push(['warn', pct(share('rough')) + ' over yardang-textured ground (HRSC proxy)']);
   if (soft) pills.push(['bad', 'no path under the limit to ' + soft + ' point' + (soft > 1 ? 's' : '') + ': least steep shown']);
   if (off) pills.push(['warn', off + ' point' + (off > 1 ? 's' : '') + ' outside the grid: straight line']);
   $('rstats').innerHTML = '<div class="stats"><div><span>Out</span><b>' + fmtM(mo.len) + '</b></div><div><span>Return leg</span><b>' + fmtM(mb.len) + '</b></div>' +
     '<div><span>Round trip</span><b>' + fmtT(mins) + '</b></div><div><span>Farthest from base</span><b>' + fmtM(mo.far) + '</b></div>' +
-    '<div><span>Slope known</span><b>' + pct(share('known')) + '</b></div><div><span>' + (JZ ? 'Proven ground' : 'Rough') + '</span><b>' + pct(share(JZ ? 'drv' : 'rough')) + '</b></div></div>' +
+    '<div><span>Slope known</span><b>' + pct(share('known')) + '</b></div><div><span>' + (ROV ? 'Proven ground' : UTP ? 'Ice zone' : PHX || CF ? 'Steep 3 m' : 'Rough') + '</span><b>' + pct(share(ROV ? 'drv' : UTP ? 'ice' : PHX || CF ? 'fineSteep' : 'rough')) + '</b></div></div>' +
     '<div class="pills">' + pills.map(p => '<span class="pill ' + p[0] + '">' + p[1] + '</span>').join('') + '</div>' +
-    '<p class="note" style="margin-top:6px">Round trip is distance over ' + SPEED + ' km/h. Walk-back circle ' + fmtM(RADIUS) + ' (' + SPEED + ' km/h × ' + WALKBACK + ' min, NASA JSC 2026) <span class="ev rule">rule</span>.' + (JZ ? '' : ' Every route here is a candidate that requires review.') + '</p>';
+    '<p class="note" style="margin-top:6px">Round trip is distance over ' + SPEED + ' km/h. Walk-back circle ' + fmtM(RADIUS) + ' (' + SPEED + ' km/h × ' + WALKBACK + ' min, NASA JSC 2026) <span class="ev rule">rule</span>.' + (ROV ? '' : ' Every route here is a candidate that requires review.') + '</p>';
+  renderConf(mo); $('retBtn').disabled = !G || !waypoints.length;
+}
+function renderConf(m) {
+  const c = Core.confidence(S.id, m), row = (k, label) => '<b>' + label + '</b><span class="c ' + (c[k][0] === 'Not characterized' ? 'nc' : c[k][0]) + '">' + c[k][0] + '</span><span class="note">' + c[k][1] + '</span>';
+  $('conf').innerHTML = m ? row('terrain', 'Terrain') + row('weather', 'Weather') + row('position', 'Position') : '';
 }
 function compareRoutes(t) {
   if (!G) return;
@@ -379,18 +452,19 @@ function compareRoutes(t) {
 }
 function renderCand() {
   if (!cand) { $('cmpWrap').innerHTML = ''; return; }
-  const pct = v => Math.round(v * 100) + '%', col3 = JZ ? 'Proven' : 'Rough', v3 = m => pct(JZ ? m.drv : m.rough);
-  $('cmpWrap').innerHTML = '<h2>Route comparison</h2><p class="note">' + (JZ ? 'To ' : 'Candidate routes to ') + '<b>' + cand.t.n + '</b> from the habitat. Computed in ' + cand.ms + ' ms. Click a row to adopt it.</p>' +
-    '<div class="tblwrap"><table class="cmp"><tr><th>Route</th><th>Length</th><th>Sandy</th><th>' + col3 + '</th><th>Slope known</th><th>Breaks</th></tr>' +
+  const pct = v => Math.round(v * 100) + '%', cols = RVX ? [['Steep 3 m', 'fineSteep'], ['Proven', 'drv']] : UTP ? [['Steep 3 m', 'fineSteep'], ['Ice zone', 'ice']] : CF ? [['Steep 3 m', 'fineSteep'], ['Sandy', 'sandy']] : PHX ? [['Steep 3 m', 'fineSteep'], ['Sand proxy', null]] : ARC ? [['Sandy', 'sandy'], ['Rough', 'rough']] : [['Sandy', 'sandy'], ['Proven', 'drv']], base = cand.routes.short.metrics;
+  $('cmpWrap').innerHTML = '<h2>Route comparison</h2><p class="note">' + (ROV ? 'To ' : 'Candidate routes to ') + '<b>' + cand.t.n + '</b> from the habitat. Computed in ' + cand.ms + ' ms. Click a row to adopt it.</p>' +
+    '<div class="tblwrap"><table class="cmp"><tr><th>Route</th><th>Length</th><th>' + cols[0][0] + '</th><th>' + cols[1][0] + '</th><th>Slope known</th><th>Breaks</th></tr>' +
     Object.keys(CAND).map(k => { const r = cand.routes[k], sw = '<span class="sw" style="background:' + CAND[k].color + '"></span>' + CAND[k].label;
-      if (!r.path) return '<tr><td>' + sw + '</td><td colspan="5">no path within grid</td></tr>';
-      const m = r.metrics; return '<tr data-m="' + k + '" class="' + (k === selected ? 'sel' : '') + '"><td>' + sw + '</td><td>' + fmtM(m.len) + '</td><td>' + pct(m.sandy) + '</td><td>' + v3(m) + '</td><td>' + pct(m.known) + '</td><td>' + m.breaks + '</td></tr>'; }).join('') + '</table></div>';
+      if (!r.path) return '<tr><td>' + sw + '</td><td colspan="5">no feasible path under stated assumptions (' + LIM() + '° limit' + (G && G.cslope ? ', no-go cells' : '') + ')</td></tr>';
+      const m = r.metrics, why = k === 'short' ? 'straight line from the habitat; no terrain considered' : Core.explain(m, base).join('; ');
+      return '<tr data-m="' + k + '" class="' + (k === selected ? 'sel' : '') + '"><td>' + sw + '</td><td>' + fmtM(m.len) + '</td><td>' + pct(m[cols[0][1]]) + '</td><td>' + (cols[1][1] ? pct(m[cols[1][1]]) : 'n/c') + '</td><td>' + pct(m.known) + '</td><td>' + m.breaks + '</td></tr><tr><td class="why" colspan="6">Why: ' + why + '</td></tr>'; }).join('') + '</table></div>';
   $('cmpWrap').querySelectorAll('tr[data-m]').forEach(tr => tr.onclick = () => { const r = cand.routes[tr.dataset.m]; anchors = r.path.slice(); selected = tr.dataset.m; rebuild(); renderCand(); });
 }
-$('routeNote').innerHTML = 'Sandy: share over cells darker than the 65th percentile midpoint in THEMIS night IR ' + ORB + '. ' +
-  (JZ ? 'Proven: share within 60 m of Perseverance\'s track ' + OBS + '. ' : 'Rough: share over the top half of the HRSC texture scale, a yardang proxy ' + CALC + '. Slope known: share where MOLA has a laser shot ' + CALC + '; elsewhere slope is not characterized. ') +
+$('routeNote').innerHTML = (HRS ? 'Steep 3 m: share over cells whose HiRISE DTM has 3 m slopes over the limit ' + CALC + '. ' + (UTP ? 'Ice zone: share inside or within 30 m of a landform marked from HiRISE ' + ORB + '; penalties there are team assumptions. ' : RVX ? 'Proven: share within 60 m of ' + ROVER + '\'s track ' + OBS + '. ' : CF ? 'Sandy: share over cells darker than the 65th percentile midpoint in THEMIS night IR ' + ORB + '. Here a cell whose own 30 m slope is over the limit is a no-go for Recommended, not only a steep step. ' : 'Sand proxy: n/c, not characterized: THEMIS night IR does not reach this latitude. ') + 'Slope known: share inside the DTM strip. ' : 'Sandy: share over cells darker than the 65th percentile midpoint in THEMIS night IR ' + ORB + '. ') +
+  (HRS ? '' : JZ ? 'Proven: share within 60 m of Perseverance\'s track ' + OBS + '. ' : 'Rough: share over the top half of the HRSC texture scale, a yardang proxy ' + CALC + '. Slope known: share where MOLA has a laser shot ' + CALC + '; elsewhere slope is not characterized. ') +
   'Breaks: 30 m steps over the slope limit where elevation is known, plus one if the route leaves the walk-back circle. Unknown ground is unchecked and requires review.' +
-  (JZ ? '' : ' No ground truth exists here: Recommended means lower-risk under these stated assumptions only.') + ' Same grid and router as the 2D map.';
+  (ROV ? '' : ' No ground truth exists here: Recommended means lower-risk under these stated assumptions only.') + ' Why: differences from the shortest line, in metres computed on this grid. Same grid and router as the 2D map.';
 function renderTargets() {
   $('targets').innerHTML = site.targets.map((t, i) => {
     if (t.ph) return '<li><span>' + t.n + ' ' + PH + '</span><span></span></li>';
@@ -406,15 +480,27 @@ document.querySelectorAll('#clickMode button').forEach(b => b.onclick = () => { 
 $('undo').onclick = () => { anchors.pop(); rebuild(); };
 $('clear').onclick = () => { anchors = []; cand = null; selected = null; renderCand(); rebuild(); };
 $('autoRoute').onchange = rebuild;
+$('retBtn').onclick = () => {
+  if (!G || !waypoints.length) return;
+  let far = waypoints[0], fd = -1; for (const w of waypoints) { const d = Core.dist(HAB, w); if (d > fd) { fd = d; far = w; } }
+  const t0 = performance.now(), o = Core.returnOptions(G, far, HAB, LIM(), RADIUS), ms = Math.round(performance.now() - t0);
+  rets = Object.assign({ far }, o); compose(); lookAt(far, HAB);
+  $('retWrap').innerHTML = '<h2>Return options</h2><p class="note">From the farthest point of the plan, ' + fmtM(fd) + ' from the habitat. Computed in ' + ms + ' ms on the same grid.</p><div class="tblwrap"><table class="cmp"><tr><th>Return</th><th>Length</th><th>Time</th><th>Walk-back</th></tr>' +
+    Object.keys(RET).map(k => { const r = o[k], sw = '<span class="sw" style="background:' + RET[k][1] + '"></span>' + RET[k][0];
+      if (!r) return '<tr><td>' + sw + '</td><td colspan="3">no path within the grid</td></tr>';
+      return '<tr><td>' + sw + '</td><td>' + fmtM(r.len) + '</td><td>' + fmtT(r.len / (SPEED * 1000 / 60)) + '</td><td>' + (r.ok ? '<span class="pill ok">within ' + WALKBACK + ' min</span>' : '<span class="pill bad">over ' + WALKBACK + ' min</span>') + '</td></tr><tr><td class="why" colspan="4">' + RET[k][3] + (r.soft ? '; no path stays under the limit, least steep shown' : '') + '</td></tr>'; }).join('') +
+    '</table></div><p class="note">Each is checked against the walk-back rule: ' + WALKBACK + ' min at ' + SPEED + ' km/h is ' + fmtM(RADIUS) + ' of walking.' + (ROV ? '' : ' All three are candidates that require review.') + '</p>';
+};
 $('slope').oninput = () => { $('vSlope').textContent = LIM() + '°'; };
-$('slope').onchange = () => { drawStatic(); if (cand) compareRoutes(cand.t); rebuild(); };
+$('slope').onchange = () => { vmFields(); drawStatic(); if (cand) compareRoutes(cand.t); rebuild(); };
 
 // ---- the routing grid: THEMIS night IR + elevation (+ rover track on Jezero, HRSC texture on Arcadia), built by the core
-const pts = []; if (JZ) for (const s of trav.segments) for (const p of s.pts) pts.push([p[1], p[0], p[2]]);
+const pts = []; if (ROV) for (const s of trav.segments) for (const p of s.pts) pts.push([p[1], p[0], p[2]]);
 Core.loadThemis(site.bounds).then(nir => {
-  G = Core.buildGrid({ site, nirCanvas: nir, dtmBuf, roughBuf, pts });
-  const aeb = JZ ? Core.rasterAeb(G, sandMap) : 0;                            // same sand-ridge avoidance as the 2D planner
-  $('gridStatus').innerHTML = 'Routing grid ready: ' + G.nx + ' × ' + G.ny + ' cells of 30 m. ' + (JZ ? G.drv + ' cells near the rover track count as proven ground; ' + aeb + ' cells of mapped sand ridges (USGS Aeb) are avoided.' :Math.round(G.shotN / G.n * 100) + '% of cells have a MOLA laser shot; the rest are not characterized.');
+  G = Core.buildGrid({ site, nirCanvas: nir, dtmBuf, roughBuf, fineBuf, pts });
+  const aeb = JZ ? Core.rasterAeb(G, sandMap) : 0, iceCells = UTP ? Core.rasterIce(G, landforms) : 0;                            // same sand-ridge avoidance as the 2D planner
+  vmFields();
+  $('gridStatus').innerHTML = 'Routing grid ready: ' + G.nx + ' × ' + G.ny + ' cells of 30 m. ' + (RVX ? G.drv + ' cells near ' + ROVER + '\'s track count as proven ground; ' + Math.round(G.shotN / G.n * 100) + '% of cells are inside the HiRISE DTM.' + (G.dtmCheck.cnt ? ' Against ' + G.dtmCheck.cnt + ' rover-track cells the DTM differs by ' + G.dtmCheck.mean.toFixed(1) + ' m on average (spread ' + G.dtmCheck.sd.toFixed(1) + ' m).' : ' The traverse file has no elevations, so the DTM is not checked against the rover here.') : CF ? Math.round(G.shotN / G.n * 100) + '% of cells are inside the HiRISE DTM. A cell whose own 30 m slope is over the limit is a no-go. Return feasibility and line of sight are calculated from the habitat ' + CALC + '.' : JZ ? G.drv + ' cells near the rover track count as proven ground; ' + aeb + ' cells of mapped sand ridges (USGS Aeb) are avoided.' : PHX ? Math.round(G.shotN / G.n * 100) + '% of cells are inside the HiRISE DTM. Patterned ground covers the strip but its polygons are smaller than a cell, so it does not steer routes.' : UTP ? Math.round(G.shotN / G.n * 100) + '% of cells are inside the HiRISE DTM; ' + iceCells + ' cells of ice-related landforms marked from HiRISE (routes pay extra there and in a 30 m margin).' : Math.round(G.shotN / G.n * 100) + '% of cells have a MOLA laser shot; the rest are not characterized.');
   drawStatic(); renderTargets(); rebuild();
 }).catch(e => { $('gridStatus').textContent = 'Routing grid unavailable: THEMIS tiles did not load (' + e + '). Waypoints are joined by straight lines.'; });
 
@@ -430,7 +516,7 @@ function setExag(x) {
   geo.attributes.position.needsUpdate = true; geo.computeVertexNormals(); geo.computeBoundingSphere();
   pressExag(x);
 }
-exagButtons(JZ ? [1, 2, 4] : [1, 2, 4, 10], setExag); setExag(S.ex);
+exagButtons(ARC || HL || MR || GS ? [1, 2, 4, 10] : [1, 2, 4], setExag); setExag(S.ex);
 
 // ---- camera
 ctl.minDistance = 200; ctl.maxDistance = 60000;
@@ -456,9 +542,14 @@ function probeAt(ll, name) {
   const [x, z] = toXZ(ll), ix = Math.floor((x + hx) / CELL), iy = Math.floor((z + hz) / CELL), i = G ? G.toCell(ll.lat, ll.lng) : -1;
   const s = slopeAtCell(i), dHab = Core.dist(ll, HAB), sd = Core.sandAt(G, ll), rg = Core.roughAt(G, ll);
   const head = (name ? '<b>' + name + '</b><br>' : '') + Math.abs(ll.lat).toFixed(5) + '°' + (ll.lat >= 0 ? 'N' : 'S') + ' ' + Math.abs(ll.lng).toFixed(5) + '°' + (ll.lng >= 0 ? 'E' : 'W');
-  const slopeTxt = s == null ? '<span class="w">slope not characterized</span>' : 'steepest step <span class="' + slopeCls(s) + '">' + s.toFixed(1) + '°</span>' + (JZ ? '' : ' (calculated, MOLA)');
+  const slopeTxt = s == null ? '<span class="w">slope not characterized</span>' : 'steepest step <span class="' + slopeCls(s) + '">' + s.toFixed(1) + '°</span>' + (JZ ? '' : HRS ? ' (calculated, HiRISE DTM)' : ' (calculated, MOLA)');
   if (JZ) { const u = unitAt(ll.lat, ll.lng);
     $('probe').innerHTML = head + '<br>elevation ' + elevD(ix, iy).toFixed(0) + ' m (MOLA datum)<br>' + slopeTxt + ' · ' + (dHab / 1000).toFixed(2) + ' km from habitat<br>' + (u === 'Aeb' ? '<span class="w">sand ridges (USGS Aeb)</span>' : u === 'su' ? '<span class="w">smooth unit, possibly loose</span>' : 'no mapped sand unit') + (sd != null ? ' · night IR sand proxy ' + Math.round(sd * 100) + '%' : '');
+  } else if (HRS) {
+    const inD = G && i >= 0 && !isNaN(G.elev[i]), fv = G && i >= 0 && G.fine ? G.fine[i] : NaN, iz = G && i >= 0 && G.ice ? G.ice[i] : 0;
+    $('probe').innerHTML = head + '<br>elevation ' + elevD(ix, iy).toFixed(0) + ' m, ' + (inD ? 'HiRISE DTM' : '<span class="w">MOLA display only, outside the DTM</span>') + '<br>' + slopeTxt + ' · ' + (dHab / 1000).toFixed(2) + ' km from habitat<br>' +
+      (isNaN(fv) ? 'no 3 m slope data' : 'steepest 3 m slope in this cell <span class="' + slopeCls(fv) + '">' + fv.toFixed(1) + '°</span>') +
+      (CF && vmF.rf && i >= 0 ? '<br>' + (vmF.rf.cls[i] === 1 ? '' : '<span class="w">requires review:</span> ') + Core.RF_REASON[vmF.rf.cls[i]] + (vmF.rf.d[i] < Infinity ? ' (' + fmtM(vmF.rf.d[i]) + ' walk back)' : '') + (vmF.vs ? '; habitat mast ' + ['not computed (over 4 km away)', 'in line of sight', '<span class="w">blocked</span>', 'line of sight not characterized'][vmF.vs.vis[i]] : '') : '') + (iz ? ' · <span class="w">' + (iz === 1 ? 'inside' : 'next to') + ' an ice-related landform</span>' : '');
   } else {
     const shot = G && i >= 0 && !isNaN(G.elev[i]);
     $('probe').innerHTML = head + '<br>elevation ' + elevD(ix, iy).toFixed(0) + ' m, MOLA ' + (shot ? 'bin with a laser shot' : '<span class="w">archive interpolation, no shot</span>') + '<br>' + slopeTxt + ' · ' + (dHab / 1000).toFixed(2) + ' km from habitat<br>' +
@@ -474,7 +565,7 @@ const DOSE_PER_MIN = 0.21 / 1440 * 1000;                                       /
 const MPM = SPEED * 1000 / 60;                                                 // metres per simulated minute
 $('simBox').hidden = false;
 $('simNote').innerHTML = 'Position, timing and alerts here are a simulation that walks the planned route; no suit tag is connected. The astronaut leans into the slope under its feet and shortens its stride on steep ground. Away from the camera it is drawn larger than life so it stays visible; the factor is shown on its label. ' +
-  (JZ ? 'Slope underfoot comes from the CTX stereo DTM (20 m) ' + OBS + '.' : 'Slope underfoot is calculated from MOLA where a laser shot exists ' + CALC + '; elsewhere it is not characterized, and the ground you see is the archive\'s interpolation. When the walk reaches 12:00 LMST a dust-devil alert is raised: <span class="ev sim">simulated</span>, not a forecast.') +
+  (JZ ? 'Slope underfoot comes from the CTX stereo DTM (20 m) ' + OBS + '.' : HRS ? 'Slope underfoot is calculated from the HiRISE stereo DTM ' + CALC + '; outside its strip it is not characterized. ' + (GL ? 'Curiosity measures the weather here (REMS); the 2D map shows the latest sols. No weather alert is raised in this simulation.' : GS || MR ? ROVER + ' carried no weather station, so no weather alert is raised.' : OL ? 'No weather has ever been measured on Olympus Mons, so no weather alert is raised.' : PHX ? 'Phoenix measured weather here only in 2008, so no weather alert is raised.' : VM ? 'No weather has ever been measured in Valles Marineris; canyon winds and inversions come from models only, so no weather alert is raised here.' : HL ? 'No weather has ever been measured in Hellas, so no weather or dust alert is raised here.' : 'No weather data exists for Utopia, so no weather alert is raised here.') : 'Slope underfoot is calculated from MOLA where a laser shot exists ' + CALC + '; elsewhere it is not characterized, and the ground you see is the archive\'s interpolation. When the walk reaches 12:00 LMST a dust-devil alert is raised: <span class="ev sim">simulated</span>, not a forecast.') +
   ' Vertical scale exaggerates how steep the ground looks, not the slope figures.';
 
 // ---- the avatar: an original figure built from simple shapes, about 1.9 m tall, facing +z
@@ -512,7 +603,10 @@ function groundBase(x, z) {
 const EVCLS = { observed: 'obs', rule: 'rule', calculated: 'calc', simulated: 'sim', 'orbital proxy': 'orb', 'not characterized': 'draft' };
 function buildWarns(path) {
   const lim = LIM(), w = []; let cum = 0, sandOpen = null, roughOpen = null, ncOpen = null;
-  const closeNC = () => { if (ncOpen && ncOpen.end - ncOpen.at >= 500) { ncOpen.msg = 'Slope not characterized for ' + Math.round(ncOpen.end - ncOpen.at) + ' metres, no MOLA laser shot'; w.push(ncOpen); } ncOpen = null; };
+  const closeNC = () => { if (ncOpen && ncOpen.end - ncOpen.at >= (HRS ? 60 : 500)) { ncOpen.msg = 'Slope not characterized for ' + Math.round(ncOpen.end - ncOpen.at) + ' metres, ' + (HRS ? 'outside the HiRISE DTM' : 'no MOLA laser shot'); w.push(ncOpen); } ncOpen = null; };
+  let fineOpen = null, iceOpen = null;
+  const fineMsg = o => 'Steep 3 metre slopes for ' + Math.round(o.end - o.at) + ' metres, up to ' + Math.round(o.max) + ' degrees, HiRISE terrain model';
+  const iceMsg = o => 'Ice-related landform zone for ' + Math.round(o.end - o.at) + ' metres, marked from orbit, ground strength unverified';
   const sandMsg = o => 'Sandy ground for ' + Math.round(o.end - o.at) + ' metres, night IR proxy up to ' + Math.round(o.max * 100) + ' percent';
   const roughMsg = o => 'Yardang-textured ground for ' + Math.round(o.end - o.at) + ' metres, HRSC texture proxy, footing not characterized';
   for (let i = 1; i < path.length; i++) {
@@ -520,8 +614,16 @@ function buildWarns(path) {
     for (let k = 1; k < sp.length; k++) {
       const a = sp[k - 1], b = sp[k], d = Core.dist(a, b), e1 = Core.elevAt(G, b), mid = { lat: (a.lat + b.lat) / 2, lng: (a.lng + b.lng) / 2 };
       if (ePrev != null && e1 != null && d > 1) { const s = Math.atan2(e1 - ePrev, d) * 180 / Math.PI; if (Math.abs(s) > lim) w.push({ at: cum, end: cum + d, msg: 'Steep ground, ' + Math.abs(s).toFixed(0) + ' degrees ' + (s > 0 ? 'up' : 'down') + ', over the ' + lim + ' degree limit', sev: 'hi', ev: JZ ? 'observed' : 'calculated' }); }
+      if (HRS) { const ci = G.toCell(mid.lat, mid.lng);
+        if (e1 == null) { if (!ncOpen) ncOpen = { at: cum, end: cum + d, msg: '', sev: '', ev: 'not characterized' }; else ncOpen.end = cum + d; } else closeNC();
+        const fv = ci >= 0 && G.fine ? G.fine[ci] : NaN;
+        if (fv > lim) { if (!fineOpen) { fineOpen = { at: cum, end: cum + d, max: fv, msg: '', sev: 'hi', ev: 'calculated' }; w.push(fineOpen); } else { fineOpen.end = cum + d; fineOpen.max = Math.max(fineOpen.max, fv); } }
+        else if (fineOpen) { fineOpen.msg = fineMsg(fineOpen); fineOpen = null; }
+        const iv = ci >= 0 && G.ice ? G.ice[ci] : 0;
+        if (iv) { if (!iceOpen) { iceOpen = { at: cum, end: cum + d, msg: '', sev: '', ev: 'orbital proxy' }; w.push(iceOpen); } else iceOpen.end = cum + d; }
+        else if (iceOpen) { iceOpen.msg = iceMsg(iceOpen); iceOpen = null; } }
       ePrev = e1;
-      if (!JZ) { if (e1 == null) { if (!ncOpen) ncOpen = { at: cum, end: cum + d, msg: '', sev: '', ev: 'not characterized' }; else ncOpen.end = cum + d; } else closeNC();
+      if (ARC) { if (e1 == null) { if (!ncOpen) ncOpen = { at: cum, end: cum + d, msg: '', sev: '', ev: 'not characterized' }; else ncOpen.end = cum + d; } else closeNC();
         const rg = Core.roughAt(G, mid);
         if (rg != null && rg > 0.5) { if (!roughOpen) { roughOpen = { at: cum, end: cum + d, msg: '', sev: '', ev: 'calculated' }; w.push(roughOpen); } else roughOpen.end = cum + d; }
         else if (roughOpen) { roughOpen.msg = roughMsg(roughOpen); roughOpen = null; } }
@@ -533,7 +635,7 @@ function buildWarns(path) {
       cum += d;
     }
   }
-  if (sandOpen) sandOpen.msg = sandMsg(sandOpen); if (roughOpen) roughOpen.msg = roughMsg(roughOpen); closeNC();
+  if (sandOpen) sandOpen.msg = sandMsg(sandOpen); if (roughOpen) roughOpen.msg = roughMsg(roughOpen); if (fineOpen) fineOpen.msg = fineMsg(fineOpen); if (iceOpen) iceOpen.msg = iceMsg(iceOpen); closeNC();
   return w.sort((x, y) => x.at - y.at);
 }
 function renderWarns() {
@@ -576,7 +678,7 @@ $('simStart').onclick = () => {
 $('simStop').onclick = () => { simReset(); $('cMsg').textContent = ''; };
 $('trackBack').onclick = () => {
   if (!sim) return;
-  const here = posAt(sim.s), r = G ? Core.routeTo(G, here, HAB, LIM()) : null;
+  const here = posAt(sim.s), r0 = G ? Core.routeTo(G, here, HAB, LIM()) : null, r = r0 && r0.path ? r0 : null;
   sim.back = true; sim.outLen = null; sim.trackBack = [here, ...(r ? r.path : [HAB])];
   setPath(sim.trackBack); compose();
   speak('Tracking back to the habitat' + (r ? ' on the recommended cost' + (r.soft ? ', least steep path, a step exceeds the limit' : '') : ' in a straight line, terrain grid unavailable') + '. ' + Math.round(sim.total) + ' metres.');
@@ -624,7 +726,7 @@ frameHooks.push(now => {
   // label above the helmet: slope underfoot with its evidence
   const known = JZ || Core.elevAt(G, ll) != null, dirTxt = Math.abs(slopeTrue) < 1 ? 'level' : slopeTrue > 0 ? 'uphill' : 'downhill', arrow = Math.abs(slopeTrue) < 1 ? '→' : slopeTrue > 0 ? '↗' : '↘';
   const cls = Math.abs(slopeTrue) > LIM() ? 'h' : Math.abs(slopeTrue) > LIM() - 5 ? 'w' : '';
-  const slopeHtml = known ? '<span class="' + cls + '">' + arrow + ' ' + Math.abs(slopeTrue).toFixed(1) + '° ' + dirTxt + '</span> <span class="m">' + (JZ ? 'CTX DTM' : 'calculated, MOLA') + '</span>' : '<span class="w">slope not characterized</span>';
+  const slopeHtml = known ? '<span class="' + cls + '">' + arrow + ' ' + Math.abs(slopeTrue).toFixed(1) + '° ' + dirTxt + '</span> <span class="m">' + (JZ ? 'CTX DTM' : HRS ? 'calculated, HiRISE DTM' : 'calculated, MOLA') + '</span>' : '<span class="w">slope not characterized</span>';
   tmpV.set(x, y + 2.1 * scl, z).project(cam);
   const lab = $('avLabel'); lab.hidden = tmpV.z > 1; lab.style.left = ((tmpV.x + 1) / 2 * innerWidth) + 'px'; lab.style.top = ((1 - tmpV.y) / 2 * innerHeight - 6) + 'px';
   lab.innerHTML = 'Crew (simulated) · ' + slopeHtml + (scl > 1.5 ? ' <span class="m">×' + Math.round(scl) + ' size</span>' : '');
@@ -640,7 +742,7 @@ frameHooks.push(now => {
   for (const w of sim.warns) { const k = w.msg + w.at, ahead = w.at - sim.s; if (ahead < 150 && ahead > -5 && !sim.said.has(k)) { sim.said.add(k); speak((ahead > 10 ? 'In ' + Math.round(ahead / 10) * 10 + ' metres: ' : 'Now: ') + w.msg + '.'); } }
   if (!sim.back && sim.outLen != null && !sim.said.has('far') && sim.s >= sim.outLen) { sim.said.add('far'); speak('Farthest point reached. Heading back to base, ' + Math.round(sim.total - sim.s) + ' metres.'); }
   if (!sim.back && !sim.said.has('wbm') && dh > RADIUS - 200 && dh <= RADIUS && sim.s < (sim.outLen || Infinity)) { sim.said.add('wbm'); speak('Walk-back margin low, ' + Math.round(RADIUS - dh) + ' metres to the limit.'); }
-  if (!JZ && !sim.dd && startMin() + sim.min >= 12 * 60) { sim.dd = true;
+  if (ARC && !sim.dd && startMin() + sim.min >= 12 * 60) { sim.dd = true;
     const w = { at: sim.s, end: sim.s + 300, msg: 'Dust-devil alert, simulated, not a forecast: afternoon is when dust devils form here; seen from orbit up to 45 m/s and 8 km tall, usually under 100 m wide. Route requires review', sev: 'hi', ev: 'simulated' };
     sim.said.add(w.msg + w.at); sim.warns.push(w); sim.warns.sort((p, q) => p.at - q.at); speak('Simulated alert, not a forecast. Afternoon dust devils form in this region. Requires review before continuing.'); }
   if (now - lastTrail > 1500) { lastTrail = now; sim.trail = sim.path.slice(0, sim.cum.findIndex(c => c >= sim.s) + 1).concat([ll]); renderWarns(); compose(); }
@@ -656,8 +758,10 @@ const [meta, buf] = await Promise.all([
   fetch(`data/terrain/${S.id}.json`).then(r => { if (!r.ok) throw new Error('no terrain file for ' + S.id); return r.json(); }),
   fetch(`data/terrain/${S.id}.i16`).then(r => r.arrayBuffer()),
 ]);
-$('layers').innerHTML = '<label class="tg"><input type="checkbox" id="lTint"> Elevation colours (blue low, white high)</label><label class="tg"><input type="checkbox" id="lMark" checked> Site marker</label>' +
-  (Core.SITES[S.id] ? '' : '<p class="note" style="margin-top:4px">No routing here: route planning needs a walk-scale terrain grid, which exists for Jezero and Arcadia only.</p>');
+$('layers').innerHTML = '<label class="tg"><input type="checkbox" id="lTint"> Elevation colours (blue low, white high)</label>' +
+  '<label class="tg"><input type="checkbox" id="lSteepG"' + (S.id === 'olympus' ? ' checked' : '') + '> Steep ground from MOLA: red over 20°, amber 10 to 20° (calculated)</label>' +
+  '<label class="tg"><input type="checkbox" id="lMark" checked> Site marker</label>' +
+  (Core.SITES[S.id] ? '' : '<p class="note" style="margin-top:4px">No routing here: route planning needs a walk-scale terrain grid, which exists for Jezero, Gale, Gusev, Meridiani, Utopia, the Phoenix site, Arcadia and one tile each at Olympus Mons, Valles Marineris and Hellas.</p>');
 const NX = meta.nx, NY = meta.ny, D = new Int16Array(buf), N = meta.north, So = meta.south, W = meta.west, E = meta.east;
 const dLat = (N - So) / NY, dLon = (E - W) / NX, latC = (N + So) / 2, lonC = (W + E) / 2, rad = Math.PI / 180;
 $('sources').textContent = `Terrain: MGS MOLA laser altimetry, ${(meta.ppd).toFixed(0)} px per degree (about ${(meta.cell_m / 1000).toFixed(1)} km per cell), metres above the Mars datum. Imagery: Viking MDIM 2.1 colour mosaic (NASA/USGS) via Mars Trek. Small features such as rovers' tracks and boulders are far below this resolution.`;
@@ -699,9 +803,16 @@ const tint = document.createElement('canvas'); tint.width = NX; tint.height = NY
     const [f0, c0] = stops[a], [f1, c1] = stops[a + 1], u = Math.min(1, Math.max(0, (f - f0) / (f1 - f0)));
     for (let ch = 0; ch < 3; ch++) im.data[4 * k + ch] = c0[ch] + (c1[ch] - c0[ch]) * u; im.data[4 * k + 3] = 255; }
   c.putImageData(im, 0, 0); }
+// steep ground from the same MOLA grid: slopes averaged over cells of about meta.cell_m, so real cliffs are steeper than shown
+const steepCv = document.createElement('canvas'); steepCv.width = NX; steepCv.height = NY;
+{ const c = steepCv.getContext('2d'), im = c.createImageData(NX, NY);
+  for (let iy = 0; iy < NY; iy++) for (let ix = 0; ix < NX; ix++) { const sl = slopeAt(ix, iy), k = 4 * (iy * NX + ix);
+    if (sl > 20) im.data.set([224, 60, 40, 200], k); else if (sl > 10) im.data.set([240, 170, 40, 130], k); }
+  c.putImageData(im, 0, 0); }
 const px = (lat, lon) => [(lon - TLON0) / SPX * TW, (TLAT0 - lat) / SPY * TH];
 function compose() {
   tctx.drawImage(imgCv, 0, 0);
+  if ($('lSteepG').checked) { const [x0, y0] = px(N, W), [x1, y1] = px(So, E); tctx.imageSmoothingEnabled = false; tctx.drawImage(steepCv, x0, y0, x1 - x0, y1 - y0); tctx.imageSmoothingEnabled = true; }
   if ($('lTint').checked) { const [x0, y0] = px(N, W), [x1, y1] = px(So, E); tctx.globalAlpha = .55; tctx.drawImage(tint, x0, y0, x1 - x0, y1 - y0); tctx.globalAlpha = 1; }
   texture.needsUpdate = true;
 }
@@ -713,7 +824,7 @@ for (let ty = TY0; ty <= TY1; ty++) for (let tx = TX0; tx <= TX1; tx++) {
   im.src = `https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/default/default028mm/${Z}/${ty}/${tx}.jpg`;
 }
 compose();
-$('lTint').onchange = compose;
+$('lTint').onchange = compose; $('lSteepG').onchange = compose;
 
 // site marker: a cone standing on the ground at the marked point
 const [mx, mz] = toXZ(S.mark[0], S.mark[1]);

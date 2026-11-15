@@ -1,0 +1,69 @@
+{
+ "bounds": [
+  [
+   -14.677500369592092,
+   175.44184907854878
+  ],
+  [
+   -14.492559750407155,
+   175.5547918984464
+  ]
+ ],
+ "nx": 216,
+ "ny": 366,
+ "cell": 30,
+ "dtm": {
+  "file": "gus_dtm_30m.i16",
+  "units": "decimetres above offset_m",
+  "offset_m": -2000,
+  "nodata": -32768,
+  "dtms": [
+   {
+    "dtm": "DTEEC_001513_1655_001777_1650_U01",
+    "ortho": "PSP_001777_1650_RED_C_01_ORTHO",
+    "cells": 60893,
+    "median_offset_vs_mosaic_m": null
+   }
+  ],
+  "method": "mean of 1 m HiRISE posts per 30 m cell; cells with under half coverage are no-data",
+  "valid_share": 0.7703,
+  "min_m": -1954.0,
+  "max_m": -1834.2
+ },
+ "fine_slope": {
+  "file": "gus_fslope_30m.u8",
+  "units": "quarter degrees",
+  "nodata": 255
+ },
+ "fill": {
+  "file": "gus_elev_fill_30m.i16",
+  "offset_m": -2000,
+  "use": "3D display only; MOLA megt00n090hb.img shifted by -1.6 m outside the DTM"
+ },
+ "ortho": {
+  "file": "gus_ortho.webp",
+  "bounds": [
+   [
+    -14.677500369592092,
+    175.44184907854878
+   ],
+   [
+    -14.492559750407155,
+    175.5547918984464
+   ]
+  ],
+  "px": [
+   1620,
+   2741
+  ],
+  "scale_m": 4,
+  "credit": "NASA/JPL/University of Arizona"
+ },
+ "traverse": {
+  "file": "gus_traverse.json",
+  "drives": 509,
+  "last_sol": 2169,
+  "points_in_grid": 8069,
+  "frame": "Plate Carree, central meridian 175.5 E, sphere 3396190 m, registered to HiRISE PSP_001777_1650 (an image of this DTM pair)"
+ }
+}

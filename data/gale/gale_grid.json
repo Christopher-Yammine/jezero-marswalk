@@ -1,0 +1,85 @@
+{
+ "bounds": [
+  [
+   -4.86,
+   137.33
+  ],
+  [
+   -4.565,
+   137.47
+  ]
+ ],
+ "nx": 276,
+ "ny": 583,
+ "cell": 30,
+ "dtm": {
+  "file": "gale_dtm_30m.i16",
+  "units": "decimetres above offset_m",
+  "offset_m": -4000,
+  "nodata": -32768,
+  "dtms": [
+   {
+    "dtm": "DTEEC_040770_1755_039280_1755_A01",
+    "ortho": "ESP_040770_1755_RED_C_01_ORTHO",
+    "cells": 63822,
+    "median_offset_vs_mosaic_m": null
+   },
+   {
+    "dtm": "DTEEC_023957_1755_024023_1755_U01",
+    "ortho": "ESP_023957_1755_RED_C_01_ORTHO",
+    "cells": 7859,
+    "median_offset_vs_mosaic_m": null
+   },
+   {
+    "dtm": "DTEEC_019698_1750_019988_1750_U01",
+    "ortho": "ESP_019698_1750_RED_C_01_ORTHO",
+    "cells": 29536,
+    "median_offset_vs_mosaic_m": -0.4359868167930472
+   }
+  ],
+  "method": "mean of 1 m HiRISE posts per 30 m cell; cells with under half coverage are no-data; overlaps: first DTM in the list wins",
+  "valid_share": 0.629,
+  "dtm_minus_rover_m": {
+   "n": 26006,
+   "mean": 14.03,
+   "median": 13.41,
+   "std": 4.19,
+   "p95abs": 19.78
+  }
+ },
+ "fine_slope": {
+  "file": "gale_fslope_30m.u8",
+  "units": "quarter degrees",
+  "nodata": 255
+ },
+ "fill": {
+  "file": "gale_elev_fill_30m.i16",
+  "units": "decimetres above offset_m",
+  "offset_m": -4000,
+  "use": "3D display only; MOLA shifted by -2.5 m outside the DTMs"
+ },
+ "ortho": {
+  "file": "gale_ortho.webp",
+  "bounds": [
+   [
+    -4.86,
+    137.33
+   ],
+   [
+    -4.565,
+    137.47
+   ]
+  ],
+  "px": [
+   2068,
+   4372
+  ],
+  "scale_m": 4,
+  "credit": "NASA/JPL/University of Arizona"
+ },
+ "traverse": {
+  "file": "gale_traverse.json",
+  "last_sol": 5073,
+  "total_km": 38.32
+ }
+}

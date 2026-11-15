@@ -1,0 +1,63 @@
+{
+ "bounds": [
+  [
+   21.446974781961124,
+   -137.7021515549102
+  ],
+  [
+   21.587265453850808,
+   -137.58765278718232
+  ]
+ ],
+ "nx": 211,
+ "ny": 278,
+ "cell": 30,
+ "dtm": {
+  "file": "oly_dtm_30m.i16",
+  "units": "decimetres above offset_m",
+  "offset_m": 6000,
+  "nodata": -32768,
+  "dtms": [
+   {
+    "dtm": "DTEEC_001432_2015_001630_2015_U01",
+    "ortho": "PSP_001432_2015_RED_C_01_ORTHO",
+    "cells": 47059,
+    "median_offset_vs_mosaic_m": null
+   }
+  ],
+  "method": "mean of 1 m HiRISE posts per 30 m cell; cells with under half coverage are no-data",
+  "valid_share": 0.8023,
+  "min_m": 5089.2,
+  "max_m": 6867.2
+ },
+ "fine_slope": {
+  "file": "oly_fslope_30m.u8",
+  "units": "quarter degrees",
+  "nodata": 255
+ },
+ "fill": {
+  "file": "oly_elev_fill_30m.i16",
+  "offset_m": 6000,
+  "use": "3D display only; MOLA megt44n180hb.img shifted by 7.3 m outside the DTM"
+ },
+ "ortho": {
+  "file": "oly_ortho.webp",
+  "bounds": [
+   [
+    21.446974781961124,
+    -137.7021515549102
+   ],
+   [
+    21.587265453850808,
+    -137.58765278718232
+   ]
+  ],
+  "px": [
+   1578,
+   2079
+  ],
+  "scale_m": 4,
+  "credit": "NASA/JPL/University of Arizona"
+ },
+ "traverse": null
+}

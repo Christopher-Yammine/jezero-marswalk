@@ -1,0 +1,79 @@
+{
+ "bounds": [
+  [
+   68.121495764396,
+   -125.91425183000001
+  ],
+  [
+   68.292335140399,
+   -125.56676909999999
+  ]
+ ],
+ "nx": 255,
+ "ny": 338,
+ "cell": 30,
+ "dtm": {
+  "file": "phx_dtm_30m.i16",
+  "units": "decimetres above offset_m",
+  "offset_m": -4100,
+  "nodata": -32768,
+  "product": "DTEPC_008591_2485_008644_2485_U01",
+  "source": "HiRISE DTM from stereo pair PSP_008591_2485 / PSP_008644_2485, 1 m posts, NASA/JPL/University of Arizona (PDS)",
+  "method": "mean of 1 m posts per 30 m cell; polar stereographic to map grid with fitted radial factor K=0.99411",
+  "valid_share": 0.7639
+ },
+ "fine_slope": {
+  "file": "phx_fslope_30m.u8",
+  "units": "quarter degrees",
+  "nodata": 255,
+  "method": "DTM averaged to 3 m, slope on ground spacing, 3 x 3 median, maximum within the cell"
+ },
+ "fill": {
+  "file": "phx_elev_fill_30m.i16",
+  "units": "decimetres above offset_m",
+  "offset_m": -4100,
+  "use": "3D display only: DTM, else MOLA shifted by -0.8 m"
+ },
+ "ortho": {
+  "file": "phx_ortho.webp",
+  "bounds": [
+   [
+    68.121495764396,
+    -125.91425183000001
+   ],
+   [
+    68.292335140399,
+    -125.56676909999999
+   ]
+  ],
+  "px": [
+   1912,
+   2532
+  ],
+  "product": "PSP_008591_2485_RED_C_01_ORTHO",
+  "scale_m": 4,
+  "credit": "NASA/JPL/University of Arizona"
+ },
+ "hardware": {
+  "positions": {
+   "lander": [
+    68.217666,
+    -125.75008
+   ],
+   "backshell_parachute": [
+    68.212566,
+    -125.744495
+   ],
+   "heat_shield": [
+    68.216056,
+    -125.741898
+   ]
+  },
+  "method": "located by eye in the post-landing orthoimage at 1 m",
+  "published_lander": [
+   68.21883,
+   -125.749222
+  ],
+  "published_offset_m": 74
+ }
+}

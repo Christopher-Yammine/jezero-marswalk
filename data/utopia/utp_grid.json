@@ -1,0 +1,61 @@
+{
+ "bounds": [
+  [
+   42.07450140267274,
+   86.27294430584746
+  ],
+  [
+   42.37977776591766,
+   86.41470404430147
+  ]
+ ],
+ "nx": 208,
+ "ny": 604,
+ "cell": 30,
+ "dtm": {
+  "file": "utp_dtm_30m.i16",
+  "units": "decimetres above offset_m",
+  "offset_m": -4000,
+  "nodata": -32768,
+  "product": "DTEEC_009467_2225_007384_2225_A01",
+  "source": "HiRISE DTM from stereo pair PSP_009467_2225 / PSP_007384_2225, 1 m posts, NASA/JPL/University of Arizona (PDS)",
+  "method": "mean of 1 m posts per 30 m cell; cells with under half coverage are no-data",
+  "valid_share": 0.6491
+ },
+ "fine_slope": {
+  "file": "utp_fslope_30m.u8",
+  "units": "quarter degrees",
+  "nodata": 255,
+  "method": "DTM averaged to 3 m, slope from central differences, 3 x 3 median, maximum within the 30 m cell"
+ },
+ "fill": {
+  "file": "utp_elev_fill_30m.i16",
+  "units": "decimetres above offset_m",
+  "offset_m": -4000,
+  "use": "3D display only: DTM, else MOLA 128 px/deg shifted by 0.7 m"
+ },
+ "ortho": {
+  "file": "utp_ortho.webp",
+  "bounds": [
+   [
+    42.07450140267274,
+    86.27294430584746
+   ],
+   [
+    42.37977776591766,
+    86.41470404430147
+   ]
+  ],
+  "px": [
+   1603,
+   4507
+  ],
+  "product": "PSP_009467_2225_RED_C_01_ORTHO",
+  "date": "2008-08-03",
+  "scale_m": 4,
+  "credit": "NASA/JPL/University of Arizona"
+ },
+ "sharad": {
+  "file": "sharad_outline.geojson"
+ }
+}

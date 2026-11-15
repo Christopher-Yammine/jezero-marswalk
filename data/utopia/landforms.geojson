@@ -1,0 +1,1030 @@
+{
+"type": "FeatureCollection",
+"properties": {
+"source": "HiRISE PSP_009467_2225 orthoimage and DTEEC_009467_2225_007384_2225 DTM (NASA/JPL/UArizona)",
+"method": "marked by eye on gridded 4 m crops; scarps checked against 3 m slopes over 15 degrees in the DTM; positions good to a few tens of metres",
+"meaning": "visible ice-related landforms: evidence of past ice loss or ice-rich ground, not a measurement of ice today, not a statement on ground strength"
+},
+"features": [
+{
+"type": "Feature",
+"properties": {
+"name": "Scalloped scarp, main terraced margin",
+"kind": "scalloped_scarp",
+"d": "Terraced, scalloped scarp at a mantle margin: the edge of a depression read as ice loss from the ground beneath (sublimation). Steep 3 m slopes along it in the HiRISE DTM.",
+"method": "marked by eye in HiRISE PSP_009467_2225, checked against the HiRISE DTM"
+},
+"geometry": {
+"type": "Polygon",
+"coordinates": [
+[
+[
+86.304992,
+42.254505
+],
+[
+86.304546,
+42.251688
+],
+[
+86.306186,
+42.248903
+],
+[
+86.308065,
+42.246613
+],
+[
+86.311508,
+42.245831
+],
+[
+86.314579,
+42.245824
+],
+[
+86.318504,
+42.246983
+],
+[
+86.320202,
+42.245197
+],
+[
+86.323472,
+42.244825
+],
+[
+86.327396,
+42.245858
+],
+[
+86.33078,
+42.248159
+],
+[
+86.334133,
+42.249289
+],
+[
+86.339274,
+42.245895
+],
+[
+86.337743,
+42.244646
+],
+[
+86.333235,
+42.247738
+],
+[
+86.332203,
+42.246841
+],
+[
+86.328569,
+42.244412
+],
+[
+86.32372,
+42.243148
+],
+[
+86.319096,
+42.243722
+],
+[
+86.318163,
+42.245315
+],
+[
+86.31507,
+42.244176
+],
+[
+86.311123,
+42.244169
+],
+[
+86.306672,
+42.245278
+],
+[
+86.304165,
+42.248124
+],
+[
+86.302296,
+42.251421
+],
+[
+86.302727,
+42.254684
+],
+[
+86.304992,
+42.254505
+]
+]
+]
+}
+},
+{
+"type": "Feature",
+"properties": {
+"name": "Scalloped scarp, north-west",
+"kind": "scalloped_scarp",
+"d": "Terraced, scalloped scarp at a mantle margin: the edge of a depression read as ice loss from the ground beneath (sublimation). Steep 3 m slopes along it in the HiRISE DTM.",
+"method": "marked by eye in HiRISE PSP_009467_2225, checked against the HiRISE DTM"
+},
+"geometry": {
+"type": "Polygon",
+"coordinates": [
+[
+[
+86.30877,
+42.26767
+],
+[
+86.309121,
+42.261386
+],
+[
+86.306844,
+42.261317
+],
+[
+86.306493,
+42.2676
+],
+[
+86.30877,
+42.26767
+]
+]
+]
+}
+},
+{
+"type": "Feature",
+"properties": {
+"name": "Scalloped scarp, east arc",
+"kind": "scalloped_scarp",
+"d": "Terraced, scalloped scarp at a mantle margin: the edge of a depression read as ice loss from the ground beneath (sublimation). Steep 3 m slopes along it in the HiRISE DTM.",
+"method": "marked by eye in HiRISE PSP_009467_2225, checked against the HiRISE DTM"
+},
+"geometry": {
+"type": "Polygon",
+"coordinates": [
+[
+[
+86.373853,
+42.246567
+],
+[
+86.374237,
+42.243379
+],
+[
+86.37632,
+42.241187
+],
+[
+86.377502,
+42.239169
+],
+[
+86.381843,
+42.239856
+],
+[
+86.384475,
+42.237491
+],
+[
+86.388277,
+42.238191
+],
+[
+86.388741,
+42.236539
+],
+[
+86.383771,
+42.235887
+],
+[
+86.381139,
+42.238252
+],
+[
+86.376709,
+42.237588
+],
+[
+86.374382,
+42.2403
+],
+[
+86.372079,
+42.242837
+],
+[
+86.371585,
+42.246406
+],
+[
+86.373853,
+42.246567
+]
+]
+]
+}
+},
+{
+"type": "Feature",
+"properties": {
+"name": "Scalloped scarp, south-west",
+"kind": "scalloped_scarp",
+"d": "Terraced, scalloped scarp at a mantle margin: the edge of a depression read as ice loss from the ground beneath (sublimation). Steep 3 m slopes along it in the HiRISE DTM.",
+"method": "marked by eye in HiRISE PSP_009467_2225, checked against the HiRISE DTM"
+},
+"geometry": {
+"type": "Polygon",
+"coordinates": [
+[
+[
+86.306819,
+42.226268
+],
+[
+86.303273,
+42.223879
+],
+[
+86.300413,
+42.22236
+],
+[
+86.299291,
+42.219712
+],
+[
+86.29973,
+42.2165
+],
+[
+86.297463,
+42.216338
+],
+[
+86.297025,
+42.219882
+],
+[
+86.298535,
+42.223315
+],
+[
+86.301815,
+42.225175
+],
+[
+86.305286,
+42.227516
+],
+[
+86.306819,
+42.226268
+]
+]
+]
+}
+},
+{
+"type": "Feature",
+"properties": {
+"name": "Scalloped scarp, south diagonal",
+"kind": "scalloped_scarp",
+"d": "Terraced, scalloped scarp at a mantle margin: the edge of a depression read as ice loss from the ground beneath (sublimation). Steep 3 m slopes along it in the HiRISE DTM.",
+"method": "marked by eye in HiRISE PSP_009467_2225, checked against the HiRISE DTM"
+},
+"geometry": {
+"type": "Polygon",
+"coordinates": [
+[
+[
+86.343722,
+42.175318
+],
+[
+86.340212,
+42.16988
+],
+[
+86.337119,
+42.164404
+],
+[
+86.333951,
+42.1602
+],
+[
+86.33016,
+42.156924
+],
+[
+86.32309,
+42.154388
+],
+[
+86.316197,
+42.155153
+],
+[
+86.3115,
+42.158728
+],
+[
+86.313148,
+42.159894
+],
+[
+86.317253,
+42.156648
+],
+[
+86.322685,
+42.156048
+],
+[
+86.328819,
+42.158288
+],
+[
+86.33207,
+42.161151
+],
+[
+86.335064,
+42.165132
+],
+[
+86.338133,
+42.17057
+],
+[
+86.341666,
+42.176046
+],
+[
+86.343722,
+42.175318
+]
+]
+]
+}
+},
+{
+"type": "Feature",
+"properties": {
+"name": "Scalloped scarp, bright tongue edge",
+"kind": "scalloped_scarp",
+"d": "Terraced, scalloped scarp at a mantle margin: the edge of a depression read as ice loss from the ground beneath (sublimation). Steep 3 m slopes along it in the HiRISE DTM.",
+"method": "marked by eye in HiRISE PSP_009467_2225, checked against the HiRISE DTM"
+},
+"geometry": {
+"type": "Polygon",
+"coordinates": [
+[
+[
+86.376692,
+42.134335
+],
+[
+86.374052,
+42.130924
+],
+[
+86.371411,
+42.127514
+],
+[
+86.369434,
+42.128353
+],
+[
+86.372075,
+42.131763
+],
+[
+86.374716,
+42.135174
+],
+[
+86.376692,
+42.134335
+]
+]
+]
+}
+},
+{
+"type": "Feature",
+"properties": {
+"name": "Scalloped depression",
+"kind": "scalloped_depression",
+"d": "Closed, rimless depression with a scalloped outline: interpreted as ground that sank where ice was lost. Ground strength unverified.",
+"method": "marked by eye in HiRISE PSP_009467_2225, checked against the HiRISE DTM"
+},
+"geometry": {
+"type": "Polygon",
+"coordinates": [
+[
+[
+86.33037,
+42.149761
+],
+[
+86.33125,
+42.146351
+],
+[
+86.335211,
+42.144986
+],
+[
+86.338732,
+42.146351
+],
+[
+86.343134,
+42.151467
+],
+[
+86.342254,
+42.154195
+],
+[
+86.337852,
+42.153172
+],
+[
+86.333451,
+42.150784
+],
+[
+86.33037,
+42.149761
+]
+]
+]
+}
+},
+{
+"type": "Feature",
+"properties": {
+"name": "Rimmed crater, north",
+"kind": "rimmed_crater",
+"d": "Crater with a raised rim and a central mound or ring (ring-mold type), a form associated with ice-rich ground when it formed.",
+"method": "marked by eye in HiRISE PSP_009467_2225, checked against the HiRISE DTM"
+},
+"geometry": {
+"type": "Polygon",
+"coordinates": [
+[
+[
+86.370663,
+42.26473
+],
+[
+86.370539,
+42.265428
+],
+[
+86.370174,
+42.266079
+],
+[
+86.369595,
+42.266638
+],
+[
+86.36884,
+42.267067
+],
+[
+86.367961,
+42.267337
+],
+[
+86.367018,
+42.267429
+],
+[
+86.366074,
+42.267337
+],
+[
+86.365195,
+42.267067
+],
+[
+86.36444,
+42.266638
+],
+[
+86.363861,
+42.266079
+],
+[
+86.363496,
+42.265428
+],
+[
+86.363372,
+42.26473
+],
+[
+86.363496,
+42.264031
+],
+[
+86.363861,
+42.26338
+],
+[
+86.36444,
+42.262821
+],
+[
+86.365195,
+42.262392
+],
+[
+86.366074,
+42.262122
+],
+[
+86.367018,
+42.26203
+],
+[
+86.367961,
+42.262122
+],
+[
+86.36884,
+42.262392
+],
+[
+86.369595,
+42.262821
+],
+[
+86.370174,
+42.26338
+],
+[
+86.370539,
+42.264031
+],
+[
+86.370663,
+42.26473
+]
+]
+]
+}
+},
+{
+"type": "Feature",
+"properties": {
+"name": "Rimmed crater, centre",
+"kind": "rimmed_crater",
+"d": "Crater with a raised rim and a central mound or ring (ring-mold type), a form associated with ice-rich ground when it formed.",
+"method": "marked by eye in HiRISE PSP_009467_2225, checked against the HiRISE DTM"
+},
+"geometry": {
+"type": "Polygon",
+"coordinates": [
+[
+[
+86.341646,
+42.228041
+],
+[
+86.341545,
+42.228608
+],
+[
+86.341249,
+42.229137
+],
+[
+86.340779,
+42.229591
+],
+[
+86.340165,
+42.22994
+],
+[
+86.339451,
+42.230159
+],
+[
+86.338684,
+42.230234
+],
+[
+86.337918,
+42.230159
+],
+[
+86.337203,
+42.22994
+],
+[
+86.33659,
+42.229591
+],
+[
+86.336119,
+42.229137
+],
+[
+86.335823,
+42.228608
+],
+[
+86.335722,
+42.228041
+],
+[
+86.335823,
+42.227473
+],
+[
+86.336119,
+42.226944
+],
+[
+86.33659,
+42.22649
+],
+[
+86.337203,
+42.226141
+],
+[
+86.337918,
+42.225922
+],
+[
+86.338684,
+42.225847
+],
+[
+86.339451,
+42.225922
+],
+[
+86.340165,
+42.226141
+],
+[
+86.340779,
+42.22649
+],
+[
+86.341249,
+42.226944
+],
+[
+86.341545,
+42.227473
+],
+[
+86.341646,
+42.228041
+]
+]
+]
+}
+},
+{
+"type": "Feature",
+"properties": {
+"name": "Ring-mold crater, south-west",
+"kind": "rimmed_crater",
+"d": "Crater with a raised rim and a central mound or ring (ring-mold type), a form associated with ice-rich ground when it formed.",
+"method": "marked by eye in HiRISE PSP_009467_2225, checked against the HiRISE DTM"
+},
+"geometry": {
+"type": "Polygon",
+"coordinates": [
+[
+[
+86.323938,
+42.164427
+],
+[
+86.323768,
+42.165388
+],
+[
+86.323267,
+42.166283
+],
+[
+86.32247,
+42.167051
+],
+[
+86.321432,
+42.167641
+],
+[
+86.320223,
+42.168012
+],
+[
+86.318926,
+42.168139
+],
+[
+86.317629,
+42.168012
+],
+[
+86.31642,
+42.167641
+],
+[
+86.315382,
+42.167051
+],
+[
+86.314585,
+42.166283
+],
+[
+86.314085,
+42.165388
+],
+[
+86.313914,
+42.164427
+],
+[
+86.314085,
+42.163466
+],
+[
+86.314585,
+42.162571
+],
+[
+86.315382,
+42.161803
+],
+[
+86.31642,
+42.161213
+],
+[
+86.317629,
+42.160842
+],
+[
+86.318926,
+42.160715
+],
+[
+86.320223,
+42.160842
+],
+[
+86.321432,
+42.161213
+],
+[
+86.32247,
+42.161803
+],
+[
+86.323267,
+42.162571
+],
+[
+86.323768,
+42.163466
+],
+[
+86.323938,
+42.164427
+]
+]
+]
+}
+},
+{
+"type": "Feature",
+"properties": {
+"name": "Ring-mold crater, south-east",
+"kind": "rimmed_crater",
+"d": "Crater with a raised rim and a central mound or ring (ring-mold type), a form associated with ice-rich ground when it formed.",
+"method": "marked by eye in HiRISE PSP_009467_2225, checked against the HiRISE DTM"
+},
+"geometry": {
+"type": "Polygon",
+"coordinates": [
+[
+[
+86.397639,
+42.113267
+],
+[
+86.397491,
+42.114097
+],
+[
+86.397059,
+42.11487
+],
+[
+86.396371,
+42.115534
+],
+[
+86.395474,
+42.116043
+],
+[
+86.39443,
+42.116364
+],
+[
+86.39331,
+42.116473
+],
+[
+86.392189,
+42.116364
+],
+[
+86.391145,
+42.116043
+],
+[
+86.390249,
+42.115534
+],
+[
+86.389561,
+42.11487
+],
+[
+86.389129,
+42.114097
+],
+[
+86.388981,
+42.113267
+],
+[
+86.389129,
+42.112438
+],
+[
+86.389561,
+42.111665
+],
+[
+86.390249,
+42.111001
+],
+[
+86.391145,
+42.110491
+],
+[
+86.392189,
+42.110171
+],
+[
+86.39331,
+42.110062
+],
+[
+86.39443,
+42.110171
+],
+[
+86.395474,
+42.110491
+],
+[
+86.396371,
+42.111001
+],
+[
+86.397059,
+42.111665
+],
+[
+86.397491,
+42.112438
+],
+[
+86.397639,
+42.113267
+]
+]
+]
+}
+},
+{
+"type": "Feature",
+"properties": {
+"name": "Polygonal terrain",
+"kind": "polygonal_terrain",
+"d": "Ground cut into polygons tens of metres across by a crack network: thermal-contraction polygons, typical of ice-rich ground. The cracks themselves are below this map's routing cell size.",
+"method": "marked by eye in HiRISE PSP_009467_2225, checked against the HiRISE DTM"
+},
+"geometry": {
+"type": "Polygon",
+"coordinates": [
+[
+[
+86.341373,
+42.175
+],
+[
+86.398592,
+42.175
+],
+[
+86.400352,
+42.153854
+],
+[
+86.396831,
+42.144986
+],
+[
+86.379225,
+42.140894
+],
+[
+86.36162,
+42.139529
+],
+[
+86.349296,
+42.134072
+],
+[
+86.339613,
+42.12998
+],
+[
+86.326408,
+42.12998
+],
+[
+86.314085,
+42.134072
+],
+[
+86.311444,
+42.144986
+],
+[
+86.329049,
+42.145668
+],
+[
+86.338732,
+42.149079
+],
+[
+86.341373,
+42.157265
+],
+[
+86.338732,
+42.164086
+],
+[
+86.341373,
+42.175
+]
+]
+]
+}
+}
+]
+}

@@ -4,3 +4,4 @@ habitat/logs
 .env*
 __pycache__
 *.pyc
+docs/media/*.mp4

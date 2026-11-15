@@ -7,7 +7,7 @@ Live: https://jezero-marswalk-ashy.vercel.app
 
 ## Demo video
 
-[Watch the demo video with voiceover](https://jezero-marswalk-ashy.vercel.app/docs/media/marswalk-demo.mp4) (2 minutes, MP4)
+[Watch the demo video with voiceover](https://jezero-marswalk-ashy.vercel.app/docs/media/marswalk-demo-v2.mp4) (2 minutes, MP4)
 
 ## What it does
 

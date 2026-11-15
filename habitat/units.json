@@ -1,12 +1,40 @@
 {
   "_comment": "Where the fixed units stand on the bench (metres, x = east, y = north, from the base), and how the bench maps onto Jezero. Bench metres are multiplied by 'scale' so a room-sized test shows up as a walk-sized route. The scale is a demo device: positions on the Mars map are SIMULATED placements of real bench measurements.",
-  "habitat": { "lat": 18.444627, "lon": 77.450886 },
+  "habitat": {
+    "lat": 18.444627,
+    "lon": 77.450886
+  },
   "scale": 20,
   "units": {
-    "B1": { "name": "Habitat base (LoRa + FTM)", "x": 0.0, "y": 0.0 },
-    "A1": { "name": "Nav beacon A1", "x": 6.0, "y": 0.0 },
-    "A2": { "name": "Nav beacon A2", "x": 0.0, "y": 6.0 },
-    "R1": { "name": "Relay mast R1", "x": 4.0, "y": 4.0 }
+    "B1": {
+      "name": "Habitat base (LoRa + FTM)",
+      "x": 0,
+      "y": 0,
+      "ftm_offset_m": 2.5,
+      "calibrated": false
+    },
+    "A1": {
+      "name": "Buddy beacon A1 (carried by the second walker)",
+      "role": "buddy",
+      "limit_m": 15,
+      "ftm_offset_m": 1.0,
+      "calibrated": false
+    },
+    "R1": {
+      "name": "Relay mast R1",
+      "x": 0,
+      "y": 4,
+      "ftm_offset_m": 2.5,
+      "calibrated": false
+    },
+    "A2": {
+      "name": "Nav beacon A2",
+      "x": 5,
+      "y": 0,
+      "ftm_offset_m": 2.5,
+      "calibrated": false
+    }
   },
-  "gps_origin": null
+  "gps_origin": null,
+  "_calibration": "2026-11-15: indoor readings at 1 m ranged 1.5-7 m, so no true calibration. Rough fixed correction 2.5 m per fixed unit (A1 buddy: 1.0 m from its 1.4-2.5 m readings at ~1 m). Buddy limit 15 m, above the noise."
 }

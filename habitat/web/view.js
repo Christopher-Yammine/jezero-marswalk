@@ -23,13 +23,14 @@
     },
     applySnapshot(m) {
       Object.assign(this.state, { tags: m.tags || {}, base: m.base, events: m.events || [], units: m.units || {},
-        habitat: m.habitat, scale: m.scale, mode: m.mode, started: m.started });
+        habitat: m.habitat, scale: m.scale, mode: m.mode, started: m.started, frame: m.frame || 'mars', earth_origin: m.earth_origin });
       this.emit('snapshot', m);
     },
     drain() {
       const cut = Date.now() - this.delayMs;
       while (this.queue.length && this.queue[0]._rx <= cut) {
         const m = this.queue.shift();
+        if (m.kind === 'reload') { location.reload(); return; }      // the site changed (Earth analog <-> Jezero)
         if (m.kind === 'tag') this.state.tags[m.tag.tag] = m.tag;
         if (m.kind === 'base') this.state.base = m.base;
         if (m.event) { this.state.events.push(m.event); this.state.events = this.state.events.slice(-300); }
@@ -39,8 +40,8 @@
     },
     pending() { return this.queue.length; },
 
-    async cmd(word, tag) {
-      const r = await fetch('/cmd', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cmd: word, tag }) });
+    async cmd(word, tag, arg) {
+      const r = await fetch('/cmd', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cmd: word, tag, arg }) });
       return r.json();
     },
 
@@ -58,10 +59,19 @@
       if (!isFinite(s)) return 'never';
       return s < 60 ? Math.round(s) + ' s ago' : s < 3600 ? Math.round(s / 60) + ' min ago' : Math.round(s / 3600) + ' h ago';
     },
-    loss(t) { const n = (t.rx || 0) + (t.lost || 0); return n ? Math.round(100 * (t.lost || 0) / n) : 0; },
+    loss(t) { if (!t.radio) return 'not measured'; const n = (t.rx || 0) + (t.lost || 0); return (n ? Math.round(100 * (t.lost || 0) / n) : 0) + ' %'; },
+    // buddy ring: the buddy is somewhere within the measured separation of the tag (map scale applied)
+    buddyRing(L, map, store, t) {
+      const b = t.buddy, has = b && t.pos && b.dist_m != null && b.state !== 'unknown';
+      if (!has) { if (store[t.tag]) { map.removeLayer(store[t.tag]); delete store[t.tag]; } return; }
+      const bad = b.state === 'separated', r = Math.max(1, b.dist_m * (this.state.scale || 1));
+      if (!store[t.tag]) store[t.tag] = L.circle([t.pos.lat, t.pos.lon], { radius: r, weight: 2, dashArray: '4 4', fillOpacity: .06 }).addTo(map);
+      store[t.tag].setLatLng([t.pos.lat, t.pos.lon]).setRadius(r).setStyle({ color: bad ? '#ef6b6b' : '#7fb3e6' })
+        .bindTooltip('Buddy is within ' + b.dist_m + ' m of this walker' + (bad ? ' (over the ' + b.limit_m + ' m limit)' : ''));
+    },
     short(id) { return (id || '').replace('LEB10-', ''); },
     distM(a, b) {
-      const R = 3396190, toR = Math.PI / 180, dLat = (b.lat - a.lat) * toR, dLon = (b.lon - a.lon) * toR;
+      const R = this.state.frame === 'earth' ? 6371000 : 3396190, toR = Math.PI / 180, dLat = (b.lat - a.lat) * toR, dLon = (b.lon - a.lon) * toR;
       const s = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * toR) * Math.cos(b.lat * toR) * Math.sin(dLon / 2) ** 2;
       return 2 * R * Math.asin(Math.sqrt(s));
     },
@@ -143,7 +153,23 @@
     },
 
     // ---- Mars map (same projection and Trek tiles as the planner)
+    post(path, body) { return fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json()); },
+    // phone or laptop location, after the browser's permission prompt
+    locate() {
+      return new Promise((res, rej) => {
+        if (!navigator.geolocation) return rej(new Error('this browser has no location service'));
+        navigator.geolocation.getCurrentPosition(p => res({ lat: p.coords.latitude, lon: p.coords.longitude, acc: Math.round(p.coords.accuracy) }),
+          e => rej(new Error(e.code === 1 ? 'location permission was refused' : !window.isSecureContext ? 'location needs the https address of the habitat' : 'no location fix')), { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+      });
+    },
+    pinIcon(L, colour) { return L.divIcon({ className: '', html: `<div style="width:14px;height:14px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${colour};border:2px solid #140c08"></div>`, iconSize: [14, 14], iconAnchor: [7, 14] }); },
     map(el, opts) {
+      if (this.state.frame === 'earth') {            // Earth analog site: a real map at true scale
+        const h = this.state.habitat, m = L.map(el, { center: [h.lat, h.lon], zoom: 20, maxZoom: 22 });
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxNativeZoom: 19, maxZoom: 22, attribution: '&copy; OpenStreetMap contributors' }).addTo(m);
+        L.control.scale({ imperial: false }).addTo(m);
+        return m;
+      }
       const MarsCRS = L.extend({}, L.CRS.EPSG4326, { R: 3396190 });
       const h = this.state.habitat || { lat: 18.444627, lon: 77.450886 };
       const map = L.map(el, Object.assign({ crs: MarsCRS, center: [h.lat, h.lon], zoom: 15, minZoom: 8, maxZoom: 19, zoomControl: true }, opts || {}));

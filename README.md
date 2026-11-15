@@ -5,6 +5,10 @@ An astronaut's crew tablet for planning and carrying out a Marswalk in Jezero cr
 
 Live: https://jezero-marswalk-ashy.vercel.app
 
+## Demo video
+
+[Watch the demo video with voiceover](https://jezero-marswalk-ashy.vercel.app/docs/media/marswalk-demo.mp4) (2 minutes, MP4)
+
 ## What it does
 
 - Streams NASA Mars Trek tiles live: HiRISE 25 cm and CTX 6 m Jezero mosaics, THEMIS day/night thermal, MOLA+HRSC relief, Viking global.

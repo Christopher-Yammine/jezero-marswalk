@@ -24,8 +24,8 @@ a{color:var(--rust)}
 button,.chip{font:500 12px var(--body);background:transparent;color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:5px 9px;cursor:pointer;text-decoration:none}
 button:disabled{opacity:.45;cursor:default}
 .chip{padding:3px 8px}
-button[aria-pressed="true"],.chip[aria-current="page"]{background:var(--rust);border-color:var(--rust);color:#140c08}
-button:focus-visible,.chip:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
+button[aria-pressed="true"],.chip[aria-current="page"]{background:var(--rust-soft);border-color:var(--rust);color:var(--fg);font-weight:600}
+button:focus-visible,.chip:focus-visible,summary:focus-visible,#panel a:focus-visible{outline:2px solid var(--warn);outline-offset:2px;border-radius:3px}
 label.tg{display:flex;gap:8px;align-items:center;font-size:13px;cursor:pointer}
 label.rg{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--mute)}
 label.rg b{font:500 12px var(--mono);color:var(--fg)}
@@ -63,76 +63,145 @@ input[type=time]{font:12px var(--mono);background:var(--bg);color:var(--fg);bord
 #avLabel .h{color:var(--bad)}#avLabel .w{color:var(--warn)}#avLabel .m{color:var(--mute)}
 #load{position:fixed;inset:0;display:grid;place-items:center;font:13px var(--mono);color:var(--mute);pointer-events:none;padding:16px;text-align:center}
 [hidden]{display:none!important}
+/* Panel layout: name, one sentence and the next step on top; everything else in closed groups. */
+html[data-mw] #panel,#panel{gap:0;padding:12px 14px}
+.toprow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+#panelToggle{flex:none;font-size:11.5px;color:var(--mute);padding:4px 8px}
+#panelBody{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+#blurb{font-size:13.5px}
+#step{display:flex;flex-direction:column;gap:8px}
+#stepText{font-size:14px;font-weight:500}
+#step .seg{align-items:center;gap:8px 12px}
+.primary,a.primary{display:inline-block;background:var(--rust);border:1px solid var(--rust);color:oklch(0.17 0.02 50);font:600 13.5px var(--body);padding:8px 14px;border-radius:4px;text-decoration:none;cursor:pointer}
+.lnk{font-size:12.5px}
+#groups{display:flex;flex-direction:column;border-bottom:1px solid var(--line)}
+details.g{border-top:1px solid var(--line)}
+details.g>summary{list-style:none;display:flex;align-items:center;gap:8px;padding:10px 2px;cursor:pointer;font:500 13px var(--display);letter-spacing:.07em;text-transform:uppercase}
+details.g>summary::-webkit-details-marker{display:none}
+details.g>summary::after{content:"+";font:400 16px/1 var(--mono);color:var(--mute);width:12px;text-align:center;margin-left:auto}
+details.g[open]>summary::after{content:"\2212"}
+details.g>summary .sh{flex:1;font:400 12px var(--body);letter-spacing:0;text-transform:none;color:var(--mute);text-align:right}
+details.g>summary .ev{letter-spacing:0;text-transform:none}
+.gb{display:flex;flex-direction:column;gap:10px;padding:2px 0 14px}
 @media (max-width:700px){#panel{top:auto;bottom:max(16px,env(safe-area-inset-bottom));max-height:52vh}}
 </style>
+<script src="shell.js"></script>
 </head>
 <body>
 <canvas id="cv" aria-label="3D terrain"></canvas>
 <div id="load">Loading terrain grid and imagery…</div>
 <div id="avLabel" hidden></div>
-<aside id="panel">
-  <div>
-    <p class="eyebrow">Marswalk · <a href="./" id="mapLink">map</a> · <a href="identify">identify</a></p>
+<aside id="panel" aria-label="Site and controls">
+  <div class="toprow">
     <h1 id="title">Mars in 3D</h1>
-    <p class="note" id="blurb" style="margin-top:4px"></p>
-    <p class="note" style="margin-top:4px">Drag to orbit, right-drag or two fingers to pan, scroll or pinch to zoom. Click the ground for its elevation and slope.</p>
+    <button type="button" id="panelToggle" aria-expanded="true" aria-controls="panelBody">Hide panel</button>
   </div>
-  <div><h2>Site</h2><nav class="seg" id="sites" aria-label="Site"></nav></div>
-  <div><h2>Vertical scale</h2><div class="seg" id="exag" role="group" aria-label="Vertical scale"></div>
-    <p class="note" style="margin-top:4px">Above 1× the relief is exaggerated so slopes are easier to see.</p></div>
-  <div><h2>Layers</h2><div id="layers"></div></div>
-
-  <section id="routeBox" hidden style="display:flex;flex-direction:column;gap:10px">
-    <div>
-      <h2>Route</h2>
-      <div class="seg" id="clickMode" role="group" aria-label="What a click on the ground does">
-        <button type="button" data-m="probe" aria-pressed="true">Click: inspect</button><button type="button" data-m="add" aria-pressed="false">Click: add waypoint</button>
+  <div id="panelBody">
+    <p id="blurb"></p>
+    <p class="note" id="honest" hidden></p>
+    <div id="step" hidden>
+      <p id="stepText" aria-live="polite"></p>
+      <div class="seg">
+        <button type="button" class="primary" id="stepBtn" hidden></button>
+        <a class="primary" id="stepLink" hidden></a>
+        <button type="button" id="stepAlt" hidden>Stop adding</button>
+        <a class="lnk" href="plan.html" id="mapLink">Open the 2D map</a>
       </div>
-      <label class="tg" style="margin-top:8px"><input type="checkbox" id="autoRoute" checked> Route clicks over terrain (recommended cost)</label>
-      <label class="rg" style="margin-top:6px">Slope limit <span class="ev draft">draft</span><b id="vSlope">15°</b></label>
-      <input type="range" id="slope" min="5" max="30" step="1" value="15" aria-label="Slope limit">
-      <div class="seg" style="margin-top:6px"><button type="button" id="undo">Remove last</button><button type="button" id="clear">Clear</button></div>
-      <p class="note" id="gridStatus" style="margin-top:6px">Terrain grid: loading THEMIS night IR…</p>
     </div>
-    <div id="rstats"></div>
-    <div class="conf" id="conf"></div>
-    <div><button type="button" id="retBtn" disabled>Return options from the farthest point</button></div>
-    <div id="retWrap"></div>
-    <div><h2>Targets</h2><ul class="tg" id="targets"></ul></div>
-    <div id="cmpWrap"></div>
-    <p class="note" id="routeNote"></p>
-  </section>
 
-  <section id="simBox" hidden style="display:flex;flex-direction:column;gap:8px">
-    <h2>Crew walk <span class="ev sim">simulated</span></h2>
-    <div class="seg">
-      <button type="button" id="simStart">Start simulated walk</button>
-      <button type="button" id="trackBack" disabled>Track back</button>
-      <button type="button" id="simStop">Stop</button>
-      <button type="button" id="voice" aria-pressed="false">Voice: off</button>
-    </div>
-    <div class="seg" id="simSpeed" role="group" aria-label="Simulation speed">
-      <button type="button" data-x="10" aria-pressed="false">10×</button><button type="button" data-x="60" aria-pressed="true">60×</button><button type="button" data-x="300" aria-pressed="false">300×</button>
-    </div>
-    <label class="tg"><input type="checkbox" id="follow" checked> Camera follows the astronaut</label>
-    <label class="rg">Walk start, local mean solar time <input type="time" id="start" value="09:00"></label>
-    <div id="cMsg"></div>
-    <div class="stats">
-      <div><span>Elapsed</span><b id="cElapsed">0 min</b></div>
-      <div><span>Dist. to base</span><b id="cDist">--</b></div>
-      <div><span>Walk-back</span><b id="cWb">--</b></div>
-      <div><span>Dose so far</span><b id="cDose">0 µGy</b></div>
-      <div><span>Slope underfoot</span><b id="cSlope">--</b></div>
-      <div><span>Elevation</span><b id="cElev">--</b></div>
-    </div>
-    <h2 style="margin-top:4px">Upcoming on route</h2>
-    <div class="warns" id="warns"><span class="note">Start a walk to see route warnings.</span></div>
-    <p class="note" id="simNote"></p>
-  </section>
+    <div id="groups">
+      <details class="g" id="gRoute" hidden>
+        <summary>Plan a route</summary>
+        <div class="gb">
+          <section id="routeBox" hidden style="display:flex;flex-direction:column;gap:10px">
+            <div>
+              <h2>A click on the ground</h2>
+              <div class="seg" id="clickMode" role="group" aria-label="What a click on the ground does">
+                <button type="button" data-m="probe" aria-pressed="true">Inspects the point</button><button type="button" data-m="add" aria-pressed="false">Adds a waypoint</button>
+              </div>
+              <label class="tg" style="margin-top:8px"><input type="checkbox" id="autoRoute" checked> Route clicks over terrain (recommended cost)</label>
+              <label class="rg" style="margin-top:6px">Slope limit <span class="ev draft">draft</span><b id="vSlope">15°</b></label>
+              <input type="range" id="slope" min="5" max="30" step="1" value="15" aria-label="Slope limit">
+              <div class="seg" style="margin-top:6px"><button type="button" id="undo">Remove last</button><button type="button" id="clear">Clear</button></div>
+              <p class="note" id="gridStatus" style="margin-top:6px">Terrain grid: loading THEMIS night IR…</p>
+            </div>
+            <div id="rstats"></div>
+            <div class="conf" id="conf"></div>
+            <div><button type="button" id="retBtn" disabled>Return options from the farthest point</button></div>
+            <div id="retWrap"></div>
+            <div><h2>Targets</h2><ul class="tg" id="targets"></ul></div>
+            <div id="cmpWrap"></div>
+            <p class="note" id="routeNote"></p>
+          </section>
+        </div>
+      </details>
 
-  <div><h2>Point</h2><div id="probe">Click the terrain.</div></div>
-  <div class="seg"><button type="button" id="home">Reset view</button><button type="button" id="close">Habitat close-up</button></div>
-  <p class="note" id="sources"></p>
+      <details class="g" id="gSim" hidden>
+        <summary>Crew walk <span class="ev sim">simulated</span></summary>
+        <div class="gb">
+          <section id="simBox" hidden style="display:flex;flex-direction:column;gap:8px">
+            <div class="seg">
+              <button type="button" id="simStart">Start simulated walk</button>
+              <button type="button" id="trackBack" disabled>Track back</button>
+              <button type="button" id="simStop">Stop</button>
+              <button type="button" id="voice" aria-pressed="false">Voice: off</button>
+            </div>
+            <div class="seg" id="simSpeed" role="group" aria-label="Simulation speed">
+              <button type="button" data-x="10" aria-pressed="false">10×</button><button type="button" data-x="60" aria-pressed="true">60×</button><button type="button" data-x="300" aria-pressed="false">300×</button>
+            </div>
+            <label class="tg"><input type="checkbox" id="follow" checked> Camera follows the astronaut</label>
+            <label class="rg">Walk start, local mean solar time <input type="time" id="start" value="09:00"></label>
+            <div id="cMsg"></div>
+            <div class="stats">
+              <div><span>Elapsed</span><b id="cElapsed">0 min</b></div>
+              <div><span>Dist. to base</span><b id="cDist">--</b></div>
+              <div><span>Walk-back</span><b id="cWb">--</b></div>
+              <div><span>Dose so far</span><b id="cDose">0 µGy</b></div>
+              <div><span>Slope underfoot</span><b id="cSlope">--</b></div>
+              <div><span>Elevation</span><b id="cElev">--</b></div>
+            </div>
+            <h2 style="margin-top:4px">Upcoming on route</h2>
+            <div class="warns" id="warns"><span class="note">Start a walk to see route warnings.</span></div>
+            <p class="note" id="simNote"></p>
+          </section>
+        </div>
+      </details>
+
+      <details class="g" id="gPoint">
+        <summary>Point readout <span class="sh">elevation and slope</span></summary>
+        <div class="gb"><div id="probe">Click the terrain.</div></div>
+      </details>
+
+      <details class="g" id="gView">
+        <summary>View <span class="sh">vertical scale, camera</span></summary>
+        <div class="gb">
+          <div><h2>Vertical scale</h2><div class="seg" id="exag" role="group" aria-label="Vertical scale"></div>
+            <p class="note" style="margin-top:4px">Above 1× the relief is exaggerated so slopes are easier to see.</p></div>
+          <div class="seg"><button type="button" id="home">Reset view</button><button type="button" id="close">Habitat close-up</button><a class="chip" id="regionLink" hidden></a></div>
+          <p class="note">Drag to orbit, right-drag or two fingers to pan, scroll or pinch to zoom.</p>
+        </div>
+      </details>
+
+      <details class="g" id="gLayers">
+        <summary>Layers <span class="sh">what is drawn on the ground</span></summary>
+        <div class="gb"><div id="layers"></div></div>
+      </details>
+
+      <details class="g" id="gSites">
+        <summary>Sites <span class="sh" id="siteNow"></span></summary>
+        <div class="gb"><nav class="seg" id="sites" aria-label="Site"></nav>
+          <p class="note">★ marks a site with a walking map and routing.</p></div>
+      </details>
+
+      <details class="g" id="gAbout">
+        <summary>About the data <span class="sh">sources and limits</span></summary>
+        <div class="gb">
+          <p class="note" id="blurbMore" hidden></p>
+          <p class="note" id="sources"></p>
+        </div>
+      </details>
+    </div>
+  </div>
 </aside>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -184,8 +253,29 @@ $('blurb').innerHTML = S.reg && !WALK
   ? (WALK ? S.t + ' <a href="?site=arcadia&view=region">Regional view with the candidate rampart crater →</a>'
           : 'MOLA window over the HRSC orbit 26333 scene: the walk area near the south, the candidate rampart crater (about 20 km) near the north. <a href="?site=arcadia">Walk area with routing →</a>')
   : S.t;
+// Panel copy: the first sentence stays on top, review warnings stay beside it, the rest goes under "About the data".
+// The walk/region link in the blurb becomes the primary action (region view) or a View control (walk view).
+{
+  const bl = $('blurb'), link = bl.querySelector('a'); if (link) link.remove();
+  const sent = bl.textContent.trim().split(/\.\s+(?=[A-Z])/).map((x, i, a) => i < a.length - 1 ? x + '.' : x);
+  if (sent[0].length > 170 && sent[0].includes(': ')) { const k = sent[0].indexOf(': '), rest = sent[0].slice(k + 2); sent.splice(0, 1, sent[0].slice(0, k) + '.', rest[0].toUpperCase() + rest.slice(1)); }   // a very long opener keeps its first clause on top
+  const hon = sent.slice(1).filter(x => /candidate|[Nn]othing has been measured|Measured on the surface: nothing/.test(x));
+  const more = sent.slice(1).filter(x => !hon.includes(x));
+  bl.textContent = sent[0];
+  $('honest').textContent = hon.join(' '); $('honest').hidden = !hon.length;
+  $('blurbMore').textContent = more.join(' '); $('blurbMore').hidden = !more.length;
+  if (link) {
+    const el = $(WALK ? 'regionLink' : 'stepLink'); el.href = link.getAttribute('href'); el.textContent = link.textContent.replace(/\s*→\s*$/, ''); el.hidden = false;
+    if (!WALK) { $('stepText').textContent = 'This is the wide regional view. Routes are planned in the walk area.'; $('step').hidden = false; }
+  }
+  $('siteNow').textContent = S.n;
+  $('panelToggle').onclick = () => {
+    const show = $('panelBody').hidden; $('panelBody').hidden = !show;
+    $('panelToggle').setAttribute('aria-expanded', String(show)); $('panelToggle').textContent = show ? 'Hide panel' : 'Show panel';
+  };
+}
 $('sites').innerHTML = SITES.map(s => `<a class="chip" href="?site=${s.id}"${s === S ? ' aria-current="page"' : ''}${Core.SITES[s.id] ? ' title="Walking map with routing"' : ''}>${Core.SITES[s.id] ? '★ ' : ''}${s.n}</a>`).join('');   // ★ = walking map, as on the globe
-if (WALK) $('mapLink').href = './#' + S.id;
+if (WALK) $('mapLink').href = 'plan.html#' + S.id;
 $('close').textContent = WALK ? 'Habitat close-up' : 'Close-up: ' + S.what;
 
 // ---- shared scene
@@ -223,7 +313,38 @@ const slopeCls = s => s > 15 ? 'h' : s > 10 ? 'w' : '';
 const fmtM = m => m >= 1000 ? (m / 1000).toFixed(2) + ' km' : Math.round(m) + ' m';
 const fmtT = min => min >= 60 ? Math.floor(min / 60) + ' h ' + String(Math.round(min % 60)).padStart(2, '0') + ' min' : Math.round(min) + ' min';
 
+// ---- the next step, on top of the panel: one primary action for the current state (walk sites)
+let simOn = false;
+function step() {
+  if (!WALK) return;
+  const btn = $('stepBtn'), alt = $('stepAlt'), txt = $('stepText'), had = document.activeElement;
+  const adding = cv.classList.contains('add'), routed = !!$('rstats').querySelector('.stats');
+  const st = simOn ? ['stop', 'Simulated walk running. No suit tag is connected.', 'Stop walk']
+    : routed ? ['walk', 'Route ready. Watch a simulated crew member walk it.', 'Start simulated walk']
+    : adding ? ['', 'Click the ground to place a waypoint. The route starts at the habitat, the green marker.', '']
+    : ['add', 'Plan a walk: place waypoints on the ground. The route starts at the habitat, the green marker.', 'Add waypoints'];
+  if (txt.textContent !== st[1]) txt.textContent = st[1];
+  btn.dataset.act = st[0]; btn.textContent = st[2]; btn.hidden = !st[0]; btn.classList.toggle('primary', st[0] !== 'stop');
+  alt.hidden = !adding || simOn;
+  if (had === btn && btn.hidden) alt.focus(); else if (had === alt && alt.hidden) btn.focus();
+}
+$('stepBtn').onclick = () => {
+  const act = $('stepBtn').dataset.act;
+  if (act === 'add') { $('gRoute').open = true; document.querySelector('#clickMode [data-m="add"]').click(); }
+  else if (act === 'walk') { $('gSim').open = true; $('simStart').click(); $('gSim').scrollIntoView({ block: 'nearest' }); }
+  else if (act === 'stop') $('simStop').click();
+};
+$('stepAlt').onclick = () => document.querySelector('#clickMode [data-m="probe"]').click();
+
 if (WALK) await walkSite(); else await generic();
+
+if (WALK) {
+  $('gRoute').hidden = false; $('gSim').hidden = false; $('step').hidden = false; step();
+  new MutationObserver(step).observe($('rstats'), { childList: true });
+  new MutationObserver(step).observe($('clickMode'), { attributes: true, subtree: true, attributeFilter: ['aria-pressed'] });
+}
+// a click on the ground opens the readout, unless the click is placing a waypoint
+new MutationObserver(() => { if (!cv.classList.contains('add')) $('gPoint').open = true; }).observe($('probe'), { childList: true, characterData: true, subtree: true });
 
 function resize() { renderer.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
@@ -415,7 +536,7 @@ function rebuild() {
   renderStats(soft, off); compose();
 }
 function renderStats(soft, off) {
-  if (!anchors.length) { renderConf(null); $('retBtn').disabled = true; $('rstats').innerHTML = '<p class="note">No route yet. Choose "Click: add waypoint" and click the ground, or press Route on a target.</p>'; return; }
+  if (!anchors.length) { renderConf(null); $('retBtn').disabled = true; $('rstats').innerHTML = '<p class="note">No route yet. Choose "Adds a waypoint" and click the ground, or press Route on a target below.</p>'; return; }
   const opt = { slopeLim: LIM(), radius: Infinity, hab: HAB }, last = anchors[anchors.length - 1];
   const mo = Core.routeMetrics(G, waypoints, HAB, opt), mb = Core.routeMetrics(G, backPath, last, opt);
   const total = mo.len + mb.len, mins = total / (SPEED * 1000 / 60), share = k => (mo[k] * mo.len + mb[k] * mb.len) / Math.max(1, total);
@@ -662,7 +783,7 @@ function posAt(s) {
   return { lat: a.lat + (b.lat - a.lat) * f, lng: a.lng + (b.lng - a.lng) * f };
 }
 function simReset() {
-  sim = null; AV.root.visible = false; $('avLabel').hidden = true; $('trackBack').disabled = true;
+  sim = null; simOn = false; step(); AV.root.visible = false; $('avLabel').hidden = true; $('trackBack').disabled = true;
   $('cElapsed').textContent = '0 min'; $('cDist').textContent = '--'; $('cWb').textContent = '--'; $('cDose').textContent = '0 µGy'; $('cSlope').textContent = '--'; $('cElev').textContent = '--';
   renderWarns(); compose();
 }
@@ -671,7 +792,7 @@ $('simStart').onclick = () => {
   simReset(); sim = { min: 0, back: false, phase: 0, trail: [] };
   setPath([HAB, ...waypoints, ...(backPath.length ? backPath : [HAB])]);
   sim.outLen = sim.cum[waypoints.length];
-  AV.root.visible = true; $('avLabel').hidden = false; $('trackBack').disabled = false;
+  AV.root.visible = true; $('avLabel').hidden = false; $('trackBack').disabled = false; simOn = true; step();
   speak('Simulated walk started. ' + Math.round(sim.total) + ' metres round trip, back at base about ' + lmst(startMin() + sim.total / MPM) + '.');
   if ($('follow').checked) { const [x, z] = toXZ(HAB); ctl.target.set(x, 0, z); cam.position.set(x - 120, 160, z + 220); }
 };

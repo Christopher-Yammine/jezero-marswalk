@@ -1,7 +1,7 @@
-# Jezero Marswalk Planner
+# Marswalk Planner
 
 HackAthlone 2026 (NASA Space Apps), challenge "Interplanetary Survival Guide: Martian Map".
-An astronaut's crew tablet for planning and carrying out a Marswalk in Jezero crater.
+An astronaut's crew tablet for planning and carrying out a Marswalk anywhere on Mars: ten walk sites with terrain routing (Jezero, Gale, Gusev, Meridiani, Utopia, the Phoenix site, Arcadia, Olympus Mons, Valles Marineris, Hellas) and a globe for everywhere else.
 
 Live: https://jezero-marswalk-ashy.vercel.app
 
@@ -11,7 +11,7 @@ Live: https://jezero-marswalk-ashy.vercel.app
 
 ## What it does
 
-- Streams NASA Mars Trek tiles live: HiRISE 25 cm and CTX 6 m Jezero mosaics, THEMIS day/night thermal, MOLA+HRSC relief, Viking global.
+- Streams NASA Mars Trek tiles live: HiRISE 25 cm and CTX 6 m landing-site mosaics, THEMIS day/night thermal, MOLA+HRSC relief, Viking global.
 - Draws Perseverance's full traverse (559 drives, 46.05 km, elevation at every point) coloured by sol.
 - Lets the astronaut click waypoints, drag the habitat, and get out/return distance, round trip time, farthest point from base, return time, radiation dose, climb/drop, per-leg slope and an elevation profile.
 - Enforces safety rules from NASA sources: 30 min walk-back (1.8 km at 3.5 km/h), slope limit (draft), daylight window, running dose.

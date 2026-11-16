@@ -1,7 +1,7 @@
-# Findings: data and references behind the Jezero Marswalk planner
+# Findings: data and references behind the Marswalk planner
 
 HackAthlone 2026 (NASA Space Apps, 13 to 15 Nov 2026, Athlone). Challenge: Interplanetary Survival Guide, Martian Map.
-Team: Chris Yammine, Mariam Hamdan, Helena Mansour. Site chosen: Jezero crater (Perseverance landing site).
+Team: Chris Yammine, Mariam Hamdan, Helena Mansour. First site: Jezero crater (Perseverance landing site); the planner has since grown to ten walk sites across Mars.
 
 Everything below was tested on 6 and 7 Nov 2026. "Verified" means the URL returned tiles or data in a browser or curl.
 

@@ -15,7 +15,7 @@ brand
 
 ## Product Purpose
 
-Marswalk takes what robots learned about Jezero crater and turns it into what a person on foot needs: a route that avoids steep ground and sand, hazards explained in plain words, a helmet view that reads the ground ahead, and a habitat that watches over the walker through a suit tag. Success: a judge understands "rover data becomes a survival guide for a human walk" within the first scroll, and knows which of three things to click.
+Marswalk takes what robots learned about Mars and turns it into what a person on foot needs: a route that avoids steep ground and sand, hazards explained in plain words, a helmet view that reads the ground ahead, and a habitat that watches over the walker through a suit tag. Success: a judge understands "rover data becomes a survival guide for a human walk" within the first scroll, and knows which of three things to click.
 
 ## Brand Personality
 
